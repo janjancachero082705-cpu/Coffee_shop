@@ -4,7 +4,10 @@
 @section('subtitle', 'Create a delivery receipt')
 
 @section('actions')
-    <a href="{{ route('deliveries.index') }}" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="{{ route('deliveries.index') }}" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+    </a>
 @endsection
 
 @section('content')
@@ -12,7 +15,6 @@
 <form method="POST" action="{{ route('deliveries.store') }}" id="deliveryForm">
     @csrf
 
-    {{-- ═══ DELIVERY INFO ═══ --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -25,10 +27,10 @@
             <div class="field">
                 <label class="label">Store <span class="req">*</span></label>
                 <select name="store_id" id="storeSelect" class="input" required>
-                    <option value="">— Select a store —</option>
+                    <option value="">-- Select a store --</option>
                     @foreach($stores as $store)
                         <option value="{{ $store->id }}" {{ (old('store_id', $selectedStore)==$store->id)?'selected':'' }}>
-                            {{ $store->code }} — {{ $store->store_name }}
+                            {{ $store->code }} - {{ $store->store_name }}
                         </option>
                     @endforeach
                 </select>
@@ -41,12 +43,6 @@
                 @error('delivery_date')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <div class="field">
-                <label class="label">Due Date</label>
-                <input type="date" name="due_date" value="{{ old('due_date') }}" class="input">
-                @error('due_date')<div class="field-error">{{ $message }}</div>@enderror
-            </div>
-
             <div class="field field-full">
                 <label class="label">Notes</label>
                 <textarea name="notes" rows="2" class="input" placeholder="Optional notes...">{{ old('notes') }}</textarea>
@@ -54,7 +50,6 @@
         </div>
     </div>
 
-    {{-- ═══ ITEMS ═══ --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -77,12 +72,11 @@
             </div>
             <div class="total-row total-grand">
                 <span>Grand Total</span>
-                <strong id="grandTotal">₱0.00</strong>
+                <strong id="grandTotal">&#8369;0.00</strong>
             </div>
         </div>
     </div>
 
-    {{-- ═══ ACTIONS ═══ --}}
     <div class="form-actions">
         <a href="{{ route('deliveries.index') }}" class="btn btn-ghost">Cancel</a>
         <button type="submit" class="btn btn-primary">
@@ -92,14 +86,13 @@
     </div>
 </form>
 
-{{-- ═══ ITEM TEMPLATE ═══ --}}
 <template id="itemTemplate">
     <div class="item-row">
         <div class="item-grid">
             <div class="field">
                 <label class="label">Product <span class="req">*</span></label>
                 <select name="items[__INDEX__][product_id]" class="input product-select" onchange="onProductChange(this)" required>
-                    <option value="">— Select —</option>
+                    <option value="">-- Select --</option>
                     @foreach($products as $p)
                         <option value="{{ $p->id }}" data-price="{{ $p->price ?? $p->wholesale_price ?? 0 }}">
                             {{ $p->name }}@if($p->sku) ({{ $p->sku }})@endif
@@ -114,13 +107,13 @@
             <div class="field">
                 <label class="label">Unit Price <span class="req">*</span></label>
                 <div class="input-prefix">
-                    <span class="prefix">₱</span>
+                    <span class="prefix">&#8369;</span>
                     <input type="number" step="0.01" name="items[__INDEX__][unit_price]" class="input input-with-prefix price-input" min="0" value="0" required oninput="recalculate()">
                 </div>
             </div>
             <div class="field">
                 <label class="label">Subtotal</label>
-                <div class="subtotal-box" data-subtotal>₱0.00</div>
+                <div class="subtotal-box" data-subtotal>&#8369;0.00</div>
             </div>
             <button type="button" class="btn-remove" onclick="removeItem(this)" title="Remove item">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -150,7 +143,6 @@
     }
     .input-with-prefix { padding-left: 28px; }
 
-    /* ═══ ITEMS ═══ */
     .items-container { display: flex; flex-direction: column; gap: 12px; }
     .item-row {
         background: rgba(20, 20, 26, 0.4);
@@ -190,7 +182,6 @@
     }
     .btn-remove:hover { background: rgba(239, 68, 68, 0.2); }
 
-    /* ═══ TOTALS ═══ */
     .totals {
         margin-top: 20px;
         padding-top: 20px;
@@ -264,16 +255,15 @@
             const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
             const price = parseFloat(row.querySelector('.price-input').value) || 0;
             const subtotal = qty * price;
-            row.querySelector('[data-subtotal]').textContent = '₱' + subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            row.querySelector('[data-subtotal]').textContent = '\u20B1' + subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             total += subtotal;
             count += qty;
         });
 
         document.getElementById('totalItems').textContent = count;
-        document.getElementById('grandTotal').textContent = '₱' + total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('grandTotal').textContent = '\u20B1' + total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Init with one item
     document.addEventListener('DOMContentLoaded', () => {
         addItem();
     });

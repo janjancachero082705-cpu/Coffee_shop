@@ -16,7 +16,6 @@ class ConsignmentPaymentController extends Controller
         $tab = $request->get('payment_status', 'all');
         $stores = Store::orderBy('store_name')->get();
 
-        // ═══ PENDING TAB — show Delivery Receipts with pending status ═══
         if ($tab === 'pending') {
             $query = DeliveryReceipt::with('store')
                 ->where('status', 'pending')
@@ -35,7 +34,6 @@ class ConsignmentPaymentController extends Controller
 
             $pendings = $query->latest()->paginate(15)->withQueryString();
 
-            // Stats
             $stats = [
                 'total'      => ConsignmentPayment::count(),
                 'all_amount' => (float) ConsignmentPayment::sum('amount'),
@@ -51,13 +49,12 @@ class ConsignmentPaymentController extends Controller
                 'unlinked' => ConsignmentPayment::whereNull('delivery_receipt_id')->whereNull('sales_report_id')->count(),
             ];
 
-            $payments = collect(); // empty
+            $payments = collect();
             return view('payments.consignment.index', compact('payments', 'pendings', 'stores', 'stats', 'tabCounts'))
                 ->with('paymentStatus', $tab);
         }
 
-        // ═══ OTHER TABS — show payments ═══
-        $query = ConsignmentPayment::with('store', 'deliveryReceipt');
+        $query = ConsignmentPayment::with('store');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -70,17 +67,6 @@ class ConsignmentPaymentController extends Controller
 
         if ($request->filled('store')) {
             $query->where('store_id', $request->store);
-        }
-
-        if ($tab === 'partial') {
-            $query->whereHas('deliveryReceipt', fn($q) => $q->where('status', 'partial'));
-        } elseif ($tab === 'full') {
-            $query->where(function ($q) {
-                $q->whereHas('deliveryReceipt', fn($sq) => $sq->where('status', 'paid'))
-                  ->orWhereHas('salesReport', fn($sq) => $sq->where('status', 'paid'));
-            });
-        } elseif ($tab === 'unlinked') {
-            $query->whereNull('delivery_receipt_id')->whereNull('sales_report_id');
         }
 
         $payments = $query->latest()->paginate(15)->withQueryString();
@@ -110,41 +96,45 @@ class ConsignmentPaymentController extends Controller
     {
         $stores = Store::where('status', 'active')->orderBy('store_name')->get();
         $selectedStore = $request->get('store_id');
-        $selectedDr = $request->get('delivery_receipt_id');
 
-        $outstandingDRs = collect();
+        // Calculate store balance for validation
+        $storeBalance = 0;
         if ($selectedStore) {
-            $outstandingDRs = DeliveryReceipt::where('store_id', $selectedStore)
-                ->whereIn('status', ['pending', 'partial', 'overdue'])
-                ->orderBy('delivery_date')
-                ->get();
+            $storeBalance = (float) SalesReport::where('store_id', $selectedStore)
+                ->whereIn('status', ['pending', 'partial'])
+                ->sum('balance');
         }
 
-        $outstandingReports = collect();
-        if ($selectedStore) {
-            $outstandingReports = SalesReport::where('store_id', $selectedStore)
-                ->whereIn('status', ['pending', 'verified'])
-                ->orderBy('period_from')
-                ->get();
-        }
-
-        return view('payments.consignment.create', compact(
-            'stores', 'selectedStore', 'selectedDr', 'outstandingDRs', 'outstandingReports'
-        ));
+        return view('payments.consignment.create', compact('stores', 'selectedStore', 'storeBalance'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'store_id'            => 'required|exists:stores,id',
-            'delivery_receipt_id' => 'nullable|exists:delivery_receipts,id',
-            'sales_report_id'     => 'nullable|exists:sales_reports,id',
-            'amount'              => 'required|numeric|min:0.01',
-            'method'              => 'required|in:cash,gcash,bank_transfer,check,maya',
-            'reference_number'    => 'nullable|string|max:100',
-            'payment_date'        => 'required|date',
-            'notes'               => 'nullable|string',
+            'store_id'         => 'required|exists:stores,id',
+            'amount'           => 'required|numeric|min:0.01',
+            'method'           => 'required|in:cash,gcash,bank_transfer,check,maya',
+            'reference_number' => 'nullable|string|max:100',
+            'payment_date'     => 'required|date',
+            'notes'            => 'nullable|string',
         ]);
+
+        // Calculate store's total outstanding
+        $storeBalance = (float) SalesReport::where('store_id', $data['store_id'])
+            ->whereIn('status', ['pending', 'partial'])
+            ->sum('balance');
+
+        if ($storeBalance <= 0) {
+            return back()->withInput()->withErrors([
+                'amount' => 'This store has no outstanding balance.'
+            ]);
+        }
+
+        if ($data['amount'] > $storeBalance + 0.01) {
+            return back()->withInput()->withErrors([
+                'amount' => 'Payment exceeds store balance. Total outstanding: P' . number_format($storeBalance, 2)
+            ]);
+        }
 
         DB::transaction(function () use ($data) {
             $paymentNumber = 'PMT-' . now()->format('Ymd') . '-' . str_pad(
@@ -152,41 +142,43 @@ class ConsignmentPaymentController extends Controller
                 4, '0', STR_PAD_LEFT
             );
 
-            ConsignmentPayment::create([
-                'payment_number'      => $paymentNumber,
-                'store_id'            => $data['store_id'],
-                'delivery_receipt_id' => $data['delivery_receipt_id'] ?? null,
-                'sales_report_id'     => $data['sales_report_id'] ?? null,
-                'user_id'             => auth()->id(),
-                'amount'              => $data['amount'],
-                'method'              => $data['method'],
-                'reference_number'    => $data['reference_number'] ?? null,
-                'payment_date'        => $data['payment_date'],
-                'notes'               => $data['notes'] ?? null,
+            $payment = ConsignmentPayment::create([
+                'payment_number'   => $paymentNumber,
+                'store_id'         => $data['store_id'],
+                'user_id'          => auth()->id(),
+                'amount'           => $data['amount'],
+                'method'           => $data['method'],
+                'reference_number' => $data['reference_number'] ?? null,
+                'payment_date'     => $data['payment_date'],
+                'notes'            => $data['notes'] ?? null,
             ]);
 
-            if (!empty($data['delivery_receipt_id'])) {
-                $dr = DeliveryReceipt::find($data['delivery_receipt_id']);
-                if ($dr) {
-                    $dr->amount_paid += $data['amount'];
-                    $dr->balance = max(0, $dr->total_amount - $dr->amount_paid);
+            // FIFO allocation to Sales Reports (oldest first)
+            $remaining = (float) $data['amount'];
+            $reports = SalesReport::where('store_id', $data['store_id'])
+                ->whereIn('status', ['pending', 'partial'])
+                ->where('balance', '>', 0)
+                ->orderBy('period_from', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
 
-                    if ($dr->balance <= 0.01) {
-                        $dr->status = 'paid';
-                        $dr->balance = 0;
-                    } elseif ($dr->amount_paid > 0) {
-                        $dr->status = 'partial';
-                    }
-                    $dr->save();
-                }
-            }
+            foreach ($reports as $sr) {
+                if ($remaining <= 0) break;
 
-            if (!empty($data['sales_report_id'])) {
-                $sr = SalesReport::find($data['sales_report_id']);
-                if ($sr && $sr->amount_due <= $data['amount']) {
+                $applied = min($remaining, (float) $sr->balance);
+
+                $sr->amount_paid = (float) $sr->amount_paid + $applied;
+                $sr->balance = max(0, (float) $sr->total_sales - (float) $sr->amount_paid);
+
+                if ($sr->balance <= 0.01) {
                     $sr->status = 'paid';
-                    $sr->save();
+                    $sr->balance = 0;
+                } else {
+                    $sr->status = 'partial';
                 }
+                $sr->save();
+
+                $remaining -= $applied;
             }
         });
 
@@ -197,7 +189,7 @@ class ConsignmentPaymentController extends Controller
 
     public function show(ConsignmentPayment $payment)
     {
-        $payment->load('store', 'user', 'deliveryReceipt', 'salesReport');
+        $payment->load('store', 'user');
         return view('payments.consignment.show', compact('payment'));
     }
 }

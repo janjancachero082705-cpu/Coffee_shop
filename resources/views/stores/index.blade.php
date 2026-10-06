@@ -16,31 +16,31 @@
     $suspended = \App\Models\Store::where('status','suspended')->count();
 @endphp
 
-{{-- ═══ SUMMARY ═══ --}}
+{{-- â•â•â• SUMMARY â•â•â• --}}
 <div class="summary-grid">
     <div class="summary">
-        <div class="summary-icon">🏪</div>
+        <div class="summary-icon">ðŸª</div>
         <div class="summary-content">
             <div class="summary-value">{{ $totalStores }}</div>
             <div class="summary-label">Total Stores</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon green">✓</div>
+        <div class="summary-icon green">âœ“</div>
         <div class="summary-content">
             <div class="summary-value">{{ $active }}</div>
             <div class="summary-label">Active</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon blue">💤</div>
+        <div class="summary-icon blue">ðŸ’¤</div>
         <div class="summary-content">
             <div class="summary-value">{{ $inactive }}</div>
             <div class="summary-label">Inactive</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon red">⚠</div>
+        <div class="summary-icon red">âš </div>
         <div class="summary-content">
             <div class="summary-value">{{ $suspended }}</div>
             <div class="summary-label">Suspended</div>
@@ -48,7 +48,7 @@
     </div>
 </div>
 
-{{-- ═══ TOOLBAR ═══ --}}
+{{-- â•â•â• TOOLBAR â•â•â• --}}
 <div class="toolbar">
     <form method="GET" class="toolbar-form">
         <div class="search-box">
@@ -76,11 +76,11 @@
     </form>
 </div>
 
-{{-- ═══ STORES GRID ═══ --}}
+{{-- â•â•â• STORES GRID â•â•â• --}}
 @if($stores->isEmpty())
     <div class="card">
         <div class="empty">
-            <div class="empty-icon">🏪</div>
+            <div class="empty-icon">ðŸª</div>
             <div class="empty-title">No stores found</div>
             <div class="empty-text">
                 @if(request()->hasAny(['search','status']))
@@ -153,7 +153,7 @@
                 <div class="store-card-foot">
                     <div>
                         <div class="foot-label">Credit Limit</div>
-                        <div class="foot-value">₱{{ number_format($store->credit_limit, 0) }}</div>
+                        <div class="foot-value">â‚±{{ number_format($store->credit_limit, 0) }}</div>
                     </div>
                     <div style="text-align:right;">
                         <div class="foot-label">Terms</div>
@@ -169,7 +169,7 @@
     @endif
 @endif
 
-{{-- ═══ HIDDEN DELETE FORM ═══ --}}
+{{-- â•â•â• HIDDEN DELETE FORM â•â•â• --}}
 <form id="deleteForm" method="POST" style="display:none;">
     @csrf
     @method('DELETE')
@@ -179,7 +179,7 @@
 
 @push('styles')
 <style>
-    /* ═══ SUMMARY ═══ */
+    /* â•â•â• SUMMARY â•â•â• */
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -227,7 +227,7 @@
         font-weight: 700; margin-top: 3px;
     }
 
-    /* ═══ TOOLBAR ═══ */
+    /* â•â•â• TOOLBAR â•â•â• */
     .toolbar { margin-bottom: 16px; }
     .toolbar-form {
         display: flex;
@@ -298,7 +298,7 @@
     }
     .btn-clear:hover { background: rgba(239, 68, 68, 0.2); }
 
-    /* ═══ STORES GRID ═══ */
+    /* â•â•â• STORES GRID â•â•â• */
     .stores-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -359,7 +359,7 @@
         flex-shrink: 0;
     }
 
-    /* ═══ 3-DOTS MENU ═══ */
+    /* â•â•â• 3-DOTS MENU â•â•â• */
     .dots-wrap {
         position: relative;
     }
@@ -432,7 +432,7 @@
     }
     .dots-item svg { flex-shrink: 0; }
 
-    /* ═══ CARD BODY ═══ */
+    /* â•â•â• CARD BODY â•â•â• */
     .store-card-body { flex: 1; }
     .store-card-name {
         font-size: 15px; font-weight: 700;
@@ -483,14 +483,14 @@
         color: var(--text-primary);
     }
 
-    /* ═══ PAGINATION ═══ */
+    /* â•â•â• PAGINATION â•â•â• */
     .pagination-wrap {
         margin-top: 20px;
         display: flex;
         justify-content: center;
     }
 
-    /* ═══ RESPONSIVE ═══ */
+    /* â•â•â• RESPONSIVE â•â•â• */
     @media (max-width: 1100px) {
         .summary-grid { grid-template-columns: repeat(2, 1fr); }
         .stores-grid { grid-template-columns: repeat(2, 1fr); }
@@ -507,7 +507,7 @@
 
 @push('scripts')
 <script>
-    // ═══ Toggle dropdown menu ═══
+    // â•â•â• Toggle dropdown menu â•â•â•
     function toggleMenu(event, id) {
         event.stopPropagation();
         event.preventDefault();
@@ -521,19 +521,19 @@
         if (menu) menu.classList.toggle('open');
     }
 
-    // ═══ Close on outside click ═══
+    // â•â•â• Close on outside click â•â•â•
     document.addEventListener('click', () => {
         document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
     });
 
-    // ═══ Close on Escape ═══
+    // â•â•â• Close on Escape â•â•â•
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
         }
     });
 
-    // ═══ Delete confirmation ═══
+    // â•â•â• Delete confirmation â•â•â•
     function confirmDelete(event, id, name) {
         event.stopPropagation();
         event.preventDefault();

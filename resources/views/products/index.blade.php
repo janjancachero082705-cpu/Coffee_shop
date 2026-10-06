@@ -17,7 +17,7 @@
     }
 
     /* ============================================
-       STATS — Glass Cards
+       STATS â€” Glass Cards
        ============================================ */
     .stats-grid {
         display: grid;
@@ -99,7 +99,7 @@
     }
 
     /* ============================================
-       FILTER BAR — Glassmorphism
+       FILTER BAR â€” Glassmorphism
        ============================================ */
     .filter-bar {
         display: flex;
@@ -150,7 +150,7 @@
         height: 13px;
     }
 
-    /* Custom select — override base width 100% */
+    /* Custom select â€” override base width 100% */
     .filter-bar select.filter-select {
         width: auto !important;
         max-width: 200px;
@@ -472,7 +472,7 @@
     }
 
     /* ============================================
-       ⭐ CUSTOM PAGINATION
+       â­ CUSTOM PAGINATION
        ============================================ */
     .pagination-wrap {
         margin-top: 24px;
@@ -613,7 +613,7 @@
     </div>
     <div class="stat">
         <div class="stat-label">Stock Value</div>
-        <div class="stat-value" style="font-size:20px;">₱{{ number_format($stats['total_value'], 0) }}</div>
+        <div class="stat-value" style="font-size:20px;">â‚±{{ number_format($stats['total_value'], 0) }}</div>
         <div class="stat-meta">Total selling value</div>
     </div>
 </div>
@@ -623,7 +623,7 @@
     <div>
         <div class="products-header-title">All Products</div>
         <div class="products-header-sub">
-            {{ $products->total() }} items · ₱{{ number_format($stats['total_cost'], 0) }} cost value
+            {{ $products->total() }} items Â· â‚±{{ number_format($stats['total_cost'], 0) }} cost value
         </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
@@ -681,7 +681,7 @@
 {{-- PRODUCTS --}}
 @if($products->isEmpty())
     <div class="empty-state">
-        <div class="empty-state-icon">📦</div>
+        <div class="empty-state-icon">ðŸ“¦</div>
         <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">No products found</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;max-width:340px;margin-left:auto;margin-right:auto;">
             {{ request()->hasAny(['search', 'category', 'status']) ? 'Try adjusting your filters or clear them to see all products.' : 'Start by adding your first coffee bean product to the catalog.' }}
@@ -698,13 +698,13 @@
             <div class="product-card">
                 <div class="product-img">
                     @if($product->is_featured)
-                        <div class="featured-star">★</div>
+                        <div class="featured-star">â˜…</div>
                     @endif
 
                     @if($product->image_url)
                         <img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">
                     @else
-                        <div class="emoji">{{ $product->category->emoji ?? '🫘' }}</div>
+                        <div class="emoji">{{ $product->category->emoji ?? 'ðŸ«˜' }}</div>
                     @endif
 
                     <span class="stock-badge {{ $status }}">{{ $stockLabel }}</span>
@@ -720,10 +720,10 @@
                                 <span>{{ $product->variety }}</span>
                             @endif
                             @if($product->origin)
-                                <span>📍 {{ $product->origin }}</span>
+                                <span>ðŸ“ {{ $product->origin }}</span>
                             @endif
                             @if($product->roast_level)
-                                <span>🔥 {{ $product->roast_level }}</span>
+                                <span>ðŸ”¥ {{ $product->roast_level }}</span>
                             @endif
                         </div>
                     </div>
@@ -731,11 +731,11 @@
                     <div class="product-pricing">
                         <div>
                             <div class="price-main">
-                                ₱{{ number_format($product->price, 2) }}
+                                â‚±{{ number_format($product->price, 2) }}
                                 <small>/ {{ $product->base_unit }}</small>
                             </div>
                             @if($product->cost_price > 0)
-                                <div class="price-cost">Cost: ₱{{ number_format($product->cost_price, 2) }}</div>
+                                <div class="price-cost">Cost: â‚±{{ number_format($product->cost_price, 2) }}</div>
                             @endif
                         </div>
                         @if($product->profit_margin > 0)
@@ -758,7 +758,7 @@
         @endforeach
     </div>
 
-    {{-- ⭐ CUSTOM PAGINATION ⭐ --}}
+    {{-- â­ CUSTOM PAGINATION â­ --}}
     @if($products->hasPages())
         @php
             $currentPage = $products->currentPage();
@@ -785,7 +785,7 @@
             @if($startPage > 1)
                 <a href="{{ $products->url(1) }}" class="pg-btn">1</a>
                 @if($startPage > 2)
-                    <span class="pg-dots">···</span>
+                    <span class="pg-dots">Â·Â·Â·</span>
                 @endif
             @endif
 
@@ -801,7 +801,7 @@
             {{-- Last page --}}
             @if($endPage < $lastPage)
                 @if($endPage < $lastPage - 1)
-                    <span class="pg-dots">···</span>
+                    <span class="pg-dots">Â·Â·Â·</span>
                 @endif
                 <a href="{{ $products->url($lastPage) }}" class="pg-btn">{{ $lastPage }}</a>
             @endif

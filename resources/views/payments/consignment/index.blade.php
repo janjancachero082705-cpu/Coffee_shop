@@ -98,7 +98,6 @@
 </div>
 
 @if($paymentStatus === 'pending')
-    {{-- PENDING TAB: Show delivery receipts with pending status --}}
     @if($pendings->isEmpty())
         <div class="card">
             <div class="empty">
@@ -116,7 +115,7 @@
             </div>
             <div class="pending-summary-text">
                 <div class="pending-summary-title">Pending Delivery Receipts</div>
-                <div class="pending-summary-sub">Wala pa bayad Ã¢â‚¬â€ click para mo-record sa payment</div>
+                <div class="pending-summary-sub">Not yet paid - click to record payment</div>
             </div>
             <div class="pending-summary-total">
                 <div class="pending-summary-label">Total Unpaid</div>
@@ -131,7 +130,6 @@
                         <th>DR Number</th>
                         <th>Store</th>
                         <th>Delivery Date</th>
-                        <th>Due Date</th>
                         <th style="text-align:right;">Total</th>
                         <th style="text-align:right;">Balance</th>
                         <th>Status</th>
@@ -149,14 +147,7 @@
                                 <div style="font-size:11px; color:var(--text-muted);">{{ $dr->store->code ?? '' }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:500; font-size:12px;">{{ $dr->delivery_date }}</div>
-                            </td>
-                            <td>
-                                @if($dr->due_date)
-                                    <div style="font-weight:500; font-size:12px;">{{ $dr->due_date }}</div>
-                                @else
-                                    <span style="color:var(--text-muted); font-size:12px;">-</span>
-                                @endif
+                                <div style="font-weight:500; font-size:12px;">{{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}</div>
                             </td>
                             <td style="text-align:right; font-weight:600; color:var(--text-primary); font-size:13px;">
                                 &#8369;{{ number_format($dr->total_amount, 2) }}
@@ -185,7 +176,6 @@
         @endif
     @endif
 @else
-    {{-- OTHER TABS: Show payments --}}
     @if($payments->isEmpty())
         <div class="card">
             <div class="empty">
@@ -286,6 +276,7 @@
         @endif
     @endif
 @endif
+
 @endsection
 
 @push('styles')
@@ -506,6 +497,7 @@
         color: #f59e0b;
         letter-spacing: -0.02em;
     }
+
     @media (max-width: 1100px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 900px) {
         .toolbar-form { flex-wrap: wrap; }

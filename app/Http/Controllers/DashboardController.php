@@ -28,6 +28,11 @@ class DashboardController extends Controller
             'pending_reports'   => SalesReport::where('status', 'pending')->count(),
             'month_sales'       => (float) SalesReport::where('created_at', '>=', now()->startOfMonth())->sum('total_sales'),
             'month_payments'    => (float) ConsignmentPayment::where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
+
+            // NEW - DR-based totals
+            'total_delivered'   => (float) DeliveryReceipt::sum('total_amount'),
+            'total_paid'        => (float) ConsignmentPayment::sum('amount'),
+            'total_outstanding' => (float) DeliveryReceipt::sum('balance'),
         ];
 
         $recentDeliveries = DeliveryReceipt::with('store')

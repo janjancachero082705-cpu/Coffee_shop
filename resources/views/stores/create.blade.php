@@ -4,7 +4,7 @@
 @section('subtitle', 'Add a consignment partner')
 
 @section('actions')
-    <a href="{{ route('stores.index') }}" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="{{ route('stores.index') }}" class="btn btn-ghost btn-sm">â† Back</a>
 @endsection
 
 @section('content')
@@ -12,7 +12,7 @@
 <form method="POST" action="{{ route('stores.store') }}" class="form-wrap">
     @csrf
 
-    {{-- ═══ BASIC INFO ═══ --}}
+    {{-- â•â•â• BASIC INFO â•â•â• --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    {{-- ═══ ADDRESS ═══ --}}
+    {{-- â•â•â• ADDRESS â•â•â• --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -82,7 +82,7 @@
         </div>
     </div>
 
-    {{-- ═══ TERMS ═══ --}}
+    {{-- â•â•â• TERMS â•â•â• --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -95,7 +95,7 @@
             <div class="field">
                 <label class="label">Credit Limit</label>
                 <div class="input-prefix">
-                    <span class="prefix">₱</span>
+                    <span class="prefix">â‚±</span>
                     <input type="number" step="0.01" name="credit_limit" value="{{ old('credit_limit', 0) }}" class="input input-with-prefix">
                 </div>
             </div>
@@ -125,7 +125,7 @@
         </div>
     </div>
 
-    {{-- ═══ ACTIONS ═══ --}}
+    {{-- â•â•â• ACTIONS â•â•â• --}}
     <div class="form-actions">
         <a href="{{ route('stores.index') }}" class="btn btn-ghost">Cancel</a>
         <button type="submit" class="btn btn-primary">

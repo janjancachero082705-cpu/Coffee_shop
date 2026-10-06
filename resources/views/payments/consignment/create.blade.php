@@ -4,7 +4,7 @@
 @section('subtitle', 'Record a consignment payment from a store')
 
 @section('actions')
-    <a href="{{ route('consignment.payments.index') }}" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="{{ route('consignment.payments.index') }}" class="btn btn-ghost btn-sm">Back</a>
 @endsection
 
 @section('content')
@@ -13,11 +13,8 @@
     @csrf
 
     <div class="form-layout">
-
-        {{-- ═══ LEFT: FORM ═══ --}}
         <div class="form-main">
 
-            {{-- Payment Info --}}
             <div class="card">
                 <div class="card-header">
                     <div>
@@ -30,10 +27,10 @@
                     <div class="field">
                         <label class="label">Store <span class="req">*</span></label>
                         <select name="store_id" id="storeSelect" class="input" required onchange="reloadStore()">
-                            <option value="">— Select a store —</option>
+                            <option value="">-- Select a store --</option>
                             @foreach($stores as $store)
                                 <option value="{{ $store->id }}" {{ (old('store_id', $selectedStore)==$store->id)?'selected':'' }}>
-                                    {{ $store->code }} — {{ $store->store_name }}
+                                    {{ $store->code }} - {{ $store->store_name }}
                                 </option>
                             @endforeach
                         </select>
@@ -46,55 +43,20 @@
                         @error('payment_date')<div class="field-error">{{ $message }}</div>@enderror
                     </div>
                 </div>
+
+                @if($selectedStore)
+                    <div class="store-Unpaid Balance">
+                        <div class="store-Unpaid Balance-icon">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        </div>
+                        <div class="store-Unpaid Balance-info">
+                            <div class="store-Unpaid Balance-label">Total Unpaid Balance</div>
+                            <div class="store-Unpaid Balance-value">&#8369;{{ number_format($storeBalance, 2) }}</div>
+                        </div>
+                    </div>
+                @endif
             </div>
 
-            {{-- Apply Payment To --}}
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Apply Payment To</div>
-                        <div class="card-sub">Optionally link this payment to a delivery or report</div>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div class="field">
-                        <label class="label">Delivery Receipt</label>
-                        <select name="delivery_receipt_id" id="drSelect" class="input" onchange="updatePreview()">
-                            <option value="" data-balance="0" data-total="0">— None —</option>
-                            @foreach($outstandingDRs as $dr)
-                                <option value="{{ $dr->id }}"
-                                        data-balance="{{ $dr->balance }}"
-                                        data-total="{{ $dr->total_amount }}"
-                                        data-number="{{ $dr->dr_number }}"
-                                        {{ (old('delivery_receipt_id', $selectedDr)==$dr->id)?'selected':'' }}>
-                                    {{ $dr->dr_number }} — ₱{{ number_format($dr->balance, 2) }} balance
-                                </option>
-                            @endforeach
-                        </select>
-                        @if($outstandingDRs->isEmpty() && $selectedStore)
-                            <div class="hint">No outstanding deliveries for this store</div>
-                        @endif
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Sales Report</label>
-                        <select name="sales_report_id" id="srSelect" class="input" onchange="updatePreview()">
-                            <option value="" data-due="0">— None —</option>
-                            @foreach($outstandingReports as $sr)
-                                <option value="{{ $sr->id }}"
-                                        data-due="{{ $sr->amount_due }}"
-                                        data-total="{{ $sr->total_sales }}"
-                                        data-number="{{ $sr->report_number }}">
-                                    {{ $sr->report_number }} — ₱{{ number_format($sr->amount_due, 2) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Amount & Method --}}
             <div class="card">
                 <div class="card-header">
                     <div>
@@ -107,16 +69,16 @@
                     <div class="field">
                         <label class="label">Amount <span class="req">*</span></label>
                         <div class="input-prefix">
-                            <span class="prefix">₱</span>
+                            <span class="prefix">&#8369;</span>
                             <input type="number" step="0.01" name="amount" id="amountInput"
                                    value="{{ old('amount') }}" class="input input-with-prefix"
                                    min="0.01" required oninput="updatePreview()">
                         </div>
                         @error('amount')<div class="field-error">{{ $message }}</div>@enderror
                         <div class="quick-amounts">
-                            <button type="button" class="quick-amt" onclick="setAmount(1000)">₱1k</button>
-                            <button type="button" class="quick-amt" onclick="setAmount(2000)">₱2k</button>
-                            <button type="button" class="quick-amt" onclick="setAmount(5000)">₱5k</button>
+                            <button type="button" class="quick-amt" onclick="setAmount(1000)">&#8369;1k</button>
+                            <button type="button" class="quick-amt" onclick="setAmount(2000)">&#8369;2k</button>
+                            <button type="button" class="quick-amt" onclick="setAmount(5000)">&#8369;5k</button>
                             <button type="button" class="quick-amt" onclick="setFullAmount()">Full</button>
                         </div>
                     </div>
@@ -124,11 +86,11 @@
                     <div class="field">
                         <label class="label">Payment Method <span class="req">*</span></label>
                         <select name="method" class="input" required>
-                            <option value="cash"          {{ old('method')==='cash'?'selected':'' }}>💵 Cash</option>
-                            <option value="gcash"         {{ old('method')==='gcash'?'selected':'' }}>📱 GCash</option>
-                            <option value="maya"          {{ old('method')==='maya'?'selected':'' }}>📱 Maya</option>
-                            <option value="bank_transfer" {{ old('method')==='bank_transfer'?'selected':'' }}>🏦 Bank Transfer</option>
-                            <option value="check"         {{ old('method')==='check'?'selected':'' }}>📄 Check</option>
+                            <option value="cash"          {{ old('method')==='cash'?'selected':'' }}>Cash</option>
+                            <option value="gcash"         {{ old('method')==='gcash'?'selected':'' }}>GCash</option>
+                            <option value="maya"          {{ old('method')==='maya'?'selected':'' }}>Maya</option>
+                            <option value="bank_transfer" {{ old('method')==='bank_transfer'?'selected':'' }}>Bank Transfer</option>
+                            <option value="check"         {{ old('method')==='check'?'selected':'' }}>Check</option>
                         </select>
                     </div>
 
@@ -144,16 +106,23 @@
                 </div>
             </div>
 
+            <div id="overpayWarning" class="overpay-warning" style="display:none;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                <div>
+                    <strong>Cannot save payment</strong>
+                    <span id="overpayMessage">Payment exceeds the balance.</span>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <a href="{{ route('consignment.payments.index') }}" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
                     Record Payment
                 </button>
             </div>
         </div>
 
-        {{-- ═══ RIGHT: LIVE PREVIEW ═══ --}}
         <div class="preview-panel">
             <div class="preview-card">
                 <div class="preview-header">
@@ -164,37 +133,25 @@
                     </span>
                 </div>
 
-                {{-- Selected item info --}}
-                <div id="previewItemInfo" class="preview-item-info" style="display:none;">
-                    <div class="preview-item-label">Linked To</div>
-                    <div class="preview-item-number" id="previewNumber">—</div>
-                </div>
-
                 <div class="preview-rows">
                     <div class="preview-row">
-                        <span class="preview-row-label">Total Amount</span>
-                        <span class="preview-row-value" id="previewTotal">₱0.00</span>
-                    </div>
-                    <div class="preview-row">
-                        <span class="preview-row-label">Current Balance</span>
-                        <span class="preview-row-value accent" id="previewBalance">₱0.00</span>
+                        <span class="preview-row-label">Store Unpaid Balance</span>
+                        <span class="preview-row-value accent" id="previewBalance">&#8369;0.00</span>
                     </div>
                     <div class="preview-row">
                         <span class="preview-row-label">Payment Amount</span>
-                        <span class="preview-row-value green" id="previewPayment">- ₱0.00</span>
+                        <span class="preview-row-value green" id="previewPayment">- &#8369;0.00</span>
                     </div>
                 </div>
 
                 <div class="preview-divider"></div>
 
-                {{-- Big remaining balance --}}
                 <div class="preview-final" id="previewFinal">
-                    <div class="preview-final-label" id="previewFinalLabel">Remaining Balance</div>
-                    <div class="preview-final-value" id="previewRemaining">₱0.00</div>
+                    <div class="preview-final-label">Remaining Balance</div>
+                    <div class="preview-final-value" id="previewRemaining">&#8369;0.00</div>
                     <div class="preview-final-status" id="previewStatus"></div>
                 </div>
 
-                {{-- Progress bar --}}
                 <div class="progress-wrap" id="progressWrap">
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
@@ -205,10 +162,9 @@
                 </div>
             </div>
 
-            {{-- Warning / info --}}
             <div class="preview-note" id="previewNote">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                <span>Select a delivery or report to see the balance calculation.</span>
+                <span>Select a store to see the Unpaid Balance.</span>
             </div>
         </div>
     </div>
@@ -218,7 +174,6 @@
 
 @push('styles')
 <style>
-    /* ═══ LAYOUT ═══ */
     .form-layout {
         display: grid;
         grid-template-columns: 1fr 340px;
@@ -236,7 +191,6 @@
     .field { display: flex; flex-direction: column; }
     .req { color: #ef4444; font-weight: 700; }
     .field-error { font-size: 11px; color: #ef4444; margin-top: 5px; font-weight: 500; }
-    .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-style: italic; }
 
     .input-prefix { position: relative; display: flex; align-items: center; }
     .prefix {
@@ -246,7 +200,6 @@
     }
     .input-with-prefix { padding-left: 28px; }
 
-    /* ═══ QUICK AMOUNTS ═══ */
     .quick-amounts {
         display: flex;
         gap: 6px;
@@ -270,7 +223,57 @@
         transform: translateY(-1px);
     }
 
-    /* ═══ PREVIEW PANEL ═══ */
+    .store-Unpaid Balance {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 10px;
+        margin-top: 16px;
+    }
+    .store-Unpaid Balance-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+    }
+    .store-Unpaid Balance-info { flex: 1; }
+    .store-Unpaid Balance-label {
+        font-size: 10px;
+        color: #f59e0b;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+    .store-Unpaid Balance-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #f59e0b;
+        letter-spacing: -0.02em;
+    }
+
+    .overpay-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 18px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 10px;
+        color: #ef4444;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+    .overpay-warning svg { flex-shrink: 0; margin-top: 1px; }
+    .overpay-warning strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+    .overpay-warning span { font-size: 12px; color: rgba(239, 68, 68, 0.9); line-height: 1.4; }
+
     .preview-panel {
         position: sticky;
         top: 90px;
@@ -333,31 +336,6 @@
         50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); }
     }
 
-    /* ═══ ITEM INFO ═══ */
-    .preview-item-info {
-        background: rgba(59, 130, 246, 0.06);
-        border: 1px solid rgba(59, 130, 246, 0.15);
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-bottom: 14px;
-        position: relative; z-index: 1;
-    }
-    .preview-item-label {
-        font-size: 10px;
-        color: #60a5fa;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 700;
-        margin-bottom: 3px;
-    }
-    .preview-item-number {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-primary);
-        font-family: ui-monospace, monospace;
-    }
-
-    /* ═══ ROWS ═══ */
     .preview-rows {
         display: flex;
         flex-direction: column;
@@ -387,7 +365,6 @@
         position: relative; z-index: 1;
     }
 
-    /* ═══ FINAL BALANCE ═══ */
     .preview-final {
         text-align: center;
         padding: 12px 0;
@@ -413,21 +390,16 @@
         color: #22c55e;
         text-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
     }
-    .preview-final-value.over {
-        color: #f59e0b;
-    }
     .preview-final-status {
         font-size: 11px;
         font-weight: 700;
         margin-top: 8px;
         min-height: 16px;
-        letter-spacing: 0.02em;
     }
     .preview-final-status.paid    { color: #22c55e; }
     .preview-final-status.partial { color: #f59e0b; }
     .preview-final-status.none    { color: var(--text-muted); }
 
-    /* ═══ PROGRESS ═══ */
     .progress-wrap {
         margin-top: 16px;
         position: relative; z-index: 1;
@@ -454,7 +426,6 @@
         font-weight: 600;
     }
 
-    /* ═══ NOTE ═══ */
     .preview-note {
         display: flex;
         align-items: flex-start;
@@ -479,13 +450,13 @@
         color: #f59e0b;
     }
 
-    /* ═══ FORM ACTIONS ═══ */
     .form-actions {
-        display: flex; justify-content: flex-end;
-        gap: 10px; padding-top: 8px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 8px;
     }
 
-    /* ═══ RESPONSIVE ═══ */
     @media (max-width: 1000px) {
         .form-layout { grid-template-columns: 1fr; }
         .preview-panel { position: static; }
@@ -498,6 +469,8 @@
 
 @push('scripts')
 <script>
+    const STORE_BALANCE = {{ (float) ($storeBalance ?? 0) }};
+
     function reloadStore() {
         const storeId = document.getElementById('storeSelect').value;
         if (storeId) {
@@ -513,137 +486,88 @@
     }
 
     function setFullAmount() {
-        const drSel = document.getElementById('drSelect');
-        const srSel = document.getElementById('srSelect');
-        let target = 0;
-
-        if (drSel.value) {
-            const opt = drSel.options[drSel.selectedIndex];
-            target = parseFloat(opt.getAttribute('data-balance')) || 0;
-        } else if (srSel.value) {
-            const opt = srSel.options[srSel.selectedIndex];
-            target = parseFloat(opt.getAttribute('data-due')) || 0;
-        }
-
-        if (target > 0) setAmount(target);
+        if (STORE_BALANCE > 0) setAmount(STORE_BALANCE);
     }
 
     function fmt(n) {
-        return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return '\u20B1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function updatePreview() {
-        const drSel = document.getElementById('drSelect');
-        const srSel = document.getElementById('srSelect');
         const amountInput = document.getElementById('amountInput');
-
-        let total = 0;
-        let balance = 0;
-        let linkedNumber = '';
-
-        // DR takes priority
-        if (drSel.value) {
-            const opt = drSel.options[drSel.selectedIndex];
-            total = parseFloat(opt.getAttribute('data-total')) || 0;
-            balance = parseFloat(opt.getAttribute('data-balance')) || 0;
-            linkedNumber = opt.getAttribute('data-number') || '';
-        } else if (srSel.value) {
-            const opt = srSel.options[srSel.selectedIndex];
-            total = parseFloat(opt.getAttribute('data-total')) || 0;
-            balance = parseFloat(opt.getAttribute('data-due')) || 0;
-            linkedNumber = opt.getAttribute('data-number') || '';
-        }
-
+        const balance = STORE_BALANCE;
         const payment = parseFloat(amountInput.value) || 0;
         const remaining = Math.max(0, balance - payment);
         const overpay = payment > balance && balance > 0;
 
-        // Update item info
-        const infoEl = document.getElementById('previewItemInfo');
-        if (linkedNumber) {
-            infoEl.style.display = 'block';
-            document.getElementById('previewNumber').textContent = linkedNumber;
-        } else {
-            infoEl.style.display = 'none';
-        }
-
-        // Update rows
-        document.getElementById('previewTotal').textContent = fmt(total);
         document.getElementById('previewBalance').textContent = fmt(balance);
         document.getElementById('previewPayment').textContent = '- ' + fmt(payment);
 
-        // Update final
         const finalEl = document.getElementById('previewRemaining');
         const statusEl = document.getElementById('previewStatus');
 
         finalEl.textContent = fmt(remaining);
-        finalEl.classList.remove('zero', 'over');
+        finalEl.classList.remove('zero');
 
         if (balance === 0) {
-            finalEl.classList.remove('zero', 'over');
-            statusEl.textContent = 'No outstanding balance';
+            statusEl.textContent = 'No Unpaid Balance';
             statusEl.className = 'preview-final-status none';
         } else if (remaining <= 0) {
             finalEl.classList.add('zero');
-            statusEl.textContent = '✓ Fully paid';
+            statusEl.textContent = 'Fully paid';
             statusEl.className = 'preview-final-status paid';
         } else if (payment > 0) {
-            statusEl.textContent = '⚠ Partial payment';
+            statusEl.textContent = 'Partial payment';
             statusEl.className = 'preview-final-status partial';
         } else {
             statusEl.textContent = '';
             statusEl.className = 'preview-final-status';
         }
 
-        // Progress bar
         const pct = balance > 0 ? Math.min(100, (payment / balance) * 100) : 0;
         document.getElementById('progressFill').style.width = pct + '%';
         document.getElementById('progressPercent').textContent = pct.toFixed(0) + '%';
 
-        // Note
+        // Overpay check
+        const submitBtn = document.getElementById('submitBtn');
+        const warningEl = document.getElementById('overpayWarning');
+        const warningMsg = document.getElementById('overpayMessage');
+
+        if (overpay) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.4';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.background = 'rgba(239, 68, 68, 0.3)';
+            warningEl.style.display = 'flex';
+            warningMsg.textContent = 'Payment amount exceeds the Unpaid Balance of ' + fmt(balance) + '.';
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.style.background = '';
+            warningEl.style.display = 'none';
+        }
+
         const noteEl = document.getElementById('previewNote');
         if (balance === 0) {
             noteEl.className = 'preview-note';
-            noteEl.querySelector('span').textContent = 'Select a delivery or report to see the balance calculation.';
+            noteEl.querySelector('span').textContent = 'Select a store to see the Unpaid Balance.';
         } else if (overpay) {
             noteEl.className = 'preview-note warning';
-            noteEl.querySelector('span').textContent = 'Payment exceeds balance. Only ' + fmt(balance) + ' will be applied.';
+            noteEl.querySelector('span').textContent = 'Payment exceeds the store total balance.';
         } else if (remaining <= 0) {
             noteEl.className = 'preview-note success';
-            noteEl.querySelector('span').textContent = 'This will fully settle the outstanding balance.';
+            noteEl.querySelector('span').textContent = 'This will fully settle the store balance.';
         } else if (payment > 0) {
             noteEl.className = 'preview-note';
-            noteEl.querySelector('span').textContent = 'Remaining ' + fmt(remaining) + ' will stay on the balance.';
+            noteEl.querySelector('span').textContent = 'Payment will be auto-applied to oldest unpaid reports first.';
         } else {
             noteEl.className = 'preview-note';
-            noteEl.querySelector('span').textContent = 'Enter an amount to see the remaining balance.';
+            noteEl.querySelector('span').textContent = 'Payment will be auto-applied to oldest unpaid reports first.';
         }
     }
 
-    // Auto-fill amount from DR when selected
-    document.getElementById('drSelect').addEventListener('change', function() {
-        if (this.value) {
-            document.getElementById('srSelect').value = '';
-        }
-        updatePreview();
-    });
-    document.getElementById('srSelect').addEventListener('change', function() {
-        if (this.value) {
-            document.getElementById('drSelect').value = '';
-        }
-        updatePreview();
-    });
-
-    // Init
     document.addEventListener('DOMContentLoaded', () => {
-        // Auto-fill amount from preselected DR
-        const drSel = document.getElementById('drSelect');
-        const amountInput = document.getElementById('amountInput');
-        if (drSel.value && !amountInput.value) {
-            const opt = drSel.options[drSel.selectedIndex];
-            const bal = parseFloat(opt.getAttribute('data-balance')) || 0;
-            if (bal > 0) amountInput.value = bal.toFixed(2);
-        }
         updatePreview();
     });
 </script>

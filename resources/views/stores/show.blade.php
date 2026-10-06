@@ -10,7 +10,7 @@
 
 @section('content')
 
-{{-- ═══ BACK BUTTON ═══ --}}
+{{-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â BACK BUTTON Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â --}}
 <a href="{{ route('stores.index') }}" class="back-btn">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -26,7 +26,7 @@
     $recentDrs = $store->deliveryReceipts()->latest()->take(5)->get();
 @endphp
 
-{{-- ═══ HERO CARD ═══ --}}
+{{-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â HERO CARD Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â --}}
 <div class="hero-store">
     <div class="hero-store-left">
         <div class="hero-store-avatar">{{ strtoupper(substr($store->store_name, 0, 2)) }}</div>
@@ -42,42 +42,42 @@
     <div class="hero-store-right">
         <div class="hero-store-stat">
             <div class="hero-store-stat-label">Balance</div>
-            <div class="hero-store-stat-value">₱{{ number_format($balance, 0) }}</div>
+            <div class="hero-store-stat-value">Ã¢â€šÂ±{{ number_format($balance, 0) }}</div>
         </div>
         <div class="hero-store-stat">
             <div class="hero-store-stat-label">Credit Limit</div>
-            <div class="hero-store-stat-value">₱{{ number_format($store->credit_limit, 0) }}</div>
+            <div class="hero-store-stat-value">Ã¢â€šÂ±{{ number_format($store->credit_limit, 0) }}</div>
         </div>
     </div>
 </div>
 
-{{-- ═══ STATS ═══ --}}
+{{-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â STATS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â --}}
 <div class="mini-grid">
     <div class="mini">
-        <div class="mini-icon">📦</div>
+        <div class="mini-icon">Ã°Å¸â€œÂ¦</div>
         <div class="mini-content">
             <div class="mini-value">{{ $drCount }}</div>
             <div class="mini-label">Deliveries</div>
         </div>
     </div>
     <div class="mini">
-        <div class="mini-icon">💰</div>
+        <div class="mini-icon">Ã°Å¸â€™Â°</div>
         <div class="mini-content">
-            <div class="mini-value">₱{{ number_format($totalDelivered/1000, 1) }}k</div>
+            <div class="mini-value">Ã¢â€šÂ±{{ number_format($totalDelivered/1000, 1) }}k</div>
             <div class="mini-label">Delivered</div>
         </div>
     </div>
     <div class="mini">
-        <div class="mini-icon">💵</div>
+        <div class="mini-icon">Ã°Å¸â€™Âµ</div>
         <div class="mini-content">
-            <div class="mini-value">₱{{ number_format($totalPaid/1000, 1) }}k</div>
+            <div class="mini-value">Ã¢â€šÂ±{{ number_format($totalPaid/1000, 1) }}k</div>
             <div class="mini-label">Paid</div>
         </div>
     </div>
     <div class="mini">
-        <div class="mini-icon">⚖️</div>
+        <div class="mini-icon">Ã¢Å¡â€“Ã¯Â¸Â</div>
         <div class="mini-content">
-            <div class="mini-value">₱{{ number_format($balance/1000, 1) }}k</div>
+            <div class="mini-value">Ã¢â€šÂ±{{ number_format($balance/1000, 1) }}k</div>
             <div class="mini-label">Balance</div>
         </div>
     </div>
@@ -85,7 +85,7 @@
 
 <div class="detail-grid">
 
-    {{-- ═══ LEFT ═══ --}}
+    {{-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â LEFT Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â --}}
     <div>
         <div class="card">
             <div class="card-header">
@@ -112,7 +112,7 @@
                         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
                         Email
                     </div>
-                    <div class="info-value">{{ $store->email ?? '—' }}</div>
+                    <div class="info-value">{{ $store->email ?? 'Ã¢â‚¬â€' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">
@@ -123,7 +123,7 @@
                 </div>
                 @if($store->notes)
                     <div class="info-row">
-                        <div class="info-label">📝 Notes</div>
+                        <div class="info-label">Ã°Å¸â€œÂ Notes</div>
                         <div class="info-value">{{ $store->notes }}</div>
                     </div>
                 @endif
@@ -137,13 +137,13 @@
                     <div class="card-sub">Last 5 delivery receipts</div>
                 </div>
                 @if($drCount > 5)
-                    <a href="{{ route('deliveries.index') }}?store={{ $store->id }}" class="link">View all →</a>
+                    <a href="{{ route('deliveries.index') }}?store={{ $store->id }}" class="link">View all Ã¢â€ â€™</a>
                 @endif
             </div>
 
             @if($recentDrs->isEmpty())
                 <div class="empty-state">
-                    <div class="empty-icon">📦</div>
+                    <div class="empty-icon">Ã°Å¸â€œÂ¦</div>
                     <div class="empty-text">No deliveries yet</div>
                     <a href="{{ route('deliveries.create') }}?store_id={{ $store->id }}" class="btn btn-primary btn-sm" style="margin-top:12px;">+ First Delivery</a>
                 </div>
@@ -158,7 +158,7 @@
                                 <div class="dr-number">{{ $dr->dr_number }}</div>
                                 <div class="dr-date">{{ $dr->delivery_date }}</div>
                             </div>
-                            <div class="dr-amount">₱{{ number_format($dr->total_amount, 2) }}</div>
+                            <div class="dr-amount">Ã¢â€šÂ±{{ number_format($dr->total_amount, 2) }}</div>
                             <span class="badge badge-{{ $dr->status }}">{{ ucfirst($dr->status) }}</span>
                         </a>
                     @endforeach
@@ -167,7 +167,7 @@
         </div>
     </div>
 
-    {{-- ═══ RIGHT ═══ --}}
+    {{-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RIGHT Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â --}}
     <div>
         <div class="card">
             <div class="card-header">
@@ -177,20 +177,20 @@
             <div class="balance-list">
                 <div class="balance-row">
                     <span class="balance-label">Total Delivered</span>
-                    <span class="balance-value">₱{{ number_format($totalDelivered, 2) }}</span>
+                    <span class="balance-value">Ã¢â€šÂ±{{ number_format($totalDelivered, 2) }}</span>
                 </div>
                 <div class="balance-row">
                     <span class="balance-label">Total Paid</span>
-                    <span class="balance-value green">- ₱{{ number_format($totalPaid, 2) }}</span>
+                    <span class="balance-value green">- Ã¢â€šÂ±{{ number_format($totalPaid, 2) }}</span>
                 </div>
                 <div class="balance-row balance-total">
-                    <span class="balance-label">Outstanding Balance</span>
-                    <span class="balance-value {{ $balance > 0 ? 'accent' : 'green' }}">₱{{ number_format($balance, 2) }}</span>
+                    <span class="balance-label">Unpaid Balance</span>
+                    <span class="balance-value {{ $balance > 0 ? 'accent' : 'green' }}">Ã¢â€šÂ±{{ number_format($balance, 2) }}</span>
                 </div>
             </div>
 
             <a href="{{ route('consignment.payments.create') }}?store_id={{ $store->id }}" class="btn btn-primary" style="width:100%; margin-top:16px;">
-                💵 Record Payment
+                Ã°Å¸â€™Âµ Record Payment
             </a>
         </div>
 
@@ -204,7 +204,7 @@
                     <div class="timeline-dot"></div>
                     <div>
                         <div class="timeline-label">Created</div>
-                        <div class="timeline-date">{{ $store->created_at->format('M d, Y · g:i A') }}</div>
+                        <div class="timeline-date">{{ $store->created_at->format('M d, Y Ã‚Â· g:i A') }}</div>
                     </div>
                 </div>
                 <div class="timeline-row">
@@ -223,7 +223,7 @@
 
 @push('styles')
 <style>
-    /* ═══ BACK BUTTON ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â BACK BUTTON Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .back-btn {
         display: inline-flex;
         align-items: center;
@@ -253,7 +253,7 @@
         transform: translateX(-2px);
     }
 
-    /* ═══ HERO ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â HERO Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .hero-store {
         background: linear-gradient(135deg, rgba(169, 120, 74, 0.15), rgba(34, 34, 44, 0.7));
         backdrop-filter: blur(20px) saturate(1.4);
@@ -328,7 +328,7 @@
         letter-spacing: -0.02em;
     }
 
-    /* ═══ MINI KPIs ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MINI KPIs Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .mini-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -370,14 +370,14 @@
         font-weight: 700;
     }
 
-    /* ═══ DETAIL GRID ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â DETAIL GRID Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .detail-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 16px;
     }
 
-    /* ═══ INFO LIST ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â INFO LIST Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .info-list { display: flex; flex-direction: column; }
     .info-row {
         display: flex;
@@ -400,7 +400,7 @@
         word-break: break-word;
     }
 
-    /* ═══ DR LIST ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â DR LIST Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .dr-list { display: flex; flex-direction: column; gap: 6px; }
     .dr-row {
         display: flex; align-items: center;
@@ -433,7 +433,7 @@
         color: #c9a961; flex-shrink: 0;
     }
 
-    /* ═══ BALANCE ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â BALANCE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .balance-list { display: flex; flex-direction: column; }
     .balance-row {
         display: flex;
@@ -454,7 +454,7 @@
     }
     .balance-total .balance-value { font-size: 15px; }
 
-    /* ═══ TIMELINE ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â TIMELINE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .timeline { display: flex; flex-direction: column; gap: 14px; }
     .timeline-row {
         display: flex; gap: 12px;
@@ -495,7 +495,7 @@
         font-size: 12px; color: var(--text-muted);
     }
 
-    /* ═══ RESPONSIVE ═══ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RESPONSIVE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     @media (max-width: 1100px) {
         .mini-grid { grid-template-columns: repeat(2, 1fr); }
         .detail-grid { grid-template-columns: 1fr; }

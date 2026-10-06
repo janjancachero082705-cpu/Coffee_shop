@@ -16,17 +16,17 @@
     $productCount    = \App\Models\Product::count();
     $drToday         = \App\Models\DeliveryReceipt::whereDate('delivery_date', today())->count();
     $drTotal         = \App\Models\DeliveryReceipt::count();
-    $totalSales      = (float) \App\Models\SalesReport::sum('total_sales');
+
+    $totalSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->sum('total_sales');
     $totalPaid       = (float) \App\Models\ConsignmentPayment::sum('amount');
-    $outstanding     = max(0, $totalSales - $totalPaid);
-    $overdue         = (float) \App\Models\DeliveryReceipt::where('status','overdue')->sum('balance');
-    $monthSales      = (float) \App\Models\SalesReport::where('created_at','>=',now()->startOfMonth())->sum('total_sales');
+    $Unpaid Balance     = (float) \App\Models\SalesReport::sum('balance');
+
+    $monthSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->where('created_at','>=',now()->startOfMonth())->sum('total_sales');
     $lastMonthSales  = (float) \App\Models\SalesReport::whereBetween('created_at',[now()->subMonth()->startOfMonth(),now()->subMonth()->endOfMonth()])->sum('total_sales');
     $salesTrend      = $lastMonthSales > 0 ? round((($monthSales - $lastMonthSales) / $lastMonthSales) * 100, 1) : 0;
     $lowStock        = \App\Models\Product::where('is_active',true)->whereColumn('stock','<=','reorder_level')->count();
 @endphp
 
-{{-- ═══ GREETING ═══ --}}
 <div class="greeting">
     <div>
         <h2 class="greeting-title">
@@ -41,22 +41,15 @@
     </div>
 </div>
 
-{{-- ═══ MAIN KPI — HERO ═══ --}}
 <div class="hero-kpi">
     <div class="hero-kpi-left">
-        <div class="hero-label">Total Outstanding Balance</div>
-        <div class="hero-value">₱{{ number_format($outstanding, 2) }}</div>
+        <div class="hero-label">Total Unpaid Balance</div>
+        <div class="hero-value">&#8369;{{ number_format($Unpaid Balance, 2) }}</div>
         <div class="hero-meta">
             <span class="hero-meta-item">
                 <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                ₱{{ number_format($totalPaid, 0) }} collected
+                &#8369;{{ number_format($totalPaid, 0) }} collected
             </span>
-            @if($overdue > 0)
-                <span class="hero-meta-item danger">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                    ₱{{ number_format($overdue, 0) }} overdue
-                </span>
-            @endif
         </div>
     </div>
     <div class="hero-kpi-right">
@@ -71,16 +64,17 @@
             <span>{{ abs($salesTrend) }}%</span>
         </div>
         <div class="hero-trend-label">
-            <div class="hero-trend-value">₱{{ number_format($monthSales, 0) }}</div>
+            <div class="hero-trend-value">&#8369;{{ number_format($monthSales, 0) }}</div>
             <div class="hero-trend-caption">This month</div>
         </div>
     </div>
 </div>
 
-{{-- ═══ MINI KPIs ═══ --}}
 <div class="mini-grid">
     <div class="mini">
-        <div class="mini-icon">🏪</div>
+        <div class="mini-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        </div>
         <div class="mini-content">
             <div class="mini-value">{{ $totalStores }}</div>
             <div class="mini-label">Stores</div>
@@ -89,7 +83,9 @@
     </div>
 
     <div class="mini">
-        <div class="mini-icon">📦</div>
+        <div class="mini-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
         <div class="mini-content">
             <div class="mini-value">{{ $productCount }}</div>
             <div class="mini-label">Products</div>
@@ -102,7 +98,9 @@
     </div>
 
     <div class="mini">
-        <div class="mini-icon">🚚</div>
+        <div class="mini-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
         <div class="mini-content">
             <div class="mini-value">{{ $drTotal }}</div>
             <div class="mini-label">Deliveries</div>
@@ -111,16 +109,17 @@
     </div>
 
     <div class="mini">
-        <div class="mini-icon">💵</div>
+        <div class="mini-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
         <div class="mini-content">
-            <div class="mini-value">₱{{ number_format($totalPaid/1000, 1) }}k</div>
+            <div class="mini-value">&#8369;{{ number_format($totalPaid/1000, 1) }}k</div>
             <div class="mini-label">Collected</div>
         </div>
         <div class="mini-tag success">All-time</div>
     </div>
 </div>
 
-{{-- ═══ CHART ═══ --}}
 <div class="card">
     <div class="card-header">
         <div>
@@ -137,17 +136,14 @@
     </div>
 </div>
 
-{{-- ═══ BOTTOM GRID ═══ --}}
 <div class="bottom-grid">
-
-    {{-- TOP STORES --}}
     <div class="card">
         <div class="card-header">
             <div>
                 <div class="card-title">Top Stores</div>
                 <div class="card-sub">By delivered value</div>
             </div>
-            <a href="{{ route('stores.index') }}" class="link">View all →</a>
+            <a href="{{ route('stores.index') }}" class="link">View all</a>
         </div>
 
         @php
@@ -158,7 +154,9 @@
 
         @if($topStores->isEmpty() || $topStores->first()->total_delivered === null)
             <div class="empty-state">
-                <div class="empty-icon">📊</div>
+                <div class="empty-icon">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg>
+                </div>
                 <div class="empty-text">No data yet</div>
             </div>
         @else
@@ -175,14 +173,13 @@
                                 <div class="store-fill" style="width: {{ $pct }}%;"></div>
                             </div>
                         </div>
-                        <div class="store-amount">₱{{ number_format($store->total_delivered ?? 0, 0) }}</div>
+                        <div class="store-amount">&#8369;{{ number_format($store->total_delivered ?? 0, 0) }}</div>
                     </div>
                 @endforeach
             </div>
         @endif
     </div>
 
-    {{-- RECENT ACTIVITY --}}
     <div class="card">
         <div class="card-header">
             <div>
@@ -194,17 +191,19 @@
         @php
             $activity = collect();
             foreach (\App\Models\DeliveryReceipt::with('store')->latest()->take(4)->get() as $dr) {
-                $activity->push(['type' => 'delivery', 'title' => $dr->dr_number, 'sub' => $dr->store->store_name ?? '—', 'amount' => $dr->total_amount, 'date' => $dr->created_at]);
+                $activity->push(['type' => 'delivery', 'title' => $dr->dr_number, 'sub' => $dr->store->store_name ?? '-', 'amount' => $dr->total_amount, 'date' => $dr->created_at]);
             }
             foreach (\App\Models\ConsignmentPayment::with('store')->latest()->take(4)->get() as $p) {
-                $activity->push(['type' => 'payment', 'title' => $p->payment_number, 'sub' => $p->store->store_name ?? '—', 'amount' => $p->amount, 'date' => $p->created_at]);
+                $activity->push(['type' => 'payment', 'title' => $p->payment_number, 'sub' => $p->store->store_name ?? '-', 'amount' => $p->amount, 'date' => $p->created_at]);
             }
             $activity = $activity->sortByDesc('date')->take(6);
         @endphp
 
         @if($activity->isEmpty())
             <div class="empty-state">
-                <div class="empty-icon">📋</div>
+                <div class="empty-icon">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+                </div>
                 <div class="empty-text">No activity yet</div>
             </div>
         @else
@@ -220,24 +219,22 @@
                         </div>
                         <div class="activity-info">
                             <div class="activity-title">{{ $a['title'] }}</div>
-                            <div class="activity-sub">{{ $a['sub'] }} · {{ $a['date']->diffForHumans() }}</div>
+                            <div class="activity-sub">{{ $a['sub'] }} - {{ $a['date']->diffForHumans() }}</div>
                         </div>
                         <div class="activity-amount {{ $a['type'] === 'payment' ? 'green' : '' }}">
-                            {{ $a['type'] === 'payment' ? '+' : '' }}₱{{ number_format($a['amount'], 0) }}
+                            {{ $a['type'] === 'payment' ? '+' : '' }}&#8369;{{ number_format($a['amount'], 0) }}
                         </div>
                     </div>
                 @endforeach
             </div>
         @endif
     </div>
-
 </div>
 
 @endsection
 
 @push('styles')
 <style>
-    /* ═══ GREETING ═══ */
     .greeting {
         display: flex;
         justify-content: space-between;
@@ -286,7 +283,6 @@
         50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
     }
 
-    /* ═══ HERO KPI ═══ */
     .hero-kpi {
         background: linear-gradient(135deg, rgba(169, 120, 74, 0.12) 0%, rgba(34, 34, 44, 0.6) 100%);
         backdrop-filter: blur(20px) saturate(1.4);
@@ -345,7 +341,6 @@
         font-weight: 500;
         color: var(--text-secondary);
     }
-    .hero-meta-item.danger { color: #ef4444; }
 
     .hero-kpi-right {
         display: flex;
@@ -375,9 +370,7 @@
         border: 1px solid rgba(239, 68, 68, 0.25);
     }
     .hero-trend svg { display: block; }
-    .hero-trend-label {
-        min-width: 90px;
-    }
+    .hero-trend-label { min-width: 90px; }
     .hero-trend-value {
         font-size: 18px;
         font-weight: 700;
@@ -394,7 +387,6 @@
         font-weight: 600;
     }
 
-    /* ═══ MINI KPIs ═══ */
     .mini-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -412,7 +404,6 @@
         align-items: center;
         gap: 12px;
         transition: all 0.2s ease;
-        cursor: default;
     }
     .mini:hover {
         transform: translateY(-2px);
@@ -427,7 +418,7 @@
         border: 1px solid rgba(169, 120, 74, 0.2);
         display: grid;
         place-items: center;
-        font-size: 18px;
+        color: #c9a961;
         flex-shrink: 0;
     }
     .mini-content { flex: 1; min-width: 0; }
@@ -459,7 +450,6 @@
     .mini-tag.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
     .mini-tag.info    { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
-    /* ═══ CHART ═══ */
     .chart-legend {
         display: flex;
         gap: 16px;
@@ -478,7 +468,6 @@
         border-radius: 50%;
     }
 
-    /* ═══ BOTTOM GRID ═══ */
     .bottom-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -492,7 +481,6 @@
     }
     .link:hover { color: #c9a961; }
 
-    /* ═══ STORES LIST ═══ */
     .stores-list {
         display: flex;
         flex-direction: column;
@@ -524,7 +512,6 @@
         background: linear-gradient(135deg, #fbbf24, #d97706);
         color: #fff;
         border-color: rgba(251, 191, 36, 0.4);
-        box-shadow: 0 4px 8px -2px rgba(251, 191, 36, 0.4);
     }
     .store-rank.silver {
         background: linear-gradient(135deg, #cbd5e1, #64748b);
@@ -565,7 +552,6 @@
         flex-shrink: 0;
     }
 
-    /* ═══ ACTIVITY LIST ═══ */
     .activity-list {
         display: flex;
         flex-direction: column;
@@ -623,22 +609,22 @@
     }
     .activity-amount.green { color: #22c55e; }
 
-    /* ═══ EMPTY STATE ═══ */
     .empty-state {
         padding: 40px 20px;
         text-align: center;
     }
     .empty-icon {
-        font-size: 28px;
+        color: var(--text-muted);
         opacity: 0.4;
         margin-bottom: 8px;
+        display: flex;
+        justify-content: center;
     }
     .empty-text {
         font-size: 12px;
         color: var(--text-muted);
     }
 
-    /* ═══ RESPONSIVE ═══ */
     @media (max-width: 1100px) {
         .mini-grid { grid-template-columns: repeat(2, 1fr); }
         .bottom-grid { grid-template-columns: 1fr; }
@@ -707,9 +693,6 @@
                     tension: 0.4,
                     pointRadius: 0,
                     pointHoverRadius: 6,
-                    pointBackgroundColor: '#c9a961',
-                    pointBorderColor: '#1a1a22',
-                    pointBorderWidth: 2,
                 },
                 {
                     label: 'Payments',
@@ -721,19 +704,13 @@
                     tension: 0.4,
                     pointRadius: 0,
                     pointHoverRadius: 6,
-                    pointBackgroundColor: '#22c55e',
-                    pointBorderColor: '#1a1a22',
-                    pointBorderWidth: 2,
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index',
-            },
+            interaction: { intersect: false, mode: 'index' },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -741,36 +718,24 @@
                     borderColor: 'rgba(169, 120, 74, 0.3)',
                     borderWidth: 1,
                     padding: 12,
-                    cornerRadius: 8,
-                    titleColor: '#f5f3f0',
-                    titleFont: { size: 12, weight: '700' },
-                    bodyColor: '#a8a5a0',
-                    bodyFont: { size: 12 },
-                    displayColors: true,
-                    boxPadding: 4,
                     callbacks: {
                         label: function(c) {
-                            return '  ' + c.dataset.label + ':  ₱' + Number(c.parsed.y).toLocaleString();
+                            return '  ' + c.dataset.label + ':  \u20B1' + Number(c.parsed.y).toLocaleString();
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    grid: { display: false, drawBorder: false },
-                    ticks: {
-                        color: '#6b6862',
-                        font: { size: 11, weight: '600' },
-                        padding: 8,
-                    }
+                    grid: { display: false },
+                    ticks: { color: '#6b6862', font: { size: 11, weight: '600' } }
                 },
                 y: {
-                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
                     ticks: {
                         color: '#6b6862',
                         font: { size: 11, weight: '600' },
-                        padding: 8,
-                        callback: v => v >= 1000 ? '₱' + (v/1000) + 'k' : '₱' + v,
+                        callback: v => v >= 1000 ? '\u20B1' + (v/1000) + 'k' : '\u20B1' + v,
                     }
                 }
             }

@@ -1,53 +1,295 @@
 @extends('layouts.admin')
+
 @section('title', 'New Sales Report')
-@section('page-title', 'New Sales Report')
-@section('page-sub', 'Record store sales report')
+@section('subtitle', 'Record products sold by store')
+
+@section('actions')
+    <a href="{{ route('consignment.reports.index') }}" class="btn btn-ghost btn-sm">Back</a>
+@endsection
 
 @section('content')
-<div class="card" style="max-width:800px;">
-    <form method="GET" action="{{ route('consignment.reports.create') }}" style="margin-bottom:20px;">
-        <label class="label">Select Store First</label>
-        <select name="store_id" class="input" onchange="this.form.submit()">
-            <option value="">— Select store —</option>
-            @foreach($stores as $s)
-                <option value="{{ $s->id }}" @selected(request('store_id') == $s->id)>{{ $s->store_name }}</option>
-            @endforeach
-        </select>
-    </form>
 
-    @if($selectedStore && $inventory->count())
-        <form method="POST" action="{{ route('consignment.reports.store') }}">
-            @csrf
-            <input type="hidden" name="store_id" value="{{ $selectedStore->id }}">
+<form method="POST" action="{{ route('consignment.reports.store') }}" id="reportForm">
+    @csrf
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                <div><label class="label">From *</label><input type="date" name="period_from" class="input" required></div>
-                <div><label class="label">To *</label><input type="date" name="period_to" class="input" required></div>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Report Information</div>
+                <div class="card-sub">Select store and period covered</div>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="field">
+                <label class="label">Store <span class="req">*</span></label>
+                <select name="store_id" id="storeSelect" class="input" required onchange="reloadStore()">
+                    <option value="">-- Select a store --</option>
+                    @foreach($stores as $store)
+                        <option value="{{ $store->id }}" {{ (old('store_id', $selectedStore)==$store->id)?'selected':'' }}>
+                            {{ $store->code }} - {{ $store->store_name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('store_id')<div class="field-error">{{ $message }}</div>@enderror
             </div>
 
-            <label class="label">Products Sold</label>
-            <table style="margin-bottom:16px;">
-                <thead><tr><th>Product</th><th>On Hand</th><th>Qty Sold</th></tr></thead>
-                <tbody>
-                    @foreach($inventory as $inv)
-                        <tr>
-                            <td>{{ $inv->product->name }}</td>
-                            <td>{{ $inv->quantity_on_hand }}</td>
-                            <td>
-                                <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $inv->product_id }}">
-                                <input type="number" name="items[{{ $loop->index }}][quantity_sold]" class="input" min="0" max="{{ $inv->quantity_on_hand }}" value="0" style="width:80px;">
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div class="field">
+                <label class="label">Period From <span class="req">*</span></label>
+                <input type="date" name="period_from" value="{{ old('period_from', now()->startOfWeek()->format('Y-m-d')) }}" class="input" required>
+                @error('period_from')<div class="field-error">{{ $message }}</div>@enderror
+            </div>
 
-            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">Submit Report</button>
-        </form>
-    @elseif($selectedStore)
-        <div style="text-align:center;padding:40px;color:var(--text-muted);">No inventory on hand for this store.</div>
-    @else
-        <div style="text-align:center;padding:40px;color:var(--text-muted);">Select a store to continue.</div>
-    @endif
-</div>
+            <div class="field">
+                <label class="label">Period To <span class="req">*</span></label>
+                <input type="date" name="period_to" value="{{ old('period_to', now()->format('Y-m-d')) }}" class="input" required>
+                @error('period_to')<div class="field-error">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Products Sold</div>
+                <div class="card-sub">
+                    @if($selectedStore && $inventory->isNotEmpty())
+                        {{ $inventory->count() }} product(s) with stock in this store
+                    @elseif($selectedStore)
+                        No stock available for this store
+                    @else
+                        Select a store first to see available products
+                    @endif
+                </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addItem()">+ Add Product</button>
+        </div>
+
+        @error('items')<div class="alert alert-error">{{ $message }}</div>@enderror
+
+        <div id="itemsContainer" class="items-container"></div>
+
+        <div class="totals">
+            <div class="total-row">
+                <span>Total Items Sold</span>
+                <strong id="totalQty">0</strong>
+            </div>
+            <div class="total-row total-grand">
+                <span>Total Sales</span>
+                <strong id="grandTotal">&#8369;0.00</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Additional Notes</div>
+        </div>
+        <textarea name="notes" rows="3" class="input" placeholder="Optional notes...">{{ old('notes') }}</textarea>
+    </div>
+
+    <div class="form-actions">
+        <a href="{{ route('consignment.reports.index') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+            Save Report
+        </button>
+    </div>
+</form>
+
+<template id="itemTemplate">
+    <div class="item-row">
+        <div class="item-grid">
+            <div class="field">
+                <label class="label">Product <span class="req">*</span></label>
+                <select name="items[__INDEX__][product_id]" class="input" required onchange="onProductChange(this)">
+                    <option value="">-- Select --</option>
+                    @if($inventory->isNotEmpty())
+                        @foreach($inventory as $inv)
+                            <option value="{{ $inv->product_id }}"
+                                    data-price="{{ $inv->product->wholesale_price ?? $inv->product->price ?? 0 }}"
+                                    data-stock="{{ $inv->quantity_on_hand }}">
+                                {{ $inv->product->name ?? '-' }} (Stock: {{ $inv->quantity_on_hand }})
+                            </option>
+                        @endforeach
+                    @else
+                        @foreach($products as $p)
+                            <option value="{{ $p->id }}" data-price="{{ $p->wholesale_price ?? $p->price ?? 0 }}">
+                                {{ $p->name }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+            <div class="field">
+                <label class="label">Quantity Sold <span class="req">*</span></label>
+                <input type="number" name="items[__INDEX__][quantity_sold]" class="input qty-input" min="1" value="1" required oninput="recalculate()">
+            </div>
+            <div class="field">
+                <label class="label">Unit Price <span class="req">*</span></label>
+                <div class="input-prefix">
+                    <span class="prefix">&#8369;</span>
+                    <input type="number" step="0.01" name="items[__INDEX__][unit_price]" class="input input-with-prefix price-input" min="0" value="0" required oninput="recalculate()">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Subtotal</label>
+                <div class="subtotal-box" data-subtotal>&#8369;0.00</div>
+            </div>
+            <button type="button" class="btn-remove" onclick="removeItem(this)" title="Remove">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+        </div>
+    </div>
+</template>
+
 @endsection
+
+@push('styles')
+<style>
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; }
+    .req { color: #ef4444; font-weight: 700; }
+    .field-error { font-size: 11px; color: #ef4444; margin-top: 5px; font-weight: 500; }
+    .input-prefix { position: relative; display: flex; align-items: center; }
+    .prefix {
+        position: absolute; left: 12px;
+        color: var(--text-muted); font-size: 13px;
+        font-weight: 600; pointer-events: none;
+    }
+    .input-with-prefix { padding-left: 28px; }
+
+    .items-container { display: flex; flex-direction: column; gap: 12px; }
+    .item-row {
+        background: rgba(20, 20, 26, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 16px;
+        animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .item-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.2fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+    }
+    .subtotal-box {
+        padding: 10px 12px;
+        background: rgba(169, 120, 74, 0.08);
+        border: 1px solid rgba(169, 120, 74, 0.2);
+        border-radius: 8px;
+        color: #c9a961;
+        font-weight: 700;
+        font-size: 13px;
+        text-align: right;
+    }
+    .btn-remove {
+        width: 38px; height: 38px;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        display: grid; place-items: center;
+        cursor: pointer; transition: all 0.15s;
+    }
+    .btn-remove:hover { background: rgba(239, 68, 68, 0.2); }
+
+    .totals {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 32px;
+        min-width: 260px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .total-row strong { color: var(--text-primary); }
+    .total-grand {
+        font-size: 16px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(169, 120, 74, 0.2);
+    }
+    .total-grand strong { color: #c9a961; font-size: 20px; font-weight: 800; }
+
+    .form-actions {
+        display: flex; justify-content: flex-end;
+        gap: 10px; padding-top: 8px;
+    }
+    @media (max-width: 900px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .item-grid { grid-template-columns: 1fr; }
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    let itemIndex = 0;
+
+    function addItem() {
+        const template = document.getElementById('itemTemplate');
+        const clone = template.content.cloneNode(true);
+        const html = clone.firstElementChild.outerHTML.replace(/__INDEX__/g, itemIndex);
+        document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', html);
+        itemIndex++;
+        recalculate();
+    }
+
+    function removeItem(btn) {
+        btn.closest('.item-row').remove();
+        recalculate();
+    }
+
+    function onProductChange(select) {
+        const opt = select.options[select.selectedIndex];
+        const price = opt.getAttribute('data-price') || 0;
+        const row = select.closest('.item-row');
+        row.querySelector('.price-input').value = parseFloat(price).toFixed(2);
+        recalculate();
+    }
+
+    function recalculate() {
+        let total = 0;
+        let qty = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const q = parseFloat(row.querySelector('.qty-input').value) || 0;
+            const p = parseFloat(row.querySelector('.price-input').value) || 0;
+            const sub = q * p;
+            row.querySelector('[data-subtotal]').textContent = '\u20B1' + sub.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            total += sub;
+            qty += q;
+        });
+        document.getElementById('totalQty').textContent = qty;
+        document.getElementById('grandTotal').textContent = '\u20B1' + total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function reloadStore() {
+        const storeId = document.getElementById('storeSelect').value;
+        if (storeId) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('store_id', storeId);
+            window.location.href = url.toString();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        addItem();
+    });
+</script>
+@endpush

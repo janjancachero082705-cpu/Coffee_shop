@@ -211,7 +211,7 @@
     <div class="alert alert-error">
         <div>
             @foreach($errors->all() as $error)
-                <div>⚠ {{ $error }}</div>
+                <div>âš  {{ $error }}</div>
             @endforeach
         </div>
     </div>
@@ -259,10 +259,10 @@
                         <div class="form-field">
                             <label class="label">Category *</label>
                             <select name="category_id" class="input" required>
-                                <option value="">— Select —</option>
+                                <option value="">â€” Select â€”</option>
                                 @foreach($categories as $cat)
                                     <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id ?? '') == $cat->id)>
-                                        {{ $cat->emoji ?? '☕' }} {{ $cat->name }}
+                                        {{ $cat->emoji ?? 'â˜•' }} {{ $cat->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -270,7 +270,7 @@
                         <div class="form-field">
                             <label class="label">Variety</label>
                             <select name="variety" class="input">
-                                <option value="">— Select —</option>
+                                <option value="">â€” Select â€”</option>
                                 @foreach(['Arabica', 'Robusta', 'Liberica', 'Excelsa', 'Mixed', 'Blend'] as $v)
                                     <option value="{{ $v }}" @selected(old('variety', $product->variety ?? '') == $v)>{{ $v }}</option>
                                 @endforeach
@@ -314,7 +314,7 @@
                         <div class="form-field">
                             <label class="label">Roast Level</label>
                             <select name="roast_level" class="input">
-                                <option value="">— Select —</option>
+                                <option value="">â€” Select â€”</option>
                                 @foreach(['Light', 'Medium', 'Medium-Dark', 'Dark', 'Extra Dark', 'Green'] as $r)
                                     <option value="{{ $r }}" @selected(old('roast_level', $product->roast_level ?? '') == $r)>{{ $r }}</option>
                                 @endforeach
@@ -323,7 +323,7 @@
                         <div class="form-field">
                             <label class="label">Process Method</label>
                             <select name="process_method" class="input">
-                                <option value="">— Select —</option>
+                                <option value="">â€” Select â€”</option>
                                 @foreach(['Washed', 'Natural', 'Honey', 'Anaerobic', 'Wet-Hulled', 'Semi-Washed'] as $p)
                                     <option value="{{ $p }}" @selected(old('process_method', $product->process_method ?? '') == $p)>{{ $p }}</option>
                                 @endforeach
@@ -356,19 +356,19 @@
 
                     <div class="form-row-3">
                         <div class="form-field">
-                            <label class="label">Cost Price (₱) *</label>
+                            <label class="label">Cost Price (â‚±) *</label>
                             <input type="number" step="0.01" name="cost_price" id="costPrice" class="input"
                                    value="{{ old('cost_price', $product->cost_price ?? '') }}"
                                    placeholder="0.00" min="0" required oninput="updateProfit()">
                         </div>
                         <div class="form-field">
-                            <label class="label">Selling Price (₱) *</label>
+                            <label class="label">Selling Price (â‚±) *</label>
                             <input type="number" step="0.01" name="price" id="sellingPrice" class="input"
                                    value="{{ old('price', $product->price ?? '') }}"
                                    placeholder="0.00" min="0" required oninput="updateProfit()">
                         </div>
                         <div class="form-field">
-                            <label class="label">Wholesale Price (₱)</label>
+                            <label class="label">Wholesale Price (â‚±)</label>
                             <input type="number" step="0.01" name="wholesale_price" class="input"
                                    value="{{ old('wholesale_price', $product->wholesale_price ?? '') }}"
                                    placeholder="Optional" min="0">
@@ -438,10 +438,10 @@
             {{-- Image --}}
             <div class="card">
                 <div class="section-head" style="margin-bottom:12px;">
-                    <div class="section-num">📷</div>
+                    <div class="section-num">ðŸ“·</div>
                     <div>
                         <div class="section-title">Product Image</div>
-                        <div class="section-sub">JPG, PNG · Max 3MB</div>
+                        <div class="section-sub">JPG, PNG Â· Max 3MB</div>
                     </div>
                 </div>
 
@@ -455,7 +455,7 @@
                     <input type="file" name="image" accept="image/*" onchange="previewImage(this)" id="imageInput">
 
                     <div id="uploadPlaceholder" style="{{ $currentImage ? 'display:none' : '' }}">
-                        <div class="upload-icon">📷</div>
+                        <div class="upload-icon">ðŸ“·</div>
                         <div class="upload-title">Click to upload</div>
                         <div class="upload-hint">or drag and drop</div>
                     </div>
@@ -467,7 +467,7 @@
                 @if($currentImage)
                     <div class="image-actions">
                         <button type="button" class="image-remove" onclick="removeImage()">
-                            🗑 Remove Image
+                            ðŸ—‘ Remove Image
                         </button>
                     </div>
                 @endif
@@ -476,7 +476,7 @@
             {{-- Visibility --}}
             <div class="card">
                 <div class="section-head" style="margin-bottom:12px;">
-                    <div class="section-num">👁</div>
+                    <div class="section-num">ðŸ‘</div>
                     <div>
                         <div class="section-title">Visibility</div>
                         <div class="section-sub">Control product display</div>
@@ -510,7 +510,7 @@
             <div class="card" style="margin-bottom:0;">
                 <div style="display:flex;gap:8px;">
                     <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;">
-                        {{ isset($product) ? '✓ Update Product' : '+ Create Product' }}
+                        {{ isset($product) ? 'âœ“ Update Product' : '+ Create Product' }}
                     </button>
                     <a href="{{ route('products.index') }}" class="btn btn-ghost" style="padding:12px;">Cancel</a>
                 </div>

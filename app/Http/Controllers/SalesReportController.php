@@ -7,6 +7,7 @@ use App\Models\SalesReportItem;
 use App\Models\Store;
 use App\Models\StoreInventory;
 use App\Models\Product;
+use App\Models\ConsignmentPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +15,10 @@ class SalesReportController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SalesReport::with('store');
+        $tab = $request->get('tab', 'all');
+        $stores = Store::orderBy('store_name')->get();
+
+        $query = SalesReport::with('store', 'items');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -24,29 +28,46 @@ class SalesReportController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
         if ($request->filled('store')) {
             $query->where('store_id', $request->store);
         }
 
-        $reports = $query->latest()->paginate(15);
-        $stores = Store::orderBy('store_name')->get();
+        // IMPORTANT: Sales report only shows when there's a payment
+        if ($tab === 'all') {
+            // All = with payments only
+            $query->where('amount_paid', '>', 0);
+        } elseif ($tab === 'pending') {
+            // Pending = walay bayad pa
+            $query->where('amount_paid', 0);
+        } elseif ($tab === 'partial') {
+            $query->where('status', 'partial');
+        } elseif ($tab === 'paid') {
+            $query->where('status', 'paid');
+        }
 
-        // ═══ Stats ═══
+        $reports = $query->latest()->paginate(15)->withQueryString();
+
         $stats = [
-            'total'         => SalesReport::count(),
-            'pending'       => SalesReport::where('status', 'pending')->count(),
-            'verified'      => SalesReport::where('status', 'verified')->count(),
-            'paid'          => SalesReport::where('status', 'paid')->count(),
-            'total_sales'   => (float) SalesReport::sum('total_sales'),
-            'pending_due'   => (float) SalesReport::whereIn('status', ['pending', 'verified'])->sum('amount_due'),
-            'this_month'    => (float) SalesReport::where('created_at', '>=', now()->startOfMonth())->sum('total_sales'),
+            'total'        => SalesReport::where('amount_paid', '>', 0)->count(),
+            'pending'      => SalesReport::where('amount_paid', 0)->count(),
+            'partial'      => SalesReport::where('status', 'partial')->count(),
+            'paid'         => SalesReport::where('status', 'paid')->count(),
+            'total_sales'  => (float) SalesReport::where('amount_paid', '>', 0)->sum('total_sales'),
+            'total_paid'   => (float) SalesReport::sum('amount_paid'),
+            'total_balance'=> (float) SalesReport::sum('balance'),
+            'total_items'  => (int) SalesReport::sum('total_quantity'),
+            'this_month'   => (float) SalesReport::where('amount_paid', '>', 0)->where('created_at', '>=', now()->startOfMonth())->sum('total_sales'),
+            'today'        => (float) SalesReport::where('amount_paid', '>', 0)->whereDate('created_at', today())->sum('total_sales'),
         ];
 
-        return view('reports.consignment.index', compact('reports', 'stores', 'stats'));
+        $tabCounts = [
+            'all'      => $stats['total'],
+            'pending'  => $stats['pending'],
+            'partial'  => $stats['partial'],
+            'paid'     => $stats['paid'],
+        ];
+
+        return view('reports.consignment.index', compact('reports', 'stores', 'stats', 'tabCounts', 'tab'));
     }
 
     public function create(Request $request)
@@ -62,7 +83,9 @@ class SalesReportController extends Controller
                 ->get();
         }
 
-        return view('reports.consignment.create', compact('stores', 'selectedStore', 'inventory'));
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+
+        return view('reports.consignment.create', compact('stores', 'selectedStore', 'inventory', 'products'));
     }
 
     public function store(Request $request)
@@ -74,7 +97,7 @@ class SalesReportController extends Controller
             'notes'       => 'nullable|string',
             'items'       => 'required|array|min:1',
             'items.*.product_id'    => 'required|exists:products,id',
-            'items.*.quantity_sold' => 'required|integer|min:0',
+            'items.*.quantity_sold' => 'required|integer|min:1',
             'items.*.unit_price'    => 'required|numeric|min:0',
         ]);
 
@@ -100,13 +123,13 @@ class SalesReportController extends Controller
                 'total_sales'    => $totalSales,
                 'total_quantity' => $totalQty,
                 'amount_due'     => $totalSales,
+                'amount_paid'    => 0,
+                'balance'        => $totalSales,
                 'status'         => 'pending',
                 'notes'          => $data['notes'] ?? null,
             ]);
 
             foreach ($data['items'] as $item) {
-                if ($item['quantity_sold'] <= 0) continue;
-
                 SalesReportItem::create([
                     'sales_report_id' => $report->id,
                     'product_id'      => $item['product_id'],
@@ -124,12 +147,18 @@ class SalesReportController extends Controller
             }
         });
 
-        return redirect()->route('consignment.reports.index')->with('success', 'Sales report created.');
+        return redirect()->route('consignment.reports.index')->with('success', 'Sales report created successfully.');
     }
 
     public function show(SalesReport $report)
     {
         $report->load('store', 'items.product', 'user');
-        return view('reports.consignment.show', compact('report'));
+
+        $storePayments = ConsignmentPayment::where('store_id', $report->store_id)
+            ->orderBy('payment_date', 'desc')
+            ->take(10)
+            ->get();
+
+        return view('reports.consignment.show', compact('report', 'storePayments'));
     }
 }

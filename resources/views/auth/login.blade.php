@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login · Coffee Consignment</title>
+    <title>Login Â· Coffee Consignment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -86,7 +86,7 @@
 <body>
     <div class="card">
         <div class="brand">
-            <div class="brand-icon">☕</div>
+            <div class="brand-icon">â˜•</div>
             <h1>Coffee Consignment</h1>
             <div class="sub">Sign in to your account</div>
         </div>
@@ -103,7 +103,7 @@
             <label class="label">Password</label>
             <input type="password" name="password" value="password" class="input" required>
 
-            <button type="submit" class="btn">Sign In →</button>
+            <button type="submit" class="btn">Sign In â†’</button>
         </form>
 
         <div class="hint">

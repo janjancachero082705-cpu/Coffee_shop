@@ -4,7 +4,7 @@
 @section('subtitle', $store->store_name)
 
 @section('actions')
-    <a href="{{ route('stores.show', $store) }}" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="{{ route('stores.show', $store) }}" class="btn btn-ghost btn-sm">â† Back</a>
 @endsection
 
 @section('content')
@@ -92,7 +92,7 @@
             <div class="field">
                 <label class="label">Credit Limit</label>
                 <div class="input-prefix">
-                    <span class="prefix">₱</span>
+                    <span class="prefix">â‚±</span>
                     <input type="number" step="0.01" name="credit_limit" value="{{ old('credit_limit', $store->credit_limit) }}" class="input input-with-prefix">
                 </div>
             </div>

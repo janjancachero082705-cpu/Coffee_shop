@@ -8,6 +8,8 @@ use App\Models\Store;
 use App\Models\Product;
 use App\Models\StoreInventory;
 use App\Models\InventoryTransaction;
+use App\Models\SalesReport;
+use App\Models\SalesReportItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +17,7 @@ class DeliveryReceiptController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DeliveryReceipt::with('store');
+        $query = DeliveryReceipt::with('store', 'items');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -29,7 +31,6 @@ class DeliveryReceiptController extends Controller
             $query->where('store_id', $request->store);
         }
 
-        // Tab status filter
         $tab = $request->get('tab', 'all');
         if ($tab === 'pending') {
             $query->where('status', 'pending');
@@ -37,30 +38,24 @@ class DeliveryReceiptController extends Controller
             $query->where('status', 'partial');
         } elseif ($tab === 'paid') {
             $query->where('status', 'paid');
-        } elseif ($tab === 'overdue') {
-            $query->where('status', 'overdue');
         }
 
         $deliveries = $query->latest()->paginate(15)->withQueryString();
         $stores = Store::orderBy('store_name')->get();
 
-        // Stats
         $stats = [
             'total'        => DeliveryReceipt::count(),
             'pending'      => DeliveryReceipt::where('status', 'pending')->count(),
             'partial'      => DeliveryReceipt::where('status', 'partial')->count(),
             'paid'         => DeliveryReceipt::where('status', 'paid')->count(),
-            'overdue'      => DeliveryReceipt::where('status', 'overdue')->count(),
             'outstanding'  => (float) DeliveryReceipt::sum('balance'),
         ];
 
-        // Tab counts
         $tabCounts = [
             'all'     => $stats['total'],
             'pending' => $stats['pending'],
             'partial' => $stats['partial'],
             'paid'    => $stats['paid'],
-            'overdue' => $stats['overdue'],
         ];
 
         return view('deliveries.index', compact('deliveries', 'stores', 'stats', 'tabCounts', 'tab'));
@@ -80,7 +75,6 @@ class DeliveryReceiptController extends Controller
         $data = $request->validate([
             'store_id'      => 'required|exists:stores,id',
             'delivery_date' => 'required|date',
-            'due_date'      => 'nullable|date',
             'notes'         => 'nullable|string',
             'items'         => 'required|array|min:1',
             'items.*.product_id'         => 'required|exists:products,id',
@@ -104,7 +98,6 @@ class DeliveryReceiptController extends Controller
                 'store_id'      => $data['store_id'],
                 'user_id'       => auth()->id(),
                 'delivery_date' => $data['delivery_date'],
-                'due_date'      => $data['due_date'] ?? null,
                 'total_amount'  => $total,
                 'amount_paid'   => 0,
                 'balance'       => $total,
@@ -141,6 +134,37 @@ class DeliveryReceiptController extends Controller
                     'notes'         => 'Delivered to store: ' . ($dr->store->store_name ?? ''),
                 ]);
             }
+
+            // Auto-create Sales Report from DR
+            $reportNumber = 'SR-' . $dr->delivery_date->format('Ymd') . '-' . str_pad(
+                SalesReport::whereDate('created_at', today())->count() + 1,
+                4, '0', STR_PAD_LEFT
+            );
+
+            $sr = SalesReport::create([
+                'report_number'  => $reportNumber,
+                'store_id'       => $dr->store_id,
+                'user_id'        => auth()->id(),
+                'period_from'    => $dr->delivery_date,
+                'period_to'      => $dr->delivery_date,
+                'total_sales'    => $total,
+                'total_quantity' => collect($data['items'])->sum('quantity_delivered'),
+                'amount_due'     => $total,
+                'amount_paid'    => 0,
+                'balance'        => $total,
+                'status'         => 'pending',
+                'notes'          => 'Auto-created from ' . $dr->dr_number,
+            ]);
+
+            foreach ($data['items'] as $item) {
+                SalesReportItem::create([
+                    'sales_report_id' => $sr->id,
+                    'product_id'      => $item['product_id'],
+                    'quantity_sold'   => $item['quantity_delivered'],
+                    'unit_price'      => $item['unit_price'],
+                    'subtotal'        => $item['quantity_delivered'] * $item['unit_price'],
+                ]);
+            }
         });
 
         return redirect()->route('deliveries.index')->with('success', 'Delivery receipt created.');
@@ -163,8 +187,7 @@ class DeliveryReceiptController extends Controller
     {
         $data = $request->validate([
             'delivery_date' => 'required|date',
-            'due_date'      => 'nullable|date',
-            'status'        => 'required|in:pending,partial,paid,overdue',
+            'status'        => 'required|in:pending,partial,paid',
             'notes'         => 'nullable|string',
         ]);
 

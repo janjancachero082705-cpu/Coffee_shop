@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Admin') · Coffee Consignment</title>
+    <title>@yield('title', 'Admin') Ãƒâ€šÃ‚Â· Coffee Consignment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -495,7 +495,277 @@
                 backdrop-filter: blur(2px); pointer-events: auto;
             }
         }
-    </style>
+    
+    /* ============================================ */
+    /* PROFESSIONAL SIDEBAR ENHANCEMENTS            */
+    /* ============================================ */
+
+    .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 2px;
+        margin-right: -2px;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 8px 20px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .brand-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        flex-shrink: 0;
+        box-shadow:
+            0 8px 16px -4px rgba(169, 120, 74, 0.55),
+            0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        transition: transform 0.3s ease;
+    }
+
+    .brand-icon:hover {
+        transform: scale(1.05) rotate(-3deg);
+    }
+
+    .brand-icon svg {
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    }
+
+    .brand-text {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .brand-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #f5f3f0;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .brand-role {
+        font-size: 9px;
+        font-weight: 700;
+        color: #c9a961;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-top: 3px;
+        white-space: nowrap;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 9px;
+        color: #a8a5a0;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        margin-bottom: 2px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .nav-item svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        transition: transform 0.18s ease;
+    }
+
+    .nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: #f5f3f0;
+    }
+
+    .nav-item:hover svg {
+        transform: scale(1.08);
+        color: #c9a961;
+    }
+
+    .nav-item.active {
+        background: linear-gradient(90deg, rgba(169, 120, 74, 0.18), rgba(169, 120, 74, 0.06));
+        color: #f5f3f0;
+        font-weight: 600;
+    }
+
+    .nav-item.active svg {
+        color: #c9a961;
+    }
+
+    .nav-item.active::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 22px;
+        background: linear-gradient(180deg, #c9a961, #a9784a);
+        border-radius: 0 3px 3px 0;
+        box-shadow: 0 0 12px rgba(201, 169, 97, 0.55);
+    }
+
+    .nav-count {
+        margin-left: auto;
+        padding: 2px 8px;
+        background: rgba(169, 120, 74, 0.18);
+        color: #c9a961;
+        font-size: 10px;
+        font-weight: 800;
+        border-radius: 10px;
+        min-width: 22px;
+        text-align: center;
+        line-height: 1.4;
+        border: 1px solid rgba(169, 120, 74, 0.25);
+    }
+
+    .nav-count-info {
+        background: rgba(59, 130, 246, 0.18);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .nav-count-warn {
+        background: rgba(245, 158, 11, 0.18);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .sidebar-bottom {
+        margin-top: auto;
+        padding-top: 16px;
+    }
+
+    .today-card {
+        position: relative;
+        padding: 16px;
+        margin: 0 4px 12px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #b8845a 0%, #8a5f36 100%);
+        color: #ffffff;
+        overflow: hidden;
+        box-shadow:
+            0 12px 24px -10px rgba(169, 120, 74, 0.6),
+            0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .today-card:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 16px 32px -12px rgba(169, 120, 74, 0.75),
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+
+    .today-glow {
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
+        pointer-events: none;
+    }
+
+    .today-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .today-label {
+        font-size: 10px;
+        font-weight: 800;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-bottom: 8px;
+    }
+
+    .today-value {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        margin-bottom: 12px;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .today-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10.5px;
+        opacity: 0.95;
+        font-weight: 600;
+    }
+
+    .today-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .today-meta-sep {
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .logout-form {
+        margin: 0;
+    }
+
+    .logout-btn {
+        width: 100%;
+        background: rgba(239, 68, 68, 0.06);
+        color: #a8a5a0;
+        border: 1px solid transparent;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 10px 12px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+
+    .logout-btn:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .logout-btn:hover svg {
+        color: #ef4444;
+        transform: translateX(2px);
+    }
+
+    .logout-btn svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        transition: all 0.18s ease;
+    }
+</style>
     @stack('styles')
 </head>
 <body>
@@ -505,7 +775,7 @@
         $navStoreCount = \App\Models\Store::count();
         $navPendingPayments = \App\Models\ConsignmentPayment::whereDate('created_at', today())->count();
         $navTodayDeliveries = \App\Models\DeliveryReceipt::whereDate('delivery_date', today())->count();
-        $navTodaySales = (float) \App\Models\SalesReport::whereDate('created_at', today())->sum('total_sales');
+        $navTodaySales = (float) \App\Models\ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
     } catch (\Throwable $e) {
         $navStoreCount = 0; $navPendingPayments = 0; $navTodayDeliveries = 0; $navTodaySales = 0;
     }
@@ -513,72 +783,144 @@
 
 <div class="app">
     <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-icon">☕</div>
-            <div>
-                <div class="brand-name">Coffee Beans</div>
-                <div class="brand-role">Consignment</div>
-            </div>
+    {{-- BRAND --}}
+    <div class="brand">
+        <div class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                <line x1="6" y1="1" x2="6" y2="4"/>
+                <line x1="10" y1="1" x2="10" y2="4"/>
+                <line x1="14" y1="1" x2="14" y2="4"/>
+            </svg>
         </div>
+        <div class="brand-text">
+            <div class="brand-name">Coffee Beans</div>
+            <div class="brand-role">Consignment</div>
+        </div>
+    </div>
+
+    {{-- NAVIGATION --}}
+    <nav class="sidebar-nav">
 
         <div class="nav-section">
             <div class="nav-label">Main</div>
             <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="9" rx="1"/>
+                    <rect x="14" y="3" width="7" height="5" rx="1"/>
+                    <rect x="14" y="12" width="7" height="9" rx="1"/>
+                    <rect x="3" y="16" width="7" height="5" rx="1"/>
+                </svg>
                 <span>Dashboard</span>
             </a>
         </div>
 
         <div class="nav-section">
             <div class="nav-label">Consignment</div>
+
             <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                </svg>
                 <span>Stores</span>
-                @if($navStoreCount > 0)<span class="nav-badge" style="background: var(--accent-bg); color: var(--accent-light); border-color: var(--accent-border);">{{ $navStoreCount }}</span>@endif
+                @if(isset($navStoreCount) && $navStoreCount > 0)
+                    <span class="nav-count">{{ $navStoreCount }}</span>
+                @endif
             </a>
+
             <a href="{{ route('deliveries.index') }}" class="nav-item {{ request()->routeIs('deliveries.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                    <path d="M16 8h4l3 3v5h-7V8z"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
                 <span>Deliveries</span>
-                @if($navTodayDeliveries > 0)<span class="nav-badge">{{ $navTodayDeliveries }}</span>@endif
+                @if(isset($navTodayDeliveries) && $navTodayDeliveries > 0)
+                    <span class="nav-count nav-count-info">{{ $navTodayDeliveries }}</span>
+                @endif
             </a>
+
             <a href="{{ route('consignment.reports.index') }}" class="nav-item {{ request()->routeIs('consignment.reports.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M9 17V7"/>
+                    <path d="M4 20h16"/>
+                    <path d="M9 7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V7z"/>
+                    <path d="M14 12h6"/>
+                    <path d="M14 16h6"/>
+                    <path d="M14 8h6"/>
+                </svg>
                 <span>Sales Reports</span>
             </a>
+
             <a href="{{ route('consignment.payments.index') }}" class="nav-item {{ request()->routeIs('consignment.payments.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                    <path d="M2 10h20"/>
+                    <circle cx="12" cy="15" r="1"/>
+                </svg>
                 <span>Payments</span>
+                @if(isset($navPendingPayments) && $navPendingPayments > 0)
+                    <span class="nav-count nav-count-warn">{{ $navPendingPayments }}</span>
+                @endif
             </a>
         </div>
 
         <div class="nav-section">
             <div class="nav-label">Products</div>
             <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
                 <span>Products</span>
             </a>
         </div>
 
-        <div class="sidebar-bottom">
-            <div class="today-card">
-                <div class="today-label">Today's Sales</div>
-                <div class="today-value">₱{{ number_format($navTodaySales, 0) }}</div>
+    </nav>
+
+    {{-- BOTTOM --}}
+    <div class="sidebar-bottom">
+
+        <div class="today-card">
+            <div class="today-glow"></div>
+            <div class="today-content">
+                <div class="today-label">Today's Collected</div>
+                <div class="today-value">&#8369;{{ number_format($navTodaySales ?? 0, 0) }}</div>
                 <div class="today-meta">
-                    <span>{{ $navTodayDeliveries }} deliveries</span>
-                    <span>·</span>
-                    <span>{{ $navStoreCount }} stores</span>
+                    <span class="today-meta-item">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <rect x="1" y="3" width="15" height="13" rx="1"/>
+                            <path d="M16 8h4l3 3v5h-7V8z"/>
+                        </svg>
+                        {{ $navTodayDeliveries ?? 0 }} deliveries
+                    </span>
+                    <span class="today-meta-sep"></span>
+                    <span class="today-meta-item">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                        {{ $navStoreCount ?? 0 }} stores
+                    </span>
                 </div>
             </div>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="nav-item" style="width:100%;">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/><path d="M13 16v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                    <span>Logout</span>
-                </button>
-            </form>
         </div>
-    </aside>
+
+        <form method="POST" action="{{ route('logout') }}" class="logout-form">
+            @csrf
+            <button type="submit" class="nav-item logout-btn">
+                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </form>
+
+    </div>
+</aside>
 
     <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
 
@@ -638,7 +980,7 @@
         </div>
 
         <footer class="foot">
-            <span>© {{ now()->format('Y') }} Coffee Beans · Consignment System</span>
+            <span>&copy; {{ now()->format('Y') }} Coffee Beans - Consignment System</span>
             <span>v1.0</span>
         </footer>
     </main>

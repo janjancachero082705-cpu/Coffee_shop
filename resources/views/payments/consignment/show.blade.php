@@ -4,24 +4,24 @@
 @section('subtitle', 'Payment details')
 
 @section('actions')
-    <a href="{{ route('consignment.payments.index') }}" class="btn btn-ghost btn-sm">← Back</a>
+    <a href="{{ route('consignment.payments.index') }}" class="btn btn-ghost btn-sm">â† Back</a>
 @endsection
 
 @section('content')
 
 @php
-    $methodIcons = ['cash'=>'💵','gcash'=>'📱','maya'=>'📱','bank_transfer'=>'🏦','check'=>'📄'];
+    $methodIcons = ['cash'=>'ðŸ’µ','gcash'=>'ðŸ“±','maya'=>'ðŸ“±','bank_transfer'=>'ðŸ¦','check'=>'ðŸ“„'];
 @endphp
 
-{{-- ═══ HERO ═══ --}}
+{{-- â•â•â• HERO â•â•â• --}}
 <div class="hero-pay">
     <div class="hero-pay-left">
-        <div class="hero-pay-icon">{{ $methodIcons[$payment->method] ?? '💵' }}</div>
+        <div class="hero-pay-icon">{{ $methodIcons[$payment->method] ?? 'ðŸ’µ' }}</div>
         <div>
             <div class="hero-pay-number">{{ $payment->payment_number }}</div>
             <div class="hero-pay-store">
-                <a href="{{ route('stores.show', $payment->store) }}" class="link-accent">{{ $payment->store->store_name ?? '—' }}</a>
-                <span class="dot-sep">·</span>
+                <a href="{{ route('stores.show', $payment->store) }}" class="link-accent">{{ $payment->store->store_name ?? 'â€”' }}</a>
+                <span class="dot-sep">Â·</span>
                 <span>{{ $payment->store->code ?? '' }}</span>
             </div>
             <div class="hero-pay-tags">
@@ -35,13 +35,13 @@
     </div>
     <div class="hero-pay-right">
         <div class="hero-pay-amount-label">Amount Paid</div>
-        <div class="hero-pay-amount">₱{{ number_format($payment->amount, 2) }}</div>
+        <div class="hero-pay-amount">â‚±{{ number_format($payment->amount, 2) }}</div>
     </div>
 </div>
 
 <div class="detail-grid">
 
-    {{-- ═══ LEFT ═══ --}}
+    {{-- â•â•â• LEFT â•â•â• --}}
     <div>
         <div class="card">
             <div class="card-header"><div class="card-title">Payment Details</div></div>
@@ -54,7 +54,7 @@
                 <div class="info-row">
                     <div class="info-label">Store</div>
                     <div class="info-value">
-                        <a href="{{ route('stores.show', $payment->store) }}" class="link-accent">{{ $payment->store->store_name ?? '—' }}</a>
+                        <a href="{{ route('stores.show', $payment->store) }}" class="link-accent">{{ $payment->store->store_name ?? 'â€”' }}</a>
                     </div>
                 </div>
                 <div class="info-row">
@@ -86,34 +86,34 @@
 
                 @if($payment->deliveryReceipt)
                     <a href="{{ route('deliveries.show', $payment->deliveryReceipt) }}" class="linked-item">
-                        <div class="linked-icon">🚚</div>
+                        <div class="linked-icon">ðŸšš</div>
                         <div class="linked-info">
                             <div class="linked-title">Delivery Receipt</div>
-                            <div class="linked-sub">{{ $payment->deliveryReceipt->dr_number }} · ₱{{ number_format($payment->deliveryReceipt->total_amount, 2) }}</div>
+                            <div class="linked-sub">{{ $payment->deliveryReceipt->dr_number }} Â· â‚±{{ number_format($payment->deliveryReceipt->total_amount, 2) }}</div>
                         </div>
-                        <div class="linked-arrow">→</div>
+                        <div class="linked-arrow">â†’</div>
                     </a>
                 @endif
 
                 @if($payment->salesReport)
                     <a href="{{ route('consignment.reports.show', $payment->salesReport) }}" class="linked-item">
-                        <div class="linked-icon">📊</div>
+                        <div class="linked-icon">ðŸ“Š</div>
                         <div class="linked-info">
                             <div class="linked-title">Sales Report</div>
-                            <div class="linked-sub">{{ $payment->salesReport->report_number }} · ₱{{ number_format($payment->salesReport->total_sales, 2) }}</div>
+                            <div class="linked-sub">{{ $payment->salesReport->report_number }} Â· â‚±{{ number_format($payment->salesReport->total_sales, 2) }}</div>
                         </div>
-                        <div class="linked-arrow">→</div>
+                        <div class="linked-arrow">â†’</div>
                     </a>
                 @endif
             </div>
         @endif
     </div>
 
-    {{-- ═══ RIGHT ═══ --}}
+    {{-- â•â•â• RIGHT â•â•â• --}}
     <div>
         <div class="card">
             <div class="card-header"><div class="card-title">Amount</div></div>
-            <div class="amount-big">₱{{ number_format($payment->amount, 2) }}</div>
+            <div class="amount-big">â‚±{{ number_format($payment->amount, 2) }}</div>
             <div class="amount-label">Received via {{ ucfirst(str_replace('_',' ',$payment->method)) }}</div>
         </div>
 
@@ -122,11 +122,11 @@
             <div class="info-list">
                 <div class="info-row">
                     <div class="info-label">User</div>
-                    <div class="info-value">{{ $payment->user->name ?? '—' }}</div>
+                    <div class="info-value">{{ $payment->user->name ?? 'â€”' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Created</div>
-                    <div class="info-value">{{ $payment->created_at->format('M d, Y · g:i A') }}</div>
+                    <div class="info-value">{{ $payment->created_at->format('M d, Y Â· g:i A') }}</div>
                 </div>
             </div>
         </div>
@@ -137,7 +137,7 @@
 
 @push('styles')
 <style>
-    /* ═══ HERO ═══ */
+    /* â•â•â• HERO â•â•â• */
     .hero-pay {
         background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 34, 44, 0.7));
         backdrop-filter: blur(20px) saturate(1.4);
@@ -209,14 +209,14 @@
         color: #22c55e; letter-spacing: -0.03em;
     }
 
-    /* ═══ GRID ═══ */
+    /* â•â•â• GRID â•â•â• */
     .detail-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 16px;
     }
 
-    /* ═══ INFO ═══ */
+    /* â•â•â• INFO â•â•â• */
     .info-list { display: flex; flex-direction: column; }
     .info-row {
         display: flex;
@@ -230,7 +230,7 @@
     .info-label { color: var(--text-muted); font-weight: 600; }
     .info-value { color: var(--text-primary); text-align: right; font-weight: 500; }
 
-    /* ═══ LINKED ═══ */
+    /* â•â•â• LINKED â•â•â• */
     .linked-item {
         display: flex;
         align-items: center;
@@ -269,7 +269,7 @@
         font-size: 16px;
     }
 
-    /* ═══ AMOUNT BOX ═══ */
+    /* â•â•â• AMOUNT BOX â•â•â• */
     .amount-big {
         font-size: 32px; font-weight: 800;
         color: #22c55e; letter-spacing: -0.03em;

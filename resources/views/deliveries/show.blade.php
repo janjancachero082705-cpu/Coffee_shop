@@ -4,8 +4,13 @@
 @section('subtitle', 'Delivery Receipt details')
 
 @section('actions')
-    <a href="{{ route('deliveries.index') }}" class="btn btn-ghost btn-sm">← Back</a>
-    <a href="{{ route('consignment.payments.create') }}?store_id={{ $delivery->store_id }}&delivery_receipt_id={{ $delivery->id }}" class="btn btn-primary btn-sm">+ Record Payment</a>
+    <a href="{{ route('deliveries.index') }}" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+    </a>
+    @if($delivery->balance > 0)
+        <a href="{{ route('consignment.payments.create') }}?store_id={{ $delivery->store_id }}&delivery_receipt_id={{ $delivery->id }}" class="btn btn-primary btn-sm">+ Record Payment</a>
+    @endif
 @endsection
 
 @section('content')
@@ -15,43 +20,40 @@
         'pending' => '#f59e0b',
         'partial' => '#3b82f6',
         'paid'    => '#22c55e',
-        'overdue' => '#ef4444',
     ][$delivery->status] ?? '#6b6862';
 @endphp
 
-{{-- ═══ HERO ═══ --}}
 <div class="hero-dr">
     <div class="hero-dr-left">
-        <div class="hero-dr-icon">🚚</div>
+        <div class="hero-dr-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
         <div>
             <div class="hero-dr-number">{{ $delivery->dr_number }}</div>
             <div class="hero-dr-store">
-                <a href="{{ route('stores.show', $delivery->store) }}" class="link-accent">{{ $delivery->store->store_name ?? '—' }}</a>
-                <span class="dot-sep">·</span>
+                <a href="{{ route('stores.show', $delivery->store) }}" class="link-accent">{{ $delivery->store->store_name ?? '-' }}</a>
+                <span class="dot-sep">-</span>
                 <span>{{ $delivery->store->code ?? '' }}</span>
             </div>
             <div class="hero-dr-tags">
                 <span class="badge badge-{{ $delivery->status }}">{{ ucfirst($delivery->status) }}</span>
-                <span class="tag">{{ $delivery->delivery_date }}</span>
-                @if($delivery->due_date)
-                    <span class="tag">Due: {{ $delivery->due_date }}</span>
-                @endif
+                <span class="tag">{{ \Carbon\Carbon::parse($delivery->delivery_date)->format('M d, Y') }}</span>
             </div>
         </div>
     </div>
     <div class="hero-dr-right">
         <div class="hero-dr-stat">
             <div class="hero-dr-stat-label">Total</div>
-            <div class="hero-dr-stat-value">₱{{ number_format($delivery->total_amount, 2) }}</div>
+            <div class="hero-dr-stat-value">&#8369;{{ number_format($delivery->total_amount, 2) }}</div>
         </div>
         <div class="hero-dr-stat">
             <div class="hero-dr-stat-label">Paid</div>
-            <div class="hero-dr-stat-value green">₱{{ number_format($delivery->amount_paid, 2) }}</div>
+            <div class="hero-dr-stat-value green">&#8369;{{ number_format($delivery->amount_paid, 2) }}</div>
         </div>
         <div class="hero-dr-stat">
             <div class="hero-dr-stat-label">Balance</div>
             <div class="hero-dr-stat-value" style="color: {{ $delivery->balance > 0 ? '#f59e0b' : '#22c55e' }};">
-                ₱{{ number_format($delivery->balance, 2) }}
+                &#8369;{{ number_format($delivery->balance, 2) }}
             </div>
         </div>
     </div>
@@ -59,7 +61,6 @@
 
 <div class="detail-grid">
 
-    {{-- ═══ LEFT ═══ --}}
     <div>
         <div class="card">
             <div class="card-header">
@@ -82,7 +83,7 @@
                     @foreach($delivery->items as $item)
                         <tr>
                             <td>
-                                <div style="font-weight:600; color:var(--text-primary);">{{ $item->product->name ?? '—' }}</div>
+                                <div style="font-weight:600; color:var(--text-primary);">{{ $item->product->name ?? '-' }}</div>
                                 @if($item->product->sku)
                                     <div style="font-size:11px; color:var(--text-muted); font-family:ui-monospace;">{{ $item->product->sku }}</div>
                                 @endif
@@ -90,18 +91,18 @@
                             <td style="text-align:right;">
                                 <div style="font-weight:600;">{{ $item->quantity_delivered }}</div>
                                 <div style="font-size:10px; color:var(--text-muted);">
-                                    sold: {{ $item->quantity_sold }} · ret: {{ $item->quantity_returned }}
+                                    sold: {{ $item->quantity_sold }} / ret: {{ $item->quantity_returned }}
                                 </div>
                             </td>
-                            <td style="text-align:right;">₱{{ number_format($item->unit_price, 2) }}</td>
-                            <td style="text-align:right; font-weight:700; color:#c9a961;">₱{{ number_format($item->subtotal, 2) }}</td>
+                            <td style="text-align:right;">&#8369;{{ number_format($item->unit_price, 2) }}</td>
+                            <td style="text-align:right; font-weight:700; color:#c9a961;">&#8369;{{ number_format($item->subtotal, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr style="border-top: 1px solid rgba(169, 120, 74, 0.2);">
                         <td colspan="3" style="text-align:right; font-weight:700; color:var(--text-secondary); padding-top:16px;">TOTAL</td>
-                        <td style="text-align:right; font-weight:800; color:#c9a961; font-size:16px; padding-top:16px;">₱{{ number_format($delivery->total_amount, 2) }}</td>
+                        <td style="text-align:right; font-weight:800; color:#c9a961; font-size:16px; padding-top:16px;">&#8369;{{ number_format($delivery->total_amount, 2) }}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -115,7 +116,6 @@
         @endif
     </div>
 
-    {{-- ═══ RIGHT ═══ --}}
     <div>
         <div class="card">
             <div class="card-header"><div class="card-title">Payment Status</div></div>
@@ -123,16 +123,16 @@
             <div class="balance-list">
                 <div class="balance-row">
                     <span class="balance-label">Total Amount</span>
-                    <span class="balance-value">₱{{ number_format($delivery->total_amount, 2) }}</span>
+                    <span class="balance-value">&#8369;{{ number_format($delivery->total_amount, 2) }}</span>
                 </div>
                 <div class="balance-row">
                     <span class="balance-label">Amount Paid</span>
-                    <span class="balance-value green">- ₱{{ number_format($delivery->amount_paid, 2) }}</span>
+                    <span class="balance-value green">- &#8369;{{ number_format($delivery->amount_paid, 2) }}</span>
                 </div>
                 <div class="balance-row balance-total">
                     <span class="balance-label">Balance</span>
                     <span class="balance-value" style="color: {{ $delivery->balance > 0 ? '#f59e0b' : '#22c55e' }};">
-                        ₱{{ number_format($delivery->balance, 2) }}
+                        &#8369;{{ number_format($delivery->balance, 2) }}
                     </span>
                 </div>
             </div>
@@ -140,7 +140,7 @@
             @if($delivery->balance > 0)
                 <a href="{{ route('consignment.payments.create') }}?store_id={{ $delivery->store_id }}&delivery_receipt_id={{ $delivery->id }}"
                    class="btn btn-primary" style="width:100%; margin-top:16px;">
-                    💵 Record Payment
+                    Record Payment
                 </a>
             @else
                 <div class="paid-badge">
@@ -156,11 +156,11 @@
             <div class="info-list">
                 <div class="info-row">
                     <div class="info-label">Created by</div>
-                    <div class="info-value">{{ $delivery->user->name ?? '—' }}</div>
+                    <div class="info-value">{{ $delivery->user->name ?? '-' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Created at</div>
-                    <div class="info-value">{{ $delivery->created_at->format('M d, Y · g:i A') }}</div>
+                    <div class="info-value">{{ $delivery->created_at->format('M d, Y - g:i A') }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Last updated</div>
@@ -173,13 +173,13 @@
             <div class="card-header"><div class="card-title">Actions</div></div>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <a href="{{ route('deliveries.edit', $delivery) }}" class="btn btn-ghost" style="width:100%;">
-                    ✏ Edit Delivery
+                    Edit Delivery
                 </a>
                 <form method="POST" action="{{ route('deliveries.destroy', $delivery) }}"
                       onsubmit="return confirm('Delete this delivery? This will revert store inventory.');">
                     @csrf @method('DELETE')
                     <button type="submit" class="btn btn-danger" style="width:100%;">
-                        🗑 Delete
+                        Delete
                     </button>
                 </form>
             </div>
@@ -191,7 +191,6 @@
 
 @push('styles')
 <style>
-    /* ═══ HERO ═══ */
     .hero-dr {
         background: linear-gradient(135deg, rgba(169, 120, 74, 0.15), rgba(34, 34, 44, 0.7));
         backdrop-filter: blur(20px) saturate(1.4);
@@ -219,8 +218,7 @@
         display: flex;
         align-items: center;
         gap: 18px;
-        position: relative;
-        z-index: 1;
+        position: relative; z-index: 1;
     }
     .hero-dr-icon {
         width: 64px; height: 64px;
@@ -228,7 +226,6 @@
         background: linear-gradient(135deg, #c9a961, #8a5f36);
         display: grid; place-items: center;
         color: #fff;
-        font-size: 26px;
         box-shadow: 0 12px 24px -8px rgba(169, 120, 74, 0.6);
         flex-shrink: 0;
     }
@@ -263,8 +260,7 @@
     .hero-dr-right {
         display: flex;
         gap: 28px;
-        position: relative;
-        z-index: 1;
+        position: relative; z-index: 1;
     }
     .hero-dr-stat { text-align: right; }
     .hero-dr-stat-label {
@@ -283,14 +279,12 @@
     }
     .hero-dr-stat-value.green { color: #22c55e; }
 
-    /* ═══ GRID ═══ */
     .detail-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 16px;
     }
 
-    /* ═══ BALANCE ═══ */
     .balance-list { display: flex; flex-direction: column; }
     .balance-row {
         display: flex;
@@ -325,7 +319,6 @@
         font-size: 13px;
     }
 
-    /* ═══ INFO ═══ */
     .info-list { display: flex; flex-direction: column; }
     .info-row {
         display: flex;
