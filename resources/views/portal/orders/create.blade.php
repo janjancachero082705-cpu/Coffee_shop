@@ -1382,12 +1382,27 @@
         }
     }
 </style>
+
+<script>
+// ===== GLOBAL ERROR HANDLER =====
+window.addEventListener('error', function(e) {
+    console.error('[GLOBAL ERROR]', e.message, 'at', e.filename, ':', e.lineno);
+});
+
+console.log('[DEBUG] Product card buttons:', document.querySelectorAll('.product-add-btn').length);
+console.log('[DEBUG] Functions loaded:');
+console.log('  - quickAdd:', typeof quickAdd);
+console.log('  - openProductModal:', typeof openProductModal);
+console.log('  - renderCart:', typeof renderCart);
+console.log('  - cart:', typeof cart);
+</script>
 @endpush
 
 @push('scripts')
 <script>
     // ===== STATE =====
     var cart = {};
+    console.log('[DEBUG] Cart initialized');
     var currentProduct = null;
 
     // ===== PRODUCT MODAL =====
@@ -1542,6 +1557,7 @@
     }
 
     function renderCart() {
+        console.log('[DEBUG] renderCart called. Cart size:', Object.keys(cart).length);
         var items = Object.values(cart);
         var bar = document.getElementById('cartBar');
         var barItems = document.getElementById('cartBarItems');
@@ -1702,6 +1718,7 @@
 
     // ===== QUICK ADD (walay modal) =====
     function quickAdd(id, name, price, stock) {
+        console.log('[DEBUG] quickAdd called:', id, name, price, stock);
         if (stock <= 0) {
             showToast('Out of stock');
             return;
@@ -1801,5 +1818,19 @@
             }
         });
     });
+</script>
+
+<script>
+// ===== GLOBAL ERROR HANDLER =====
+window.addEventListener('error', function(e) {
+    console.error('[GLOBAL ERROR]', e.message, 'at', e.filename, ':', e.lineno);
+});
+
+console.log('[DEBUG] Product card buttons:', document.querySelectorAll('.product-add-btn').length);
+console.log('[DEBUG] Functions loaded:');
+console.log('  - quickAdd:', typeof quickAdd);
+console.log('  - openProductModal:', typeof openProductModal);
+console.log('  - renderCart:', typeof renderCart);
+console.log('  - cart:', typeof cart);
 </script>
 @endpush
