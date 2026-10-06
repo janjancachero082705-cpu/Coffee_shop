@@ -145,7 +145,13 @@
                     @foreach($deliveries as $dr)
                         <tr style="cursor:pointer;" onclick="window.location='{{ route('deliveries.show', $dr) }}'">
                             <td>
-                                <span style="color:#c9a961; font-family:ui-monospace; font-weight:700; font-size:12px;">{{ $dr->dr_number }}</span>
+                                @php
+                                    $drParts = explode('-', $dr->dr_number);
+                                    $drShort = end($drParts);
+                                @endphp
+                                <span style="color:#c9a961; font-family:ui-monospace; font-weight:800; font-size:13px;" title="{{ $dr->dr_number }}">
+                                    #{{ $drShort }}
+                                </span>
                             </td>
                             <td>
                                 <div style="font-weight:600; color:var(--text-primary);">{{ $dr->store->store_name ?? '-' }}</div>
@@ -828,7 +834,7 @@ function renderCalendar() {
         let eventsHtml = '';
         const maxShow = 3;
         dayDeliveries.slice(0, maxShow).forEach(d => {
-            eventsHtml += `<div class="cal-event ${d.status}" title="${d.dr_number} - ${d.store_name}">${d.dr_number.replace('DR-', '')} Ãƒâ€šÃ‚Â· ${escapeHtml(d.store_name)}</div>`;
+            eventsHtml += `<div class="cal-event ${d.status}" title="${d.dr_number} - ${d.store_name}">${d.dr_number.replace('DR-', '')} - ${escapeHtml(d.store_name)}</div>`;
         });
         if (dayDeliveries.length > maxShow) {
             eventsHtml += `<div class="cal-more">+${dayDeliveries.length - maxShow} more</div>`;
@@ -871,7 +877,7 @@ function openDayModal(dateStr) {
                 <div class="modal-item-icon ${d.status}">${statusIcon}</div>
                 <div class="modal-item-info">
                     <div class="modal-item-dr">${d.dr_number}</div>
-                    <div class="modal-item-store">${escapeHtml(d.store_name)} ${d.store_code ? 'Ãƒâ€šÃ‚Â· ' + d.store_code : ''}</div>
+                    <div class="modal-item-store">${escapeHtml(d.store_name)} ${d.store_code ? '- ' + d.store_code : ''}</div>
                 </div>
                 <div>
                     <div class="modal-item-amount">&#8369;${formatMoney(d.total_amount)}</div>

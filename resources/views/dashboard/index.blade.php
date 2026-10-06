@@ -3,14 +3,10 @@
 @section('title', 'Dashboard')
 @section('subtitle', now()->format('l, F j, Y'))
 
-@section('actions')
-    <a href="{{ route('deliveries.create') }}" class="btn btn-ghost btn-sm">+ Delivery</a>
-    <a href="{{ route('consignment.payments.create') }}" class="btn btn-primary btn-sm">+ Payment</a>
-@endsection
-
 @section('content')
 
 @php
+    // Stats
     $activeStores    = \App\Models\Store::where('status','active')->count();
     $totalStores     = \App\Models\Store::count();
     $productCount    = \App\Models\Product::count();
@@ -19,21 +15,23 @@
 
     $totalSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->sum('total_sales');
     $totalPaid       = (float) \App\Models\ConsignmentPayment::sum('amount');
-    $Unpaid Balance     = (float) \App\Models\SalesReport::sum('balance');
+    $outstanding     = (float) \App\Models\SalesReport::sum('balance');
+    $paymentsToday   = (float) \App\Models\ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
 
     $monthSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->where('created_at','>=',now()->startOfMonth())->sum('total_sales');
-    $lastMonthSales  = (float) \App\Models\SalesReport::whereBetween('created_at',[now()->subMonth()->startOfMonth(),now()->subMonth()->endOfMonth()])->sum('total_sales');
+    $lastMonthSales  = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->whereBetween('created_at',[now()->subMonth()->startOfMonth(),now()->subMonth()->endOfMonth()])->sum('total_sales');
     $salesTrend      = $lastMonthSales > 0 ? round((($monthSales - $lastMonthSales) / $lastMonthSales) * 100, 1) : 0;
     $lowStock        = \App\Models\Product::where('is_active',true)->whereColumn('stock','<=','reorder_level')->count();
 @endphp
 
+{{-- ==================== GREETING ==================== --}}
 <div class="greeting">
     <div>
         <h2 class="greeting-title">
             Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }},
             <span class="greeting-name">{{ explode(' ', auth()->user()->name ?? 'Admin')[0] }}</span>
         </h2>
-        <p class="greeting-sub">Here's your business snapshot for today.</p>
+        <p class="greeting-sub">Here's what's happening with your business today.</p>
     </div>
     <div class="greeting-badge">
         <span class="pulse"></span>
@@ -41,109 +39,169 @@
     </div>
 </div>
 
-<div class="hero-kpi">
-    <div class="hero-kpi-left">
-        <div class="hero-label">Total Unpaid Balance</div>
-        <div class="hero-value">&#8369;{{ number_format($Unpaid Balance, 2) }}</div>
-        <div class="hero-meta">
-            <span class="hero-meta-item">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+{{-- ==================== HERO KPI ==================== --}}
+<div class="hero-dash">
+    <div class="hero-dash-bg"></div>
+    <div class="hero-dash-bg2"></div>
+
+    <div class="hero-dash-left">
+        <div class="hero-dash-label">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+            Total Unpaid Balance
+        </div>
+        <div class="hero-dash-value">&#8369;{{ number_format($outstanding, 2) }}</div>
+        <div class="hero-dash-meta">
+            <div class="hero-meta-item">
+                <span class="hero-meta-dot green"></span>
                 &#8369;{{ number_format($totalPaid, 0) }} collected
-            </span>
+            </div>
+            <div class="hero-meta-divider"></div>
+            <div class="hero-meta-item">
+                <span class="hero-meta-dot"></span>
+                {{ $activeStores }} active stores
+            </div>
         </div>
     </div>
-    <div class="hero-kpi-right">
+
+    <div class="hero-dash-right">
         <div class="hero-trend {{ $salesTrend >= 0 ? 'up' : 'down' }}">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 @if($salesTrend >= 0)
-                    <path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>
+                    <path d="M23 6l-9.5 9.5-5-5L1 18"/>
+                    <path d="M17 6h6v6"/>
                 @else
-                    <path d="M23 18l-9.5-9.5-5 5L1 6"/><path d="M17 18h6v-6"/>
+                    <path d="M23 18l-9.5-9.5-5 5L1 6"/>
+                    <path d="M17 18h6v-6"/>
                 @endif
             </svg>
-            <span>{{ abs($salesTrend) }}%</span>
         </div>
-        <div class="hero-trend-label">
+        <div class="hero-trend-info">
             <div class="hero-trend-value">&#8369;{{ number_format($monthSales, 0) }}</div>
-            <div class="hero-trend-caption">This month</div>
+            <div class="hero-trend-label">
+                This month
+                <span class="trend-pct {{ $salesTrend >= 0 ? 'up' : 'down' }}">
+                    {{ $salesTrend >= 0 ? '+' : '' }}{{ $salesTrend }}%
+                </span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="mini-grid">
-    <div class="mini">
-        <div class="mini-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+{{-- ==================== KPI CARDS ==================== --}}
+<div class="kpi-row">
+
+    <div class="kpi-card">
+        <div class="kpi-card-icon gold">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <path d="M9 22V12h6v10"/>
+            </svg>
         </div>
-        <div class="mini-content">
-            <div class="mini-value">{{ $totalStores }}</div>
-            <div class="mini-label">Stores</div>
+        <div class="kpi-card-body">
+            <div class="kpi-card-value">{{ $totalStores }}</div>
+            <div class="kpi-card-label">Stores</div>
         </div>
-        <div class="mini-tag">{{ $activeStores }} active</div>
+        <div class="kpi-card-tag green">{{ $activeStores }} active</div>
     </div>
 
-    <div class="mini">
-        <div class="mini-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+    <div class="kpi-card">
+        <div class="kpi-card-icon blue">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
         </div>
-        <div class="mini-content">
-            <div class="mini-value">{{ $productCount }}</div>
-            <div class="mini-label">Products</div>
+        <div class="kpi-card-body">
+            <div class="kpi-card-value">{{ $productCount }}</div>
+            <div class="kpi-card-label">Products</div>
         </div>
         @if($lowStock > 0)
-            <div class="mini-tag warning">{{ $lowStock }} low</div>
+            <div class="kpi-card-tag amber">{{ $lowStock }} low</div>
         @else
-            <div class="mini-tag success">In stock</div>
+            <div class="kpi-card-tag green">In stock</div>
         @endif
     </div>
 
-    <div class="mini">
-        <div class="mini-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <div class="kpi-card">
+        <div class="kpi-card-icon purple">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="1" y="3" width="15" height="13"/>
+                <path d="M16 8h4l3 3v5h-7V8z"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
         </div>
-        <div class="mini-content">
-            <div class="mini-value">{{ $drTotal }}</div>
-            <div class="mini-label">Deliveries</div>
+        <div class="kpi-card-body">
+            <div class="kpi-card-value">{{ $drTotal }}</div>
+            <div class="kpi-card-label">Deliveries</div>
         </div>
-        <div class="mini-tag info">{{ $drToday }} today</div>
+        @if($drToday > 0)
+            <div class="kpi-card-tag blue">{{ $drToday }} today</div>
+        @else
+            <div class="kpi-card-tag">{{ $drToday }} today</div>
+        @endif
     </div>
 
-    <div class="mini">
-        <div class="mini-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <div class="kpi-card">
+        <div class="kpi-card-icon green">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <path d="M2 10h20"/>
+            </svg>
         </div>
-        <div class="mini-content">
-            <div class="mini-value">&#8369;{{ number_format($totalPaid/1000, 1) }}k</div>
-            <div class="mini-label">Collected</div>
+        <div class="kpi-card-body">
+            <div class="kpi-card-value">&#8369;{{ number_format($totalPaid/1000, 1) }}k</div>
+            <div class="kpi-card-label">Collected</div>
         </div>
-        <div class="mini-tag success">All-time</div>
+        @if($paymentsToday > 0)
+            <div class="kpi-card-tag green">+&#8369;{{ number_format($paymentsToday, 0) }}</div>
+        @else
+            <div class="kpi-card-tag">All-time</div>
+        @endif
     </div>
+
 </div>
 
-<div class="card">
-    <div class="card-header">
+{{-- ==================== CHART ==================== --}}
+<div class="chart-card">
+    <div class="chart-card-head">
         <div>
-            <div class="card-title">Sales & Payments</div>
-            <div class="card-sub">Last 6 months performance</div>
+            <div class="chart-card-title">Sales & Payments</div>
+            <div class="chart-card-sub">Last 6 months performance</div>
         </div>
         <div class="chart-legend">
-            <div class="legend-item"><span class="dot" style="background: #c9a961;"></span> Sales</div>
-            <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> Payments</div>
+            <div class="legend-item">
+                <span class="legend-dot gold"></span> Sales
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot green"></span> Payments
+            </div>
         </div>
     </div>
-    <div style="height: 240px;">
+    <div class="chart-wrap">
         <canvas id="trendChart"></canvas>
     </div>
 </div>
 
+{{-- ==================== BOTTOM GRID ==================== --}}
 <div class="bottom-grid">
+
+    {{-- Top Stores --}}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Top Stores</div>
-                <div class="card-sub">By delivered value</div>
+        <div class="card-head">
+            <div class="card-head-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
             </div>
-            <a href="{{ route('stores.index') }}" class="link">View all</a>
+            <div class="card-head-title">Top Stores</div>
+            <a href="{{ route('stores.index') }}" class="card-head-link" title="View all stores">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </a>
         </div>
 
         @php
@@ -153,9 +211,11 @@
         @endphp
 
         @if($topStores->isEmpty() || $topStores->first()->total_delivered === null)
-            <div class="empty-state">
+            <div class="empty-box small">
                 <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg>
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M3 3v18h18M7 16l4-4 4 4 6-6"/>
+                    </svg>
                 </div>
                 <div class="empty-text">No data yet</div>
             </div>
@@ -180,48 +240,75 @@
         @endif
     </div>
 
+    {{-- Activity --}}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Recent Activity</div>
-                <div class="card-sub">Latest transactions</div>
+        <div class="card-head">
+            <div class="card-head-icon blue">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
             </div>
+            <div class="card-head-title">Activity</div>
         </div>
 
         @php
             $activity = collect();
             foreach (\App\Models\DeliveryReceipt::with('store')->latest()->take(4)->get() as $dr) {
-                $activity->push(['type' => 'delivery', 'title' => $dr->dr_number, 'sub' => $dr->store->store_name ?? '-', 'amount' => $dr->total_amount, 'date' => $dr->created_at]);
+                $activity->push([
+                    'type' => 'delivery',
+                    'title' => $dr->dr_number,
+                    'sub' => $dr->store->store_name ?? '-',
+                    'amount' => $dr->total_amount,
+                    'date' => $dr->created_at
+                ]);
             }
             foreach (\App\Models\ConsignmentPayment::with('store')->latest()->take(4)->get() as $p) {
-                $activity->push(['type' => 'payment', 'title' => $p->payment_number, 'sub' => $p->store->store_name ?? '-', 'amount' => $p->amount, 'date' => $p->created_at]);
+                $activity->push([
+                    'type' => 'payment',
+                    'title' => $p->payment_number,
+                    'sub' => $p->store->store_name ?? '-',
+                    'amount' => $p->amount,
+                    'date' => $p->created_at
+                ]);
             }
             $activity = $activity->sortByDesc('date')->take(6);
         @endphp
 
         @if($activity->isEmpty())
-            <div class="empty-state">
+            <div class="empty-box small">
                 <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                        <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    </svg>
                 </div>
                 <div class="empty-text">No activity yet</div>
             </div>
         @else
-            <div class="activity-list">
+            <div class="txn-list">
                 @foreach($activity as $a)
-                    <div class="activity-row">
-                        <div class="activity-icon {{ $a['type'] === 'delivery' ? 'blue' : 'green' }}">
+                    <div class="txn-row">
+                        <div class="txn-icon {{ $a['type'] === 'delivery' ? 'blue' : 'green' }}">
                             @if($a['type'] === 'delivery')
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect x="1" y="3" width="15" height="13"/>
+                                    <path d="M16 8h4l3 3v5h-7V8z"/>
+                                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                                </svg>
                             @else
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                    <path d="M2 10h20"/>
+                                </svg>
                             @endif
                         </div>
-                        <div class="activity-info">
-                            <div class="activity-title">{{ $a['title'] }}</div>
-                            <div class="activity-sub">{{ $a['sub'] }} - {{ $a['date']->diffForHumans() }}</div>
+                        <div class="txn-info">
+                            <div class="txn-title">{{ $a['title'] }}</div>
+                            <div class="txn-sub">{{ $a['sub'] }} - {{ $a['date']->diffForHumans() }}</div>
                         </div>
-                        <div class="activity-amount {{ $a['type'] === 'payment' ? 'green' : '' }}">
+                        <div class="txn-amount {{ $a['type'] === 'payment' ? 'green' : '' }}">
                             {{ $a['type'] === 'payment' ? '+' : '' }}&#8369;{{ number_format($a['amount'], 0) }}
                         </div>
                     </div>
@@ -229,25 +316,30 @@
             </div>
         @endif
     </div>
+
 </div>
 
 @endsection
 
 @push('styles')
 <style>
+    /* ================================================================
+       GREETING
+       ================================================================ */
     .greeting {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 22px;
         gap: 16px;
+        flex-wrap: wrap;
     }
     .greeting-title {
-        font-size: 22px;
+        font-size: 26px;
         font-weight: 700;
         color: var(--text-primary);
         letter-spacing: -0.02em;
-        line-height: 1.3;
+        line-height: 1.25;
     }
     .greeting-name {
         background: linear-gradient(135deg, #c9a961, #a9784a);
@@ -258,229 +350,441 @@
     .greeting-sub {
         font-size: 13px;
         color: var(--text-muted);
-        margin-top: 4px;
+        margin-top: 6px;
     }
     .greeting-badge {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 14px;
+        padding: 7px 14px;
         background: rgba(34, 197, 94, 0.08);
         border: 1px solid rgba(34, 197, 94, 0.2);
         border-radius: 20px;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
         color: #22c55e;
         white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        backdrop-filter: blur(10px);
     }
     .pulse {
-        width: 6px; height: 6px; border-radius: 50%;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
         background: #22c55e;
-        animation: pulse 2s infinite;
+        animation: pulseGreen 2s infinite;
     }
-    @keyframes pulse {
+    @keyframes pulseGreen {
         0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-        50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+        50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
     }
 
-    .hero-kpi {
-        background: linear-gradient(135deg, rgba(169, 120, 74, 0.12) 0%, rgba(34, 34, 44, 0.6) 100%);
-        backdrop-filter: blur(20px) saturate(1.4);
-        -webkit-backdrop-filter: blur(20px) saturate(1.4);
-        border: 1px solid rgba(169, 120, 74, 0.2);
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 16px;
+    /* ================================================================
+       HERO DASHBOARD
+       ================================================================ */
+    .hero-dash {
+        position: relative;
+        background: linear-gradient(135deg, rgba(169, 120, 74, 0.12) 0%, rgba(34, 34, 44, 0.35) 100%);
+        backdrop-filter: blur(28px) saturate(1.6);
+        -webkit-backdrop-filter: blur(28px) saturate(1.6);
+        border: 1px solid rgba(169, 120, 74, 0.22);
+        border-radius: 22px;
+        padding: 34px 38px;
+        margin-bottom: 18px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 24px;
-        position: relative;
         overflow: hidden;
-        transition: all 0.3s ease;
+        flex-wrap: wrap;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .hero-kpi::before {
-        content: '';
+    .hero-dash:hover {
+        border-color: rgba(169, 120, 74, 0.4);
+        background: linear-gradient(135deg, rgba(169, 120, 74, 0.16) 0%, rgba(34, 34, 44, 0.4) 100%);
+        box-shadow: 0 30px 60px -25px rgba(169, 120, 74, 0.4);
+        transform: translateY(-2px);
+    }
+    .hero-dash-bg {
         position: absolute;
-        top: -50%; right: -10%;
-        width: 300px; height: 300px;
-        background: radial-gradient(circle, rgba(201, 169, 97, 0.12), transparent 70%);
+        top: -60%;
+        right: -15%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(201, 169, 97, 0.18) 0%, transparent 65%);
         pointer-events: none;
+        animation: floatGlow 8s ease-in-out infinite;
     }
-    .hero-kpi:hover {
-        border-color: rgba(169, 120, 74, 0.35);
-        box-shadow: 0 20px 40px -20px rgba(169, 120, 74, 0.3);
+    .hero-dash-bg2 {
+        position: absolute;
+        bottom: -50%;
+        left: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+        animation: floatGlow 10s ease-in-out infinite reverse;
     }
-    .hero-kpi-left { position: relative; z-index: 1; }
-    .hero-label {
-        font-size: 10px;
-        font-weight: 700;
+    @keyframes floatGlow {
+        0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+        50% { transform: translate(-15px, 15px) scale(1.05); opacity: 1; }
+    }
+
+    .hero-dash-left {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        min-width: 0;
+    }
+    .hero-dash-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 800;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 8px;
+        letter-spacing: 0.14em;
+        margin-bottom: 14px;
     }
-    .hero-value {
-        font-size: 32px;
+    .hero-dash-label svg { color: #c9a961; }
+    .hero-dash-value {
+        font-size: 46px;
         font-weight: 800;
         color: var(--text-primary);
-        letter-spacing: -0.04em;
+        letter-spacing: -0.045em;
         line-height: 1;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 2px 24px rgba(201, 169, 97, 0.2);
     }
-    .hero-meta {
+    .hero-dash-meta {
         display: flex;
         gap: 16px;
+        align-items: center;
         flex-wrap: wrap;
     }
     .hero-meta-item {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        font-size: 12px;
-        font-weight: 500;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
         color: var(--text-secondary);
     }
+    .hero-meta-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+    }
+    .hero-meta-dot.green {
+        background: #22c55e;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+    }
+    .hero-meta-divider {
+        width: 1px;
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+    }
 
-    .hero-kpi-right {
+    .hero-dash-right {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 18px;
         position: relative;
         z-index: 1;
-        padding-left: 24px;
-        border-left: 1px solid rgba(255, 255, 255, 0.06);
+        padding-left: 30px;
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
     }
     .hero-trend {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
         display: grid;
         place-items: center;
         flex-shrink: 0;
+        transition: all 0.25s;
     }
     .hero-trend.up {
-        background: rgba(34, 197, 94, 0.1);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
         color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.25);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        box-shadow: 0 8px 20px -8px rgba(34, 197, 94, 0.5);
     }
     .hero-trend.down {
-        background: rgba(239, 68, 68, 0.1);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
         color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.25);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        box-shadow: 0 8px 20px -8px rgba(239, 68, 68, 0.5);
     }
-    .hero-trend svg { display: block; }
-    .hero-trend-label { min-width: 90px; }
+    .hero-trend-info { min-width: 120px; }
     .hero-trend-value {
-        font-size: 18px;
-        font-weight: 700;
+        font-size: 22px;
+        font-weight: 800;
         color: var(--text-primary);
         letter-spacing: -0.02em;
         line-height: 1;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
+        font-variant-numeric: tabular-nums;
     }
-    .hero-trend-caption {
-        font-size: 10px;
+    .hero-trend-label {
+        font-size: 10.5px;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-    }
-
-    .mini-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    .mini {
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px) saturate(1.4);
-        -webkit-backdrop-filter: blur(20px) saturate(1.4);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        padding: 18px;
+        letter-spacing: 0.1em;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 12px;
-        transition: all 0.2s ease;
+        gap: 8px;
     }
-    .mini:hover {
-        transform: translateY(-2px);
-        border-color: rgba(169, 120, 74, 0.25);
-        background: rgba(34, 34, 44, 0.7);
+    .trend-pct {
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0;
     }
-    .mini-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: rgba(169, 120, 74, 0.1);
-        border: 1px solid rgba(169, 120, 74, 0.2);
+    .trend-pct.up { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .trend-pct.down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    /* ================================================================
+       KPI ROW
+       ================================================================ */
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+    .kpi-card {
+        background: rgba(34, 34, 44, 0.28);
+        backdrop-filter: blur(24px) saturate(1.5);
+        -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.5), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .kpi-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 100% 0%, rgba(201, 169, 97, 0.06), transparent 60%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        background: rgba(34, 34, 44, 0.4);
+        border-color: rgba(169, 120, 74, 0.35);
+        box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.7);
+    }
+    .kpi-card:hover::before { opacity: 1; }
+    .kpi-card:hover::after { opacity: 1; }
+
+    .kpi-card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
         display: grid;
         place-items: center;
-        color: #c9a961;
         flex-shrink: 0;
+        border: 1px solid;
+        transition: transform 0.3s;
     }
-    .mini-content { flex: 1; min-width: 0; }
-    .mini-value {
-        font-size: 20px;
+    .kpi-card:hover .kpi-card-icon { transform: scale(1.05) rotate(-3deg); }
+
+    .kpi-card-icon.gold   { background: rgba(169, 120, 74, 0.14); border-color: rgba(169, 120, 74, 0.3); color: #c9a961; box-shadow: 0 6px 16px -6px rgba(169, 120, 74, 0.4); }
+    .kpi-card-icon.blue   { background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.3); color: #3b82f6; box-shadow: 0 6px 16px -6px rgba(59, 130, 246, 0.4); }
+    .kpi-card-icon.purple { background: rgba(139, 92, 246, 0.14); border-color: rgba(139, 92, 246, 0.3); color: #8b5cf6; box-shadow: 0 6px 16px -6px rgba(139, 92, 246, 0.4); }
+    .kpi-card-icon.green  { background: rgba(34, 197, 94, 0.14);  border-color: rgba(34, 197, 94, 0.3);  color: #22c55e; box-shadow: 0 6px 16px -6px rgba(34, 197, 94, 0.4); }
+
+    .kpi-card-body { flex: 1; min-width: 0; }
+    .kpi-card-value {
+        font-size: 24px;
         font-weight: 800;
         color: var(--text-primary);
         letter-spacing: -0.03em;
         line-height: 1;
-        margin-bottom: 3px;
+        margin-bottom: 5px;
+        font-variant-numeric: tabular-nums;
     }
-    .mini-label {
-        font-size: 10px;
+    .kpi-card-label {
+        font-size: 10.5px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.1em;
         font-weight: 700;
     }
-    .mini-tag {
-        padding: 3px 9px;
-        border-radius: 6px;
+    .kpi-card-tag {
+        padding: 4px 10px;
+        border-radius: 7px;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 800;
         white-space: nowrap;
-        background: rgba(169, 120, 74, 0.1);
-        color: #c9a961;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-muted);
+        flex-shrink: 0;
+        border: 1px solid rgba(255, 255, 255, 0.04);
     }
-    .mini-tag.success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-    .mini-tag.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-    .mini-tag.info    { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .kpi-card-tag.green { background: rgba(34, 197, 94, 0.12); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
+    .kpi-card-tag.amber { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border-color: rgba(245, 158, 11, 0.2); }
+    .kpi-card-tag.blue  { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
 
+    /* ================================================================
+       CHART CARD
+       ================================================================ */
+    .chart-card {
+        background: rgba(34, 34, 44, 0.3);
+        backdrop-filter: blur(26px) saturate(1.5);
+        -webkit-backdrop-filter: blur(26px) saturate(1.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 18px;
+        transition: all 0.3s;
+    }
+    .chart-card:hover {
+        background: rgba(34, 34, 44, 0.38);
+        border-color: rgba(169, 120, 74, 0.2);
+    }
+    .chart-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 22px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .chart-card-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+    }
+    .chart-card-sub {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
     .chart-legend {
         display: flex;
-        gap: 16px;
-        font-size: 11px;
+        gap: 20px;
+        font-size: 11.5px;
         color: var(--text-secondary);
-        font-weight: 500;
+        font-weight: 600;
     }
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
-    .dot {
-        width: 8px;
-        height: 8px;
+    .legend-dot {
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
     }
+    .legend-dot.gold  { background: #c9a961; box-shadow: 0 0 10px rgba(201, 169, 97, 0.7); }
+    .legend-dot.green { background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.7); }
+    .chart-wrap {
+        height: 280px;
+        position: relative;
+    }
 
+    /* ================================================================
+       CARD HEAD (SHARED)
+       ================================================================ */
+    .card-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .card-head-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(169, 120, 74, 0.12);
+        border: 1px solid rgba(169, 120, 74, 0.25);
+        display: grid;
+        place-items: center;
+        color: #c9a961;
+        flex-shrink: 0;
+    }
+    .card-head-icon.blue {
+        background: rgba(59, 130, 246, 0.12);
+        border-color: rgba(59, 130, 246, 0.25);
+        color: #3b82f6;
+    }
+    .card-head-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+        flex: 1;
+        min-width: 0;
+    }
+    .card-head-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.2);
+        color: #c9a961;
+        text-decoration: none;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+    .card-head-link:hover {
+        background: rgba(169, 120, 74, 0.2);
+        border-color: rgba(169, 120, 74, 0.4);
+        transform: translateX(2px);
+    }
+
+    /* ================================================================
+       BOTTOM GRID
+       ================================================================ */
     .bottom-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
     }
-    .link {
-        font-size: 12px;
-        color: var(--text-secondary);
-        font-weight: 500;
-        transition: color 0.15s;
+    .bottom-grid .card {
+        background: rgba(34, 34, 44, 0.28);
+        backdrop-filter: blur(24px) saturate(1.5);
+        -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        transition: all 0.3s;
     }
-    .link:hover { color: #c9a961; }
+    .bottom-grid .card:hover {
+        background: rgba(34, 34, 44, 0.38);
+        border-color: rgba(169, 120, 74, 0.2);
+    }
 
+    /* Stores List */
     .stores-list {
         display: flex;
         flex-direction: column;
@@ -489,16 +793,19 @@
     .store-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px;
-        border-radius: 10px;
-        transition: background 0.15s;
+        gap: 14px;
+        padding: 12px;
+        border-radius: 12px;
+        transition: all 0.2s;
     }
-    .store-row:hover { background: rgba(255, 255, 255, 0.02); }
+    .store-row:hover {
+        background: rgba(169, 120, 74, 0.06);
+        transform: translateX(3px);
+    }
     .store-rank {
-        width: 26px;
-        height: 26px;
-        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.08);
         display: grid;
@@ -512,21 +819,24 @@
         background: linear-gradient(135deg, #fbbf24, #d97706);
         color: #fff;
         border-color: rgba(251, 191, 36, 0.4);
+        box-shadow: 0 6px 14px -4px rgba(251, 191, 36, 0.6);
     }
     .store-rank.silver {
         background: linear-gradient(135deg, #cbd5e1, #64748b);
         color: #fff;
         border-color: rgba(203, 213, 225, 0.4);
+        box-shadow: 0 6px 14px -4px rgba(203, 213, 225, 0.4);
     }
     .store-rank.bronze {
         background: linear-gradient(135deg, #d97706, #92400e);
         color: #fff;
         border-color: rgba(217, 119, 6, 0.4);
+        box-shadow: 0 6px 14px -4px rgba(217, 119, 6, 0.5);
     }
     .store-info { flex: 1; min-width: 0; }
     .store-name {
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 12.5px;
+        font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 6px;
         white-space: nowrap;
@@ -534,7 +844,7 @@
         text-overflow: ellipsis;
     }
     .store-bar {
-        height: 4px;
+        height: 5px;
         background: rgba(255, 255, 255, 0.04);
         border-radius: 3px;
         overflow: hidden;
@@ -543,104 +853,98 @@
         height: 100%;
         background: linear-gradient(90deg, #a9784a, #c9a961);
         border-radius: 3px;
-        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 12px rgba(201, 169, 97, 0.4);
     }
     .store-amount {
-        font-size: 12px;
-        font-weight: 700;
+        font-size: 12.5px;
+        font-weight: 800;
         color: #c9a961;
         flex-shrink: 0;
     }
 
-    .activity-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    .activity-row {
+    /* Transaction List */
+    .txn-list { display: flex; flex-direction: column; gap: 4px; }
+    .txn-row {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px;
-        border-radius: 10px;
-        transition: background 0.15s;
+        padding: 12px;
+        border-radius: 12px;
+        transition: all 0.2s;
     }
-    .activity-row:hover { background: rgba(255, 255, 255, 0.02); }
-    .activity-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
+    .txn-row:hover {
+        background: rgba(169, 120, 74, 0.08);
+        transform: translateX(3px);
+    }
+    .txn-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
         display: grid;
         place-items: center;
         flex-shrink: 0;
+        border: 1px solid;
     }
-    .activity-icon.blue {
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-        border: 1px solid rgba(59, 130, 246, 0.2);
-    }
-    .activity-icon.green {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.2);
-    }
-    .activity-info { flex: 1; min-width: 0; }
-    .activity-title {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .activity-sub {
-        font-size: 10px;
-        color: var(--text-muted);
-        margin-top: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .activity-amount {
-        font-size: 12px;
+    .txn-icon.blue  { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.25); color: #3b82f6; }
+    .txn-icon.green { background: rgba(34, 197, 94, 0.12);  border-color: rgba(34, 197, 94, 0.25);  color: #22c55e; }
+    .txn-info { flex: 1; min-width: 0; }
+    .txn-title {
+        font-size: 12.5px;
         font-weight: 700;
         color: var(--text-primary);
+        font-family: ui-monospace, monospace;
+        margin-bottom: 3px;
+    }
+    .txn-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    .txn-amount {
+        font-size: 13px;
+        font-weight: 800;
+        color: #c9a961;
         flex-shrink: 0;
     }
-    .activity-amount.green { color: #22c55e; }
+    .txn-amount.green { color: #22c55e; }
 
-    .empty-state {
-        padding: 40px 20px;
-        text-align: center;
-    }
+    /* Empty */
+    .empty-box { padding: 30px 20px; text-align: center; }
     .empty-icon {
         color: var(--text-muted);
-        opacity: 0.4;
-        margin-bottom: 8px;
+        opacity: 0.35;
         display: flex;
         justify-content: center;
+        margin-bottom: 10px;
     }
     .empty-text {
         font-size: 12px;
         color: var(--text-muted);
     }
 
-    @media (max-width: 1100px) {
-        .mini-grid { grid-template-columns: repeat(2, 1fr); }
-        .bottom-grid { grid-template-columns: 1fr; }
+    /* ================================================================
+       RESPONSIVE
+       ================================================================ */
+    @media (max-width: 1200px) {
+        .kpi-row { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 700px) {
-        .greeting { flex-direction: column; align-items: flex-start; }
-        .hero-kpi { flex-direction: column; align-items: flex-start; padding: 20px; }
-        .hero-value { font-size: 26px; }
-        .hero-kpi-right {
+    @media (max-width: 1100px) {
+        .bottom-grid { grid-template-columns: 1fr; }
+        .hero-dash { flex-direction: column; align-items: flex-start; padding: 26px; }
+        .hero-dash-value { font-size: 36px; }
+        .hero-dash-right {
             padding-left: 0;
-            padding-top: 16px;
+            padding-top: 20px;
             border-left: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             width: 100%;
         }
-        .mini-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+        .kpi-row { grid-template-columns: 1fr; }
+        .greeting-title { font-size: 20px; }
+        .hero-dash-value { font-size: 30px; }
+        .chart-wrap { height: 220px; }
     }
 </style>
 @endpush
@@ -650,32 +954,37 @@
 <script>
 (function() {
     const labels = {!! json_encode(
-        collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('M'))->values()
+        collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('M Y'))->values()
     ) !!};
 
     const salesArr = {!! json_encode(
         collect(range(5, 0))->map(function($i) {
             $m = now()->subMonths($i);
-            return (float) \App\Models\SalesReport::whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->sum('total_sales');
+            return (float) \App\Models\SalesReport::where('amount_paid', '>', 0)
+                ->whereYear('created_at', $m->year)
+                ->whereMonth('created_at', $m->month)
+                ->sum('total_sales');
         })->values()
     ) !!};
 
     const payArr = {!! json_encode(
         collect(range(5, 0))->map(function($i) {
             $m = now()->subMonths($i);
-            return (float) \App\Models\ConsignmentPayment::whereYear('payment_date', $m->year)->whereMonth('payment_date', $m->month)->sum('amount');
+            return (float) \App\Models\ConsignmentPayment::whereYear('payment_date', $m->year)
+                ->whereMonth('payment_date', $m->month)
+                ->sum('amount');
         })->values()
     ) !!};
 
     const ctx = document.getElementById('trendChart');
     if (!ctx) return;
 
-    const g1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240);
-    g1.addColorStop(0, 'rgba(201, 169, 97, 0.25)');
+    const g1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
+    g1.addColorStop(0, 'rgba(201, 169, 97, 0.35)');
     g1.addColorStop(1, 'rgba(201, 169, 97, 0)');
 
-    const g2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240);
-    g2.addColorStop(0, 'rgba(34, 197, 94, 0.2)');
+    const g2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
+    g2.addColorStop(0, 'rgba(34, 197, 94, 0.28)');
     g2.addColorStop(1, 'rgba(34, 197, 94, 0)');
 
     new Chart(ctx, {
@@ -688,22 +997,28 @@
                     data: salesArr,
                     borderColor: '#c9a961',
                     backgroundColor: g1,
-                    borderWidth: 2.5,
+                    borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 0,
-                    pointHoverRadius: 6,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#c9a961',
+                    pointBorderColor: '#1a1a22',
+                    pointBorderWidth: 3,
                 },
                 {
                     label: 'Payments',
                     data: payArr,
                     borderColor: '#22c55e',
                     backgroundColor: g2,
-                    borderWidth: 2.5,
+                    borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 0,
-                    pointHoverRadius: 6,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#22c55e',
+                    pointBorderColor: '#1a1a22',
+                    pointBorderWidth: 3,
                 }
             ]
         },
@@ -714,10 +1029,17 @@
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(20, 20, 26, 0.95)',
-                    borderColor: 'rgba(169, 120, 74, 0.3)',
+                    backgroundColor: 'rgba(20, 20, 26, 0.98)',
+                    borderColor: 'rgba(169, 120, 74, 0.35)',
                     borderWidth: 1,
-                    padding: 12,
+                    padding: 14,
+                    cornerRadius: 10,
+                    titleColor: '#f5f3f0',
+                    titleFont: { size: 13, weight: '700' },
+                    bodyColor: '#a8a5a0',
+                    bodyFont: { size: 12, weight: '600' },
+                    displayColors: true,
+                    boxPadding: 6,
                     callbacks: {
                         label: function(c) {
                             return '  ' + c.dataset.label + ':  \u20B1' + Number(c.parsed.y).toLocaleString();
@@ -727,15 +1049,24 @@
             },
             scales: {
                 x: {
-                    grid: { display: false },
-                    ticks: { color: '#6b6862', font: { size: 11, weight: '600' } }
-                },
-                y: {
-                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    grid: { display: false, drawBorder: false },
                     ticks: {
                         color: '#6b6862',
                         font: { size: 11, weight: '600' },
-                        callback: v => v >= 1000 ? '\u20B1' + (v/1000) + 'k' : '\u20B1' + v,
+                        padding: 10,
+                    }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                    ticks: {
+                        color: '#6b6862',
+                        font: { size: 11, weight: '600' },
+                        padding: 10,
+                        callback: function(v) {
+                            if (v >= 1000000) return '\u20B1' + (v/1000000) + 'M';
+                            if (v >= 1000) return '\u20B1' + (v/1000) + 'k';
+                            return '\u20B1' + v;
+                        }
                     }
                 }
             }

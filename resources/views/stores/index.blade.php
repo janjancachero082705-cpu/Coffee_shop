@@ -16,31 +16,50 @@
     $suspended = \App\Models\Store::where('status','suspended')->count();
 @endphp
 
-{{-- â•â•â• SUMMARY â•â•â• --}}
+{{-- ===== SUMMARY ===== --}}
 <div class="summary-grid">
     <div class="summary">
-        <div class="summary-icon">ðŸª</div>
+        <div class="summary-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <path d="M9 22V12h6v10"/>
+            </svg>
+        </div>
         <div class="summary-content">
             <div class="summary-value">{{ $totalStores }}</div>
             <div class="summary-label">Total Stores</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon green">âœ“</div>
+        <div class="summary-icon green">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M5 12l5 5L20 7"/>
+            </svg>
+        </div>
         <div class="summary-content">
             <div class="summary-value">{{ $active }}</div>
             <div class="summary-label">Active</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon blue">ðŸ’¤</div>
+        <div class="summary-icon blue">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12h8"/>
+            </svg>
+        </div>
         <div class="summary-content">
             <div class="summary-value">{{ $inactive }}</div>
             <div class="summary-label">Inactive</div>
         </div>
     </div>
     <div class="summary">
-        <div class="summary-icon red">âš </div>
+        <div class="summary-icon red">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <path d="M12 9v4M12 17h.01"/>
+            </svg>
+        </div>
         <div class="summary-content">
             <div class="summary-value">{{ $suspended }}</div>
             <div class="summary-label">Suspended</div>
@@ -48,7 +67,7 @@
     </div>
 </div>
 
-{{-- â•â•â• TOOLBAR â•â•â• --}}
+{{-- ===== TOOLBAR ===== --}}
 <div class="toolbar">
     <form method="GET" class="toolbar-form">
         <div class="search-box">
@@ -76,11 +95,16 @@
     </form>
 </div>
 
-{{-- â•â•â• STORES GRID â•â•â• --}}
+{{-- ===== STORES GRID ===== --}}
 @if($stores->isEmpty())
     <div class="card">
         <div class="empty">
-            <div class="empty-icon">ðŸª</div>
+            <div class="empty-icon">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                </svg>
+            </div>
             <div class="empty-title">No stores found</div>
             <div class="empty-text">
                 @if(request()->hasAny(['search','status']))
@@ -100,7 +124,11 @@
             <div class="store-card" onclick="window.location='{{ route('stores.show', $store) }}'">
                 <div class="store-card-head">
                     <div class="store-avatar">
-                        {{ strtoupper(substr($store->store_name, 0, 2)) }}
+                        @if($store->logo_url)
+                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                        @else
+                            {{ strtoupper(substr($store->store_name, 0, 2)) }}
+                        @endif
                     </div>
 
                     <div class="card-head-right">
@@ -153,7 +181,7 @@
                 <div class="store-card-foot">
                     <div>
                         <div class="foot-label">Credit Limit</div>
-                        <div class="foot-value">â‚±{{ number_format($store->credit_limit, 0) }}</div>
+                        <div class="foot-value">&#8369;{{ number_format($store->credit_limit, 0) }}</div>
                     </div>
                     <div style="text-align:right;">
                         <div class="foot-label">Terms</div>
@@ -169,7 +197,7 @@
     @endif
 @endif
 
-{{-- â•â•â• HIDDEN DELETE FORM â•â•â• --}}
+{{-- ===== HIDDEN DELETE FORM ===== --}}
 <form id="deleteForm" method="POST" style="display:none;">
     @csrf
     @method('DELETE')
@@ -179,7 +207,7 @@
 
 @push('styles')
 <style>
-    /* â•â•â• SUMMARY â•â•â• */
+    /* ===== SUMMARY ===== */
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -208,8 +236,6 @@
         background: rgba(169, 120, 74, 0.1);
         border: 1px solid rgba(169, 120, 74, 0.2);
         display: grid; place-items: center;
-        font-size: 16px;
-        font-weight: 800;
         color: #c9a961;
         flex-shrink: 0;
     }
@@ -227,7 +253,7 @@
         font-weight: 700; margin-top: 3px;
     }
 
-    /* â•â•â• TOOLBAR â•â•â• */
+    /* ===== TOOLBAR ===== */
     .toolbar { margin-bottom: 16px; }
     .toolbar-form {
         display: flex;
@@ -298,7 +324,7 @@
     }
     .btn-clear:hover { background: rgba(239, 68, 68, 0.2); }
 
-    /* â•â•â• STORES GRID â•â•â• */
+    /* ===== STORES GRID ===== */
     .stores-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -348,6 +374,12 @@
         gap: 6px;
         flex-shrink: 0;
     }
+    .store-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
     .store-avatar {
         width: 48px; height: 48px;
         border-radius: 12px;
@@ -359,7 +391,7 @@
         flex-shrink: 0;
     }
 
-    /* â•â•â• 3-DOTS MENU â•â•â• */
+    /* ===== 3-DOTS MENU ===== */
     .dots-wrap {
         position: relative;
     }
@@ -432,7 +464,7 @@
     }
     .dots-item svg { flex-shrink: 0; }
 
-    /* â•â•â• CARD BODY â•â•â• */
+    /* ===== CARD BODY ===== */
     .store-card-body { flex: 1; }
     .store-card-name {
         font-size: 15px; font-weight: 700;
@@ -483,14 +515,39 @@
         color: var(--text-primary);
     }
 
-    /* â•â•â• PAGINATION â•â•â• */
+    /* ===== EMPTY ===== */
+    .empty {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .empty-icon {
+        width: 60px; height: 60px;
+        margin: 0 auto 16px;
+        border-radius: 14px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.25);
+        display: grid; place-items: center;
+        color: #c9a961;
+    }
+    .empty-title {
+        font-size: 16px; font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    .empty-text {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+    }
+
+    /* ===== PAGINATION ===== */
     .pagination-wrap {
         margin-top: 20px;
         display: flex;
         justify-content: center;
     }
 
-    /* â•â•â• RESPONSIVE â•â•â• */
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 1100px) {
         .summary-grid { grid-template-columns: repeat(2, 1fr); }
         .stores-grid { grid-template-columns: repeat(2, 1fr); }
@@ -507,7 +564,7 @@
 
 @push('scripts')
 <script>
-    // â•â•â• Toggle dropdown menu â•â•â•
+    // Toggle dropdown menu
     function toggleMenu(event, id) {
         event.stopPropagation();
         event.preventDefault();
@@ -521,19 +578,19 @@
         if (menu) menu.classList.toggle('open');
     }
 
-    // â•â•â• Close on outside click â•â•â•
+    // Close on outside click
     document.addEventListener('click', () => {
         document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
     });
 
-    // â•â•â• Close on Escape â•â•â•
+    // Close on Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
         }
     });
 
-    // â•â•â• Delete confirmation â•â•â•
+    // Delete confirmation
     function confirmDelete(event, id, name) {
         event.stopPropagation();
         event.preventDefault();
@@ -541,7 +598,7 @@
         // Close menu
         document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
 
-        if (!confirm(`Delete "${name}"?\n\nThis action cannot be undone.`)) return;
+        if (!confirm('Delete "' + name + '"?\n\nThis action cannot be undone.')) return;
 
         const form = document.getElementById('deleteForm');
         form.action = '/stores/' + id;

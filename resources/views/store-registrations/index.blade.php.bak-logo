@@ -1,0 +1,560 @@
+@extends('layouts.admin')
+
+@section('title', 'Store Registrations')
+@section('subtitle', 'All store registrations')
+
+@section('content')
+
+<style>
+    .sr-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .sr-stat {
+        position: relative;
+        padding: 18px 20px;
+        background: rgba(34, 34, 44, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: all 0.25s;
+    }
+    .sr-stat:hover {
+        transform: translateY(-3px);
+        border-color: var(--stat-border);
+        box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+    }
+    .sr-stat::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--stat-color), transparent);
+        opacity: 0;
+        transition: opacity 0.25s;
+    }
+    .sr-stat:hover::before { opacity: 1; }
+
+    .sr-stat.total    { --stat-color: #c9a961; --stat-border: rgba(169, 120, 74, 0.35); --stat-bg: rgba(169, 120, 74, 0.12); }
+    .sr-stat.pending  { --stat-color: #f59e0b; --stat-border: rgba(245, 158, 11, 0.35); --stat-bg: rgba(245, 158, 11, 0.12); }
+    .sr-stat.approved { --stat-color: #22c55e; --stat-border: rgba(34, 197, 94, 0.35);  --stat-bg: rgba(34, 197, 94, 0.12); }
+    .sr-stat.rejected { --stat-color: #ef4444; --stat-border: rgba(239, 68, 68, 0.35);  --stat-bg: rgba(239, 68, 68, 0.12); }
+
+    .sr-stat-head {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 12px;
+    }
+    .sr-stat-icon {
+        width: 40px; height: 40px;
+        border-radius: 11px;
+        background: var(--stat-bg);
+        border: 1px solid var(--stat-border);
+        display: grid; place-items: center;
+        color: var(--stat-color);
+    }
+    .sr-stat-label {
+        font-size: 10.5px; font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+    .sr-stat-value {
+        font-size: 28px; font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.03em;
+        line-height: 1;
+    }
+
+    /* Filter tabs */
+    .sr-toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 18px;
+        background: rgba(34, 34, 44, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .sr-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        background: rgba(20, 20, 26, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+    }
+
+    .sr-tab {
+        padding: 7px 14px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .sr-tab:hover { color: var(--text-primary); }
+    .sr-tab.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        box-shadow: 0 4px 12px -4px rgba(169, 120, 74, 0.5);
+    }
+    .sr-tab .count {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+    .sr-tab:not(.active) .count {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-muted);
+    }
+
+    .sr-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+    }
+    .sr-search svg {
+        position: absolute; left: 14px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+    .sr-search input {
+        width: 100%;
+        padding: 10px 14px 10px 40px;
+        background: rgba(20, 20, 26, 0.7);
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+    }
+    .sr-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
+    }
+
+    /* Table */
+    .sr-card {
+        background: rgba(34, 34, 44, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .sr-table { width: 100%; border-collapse: collapse; }
+    .sr-table thead th {
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(20, 20, 26, 0.4);
+        white-space: nowrap;
+    }
+    .sr-table tbody td {
+        padding: 16px 18px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        border-bottom: 1px solid rgba(38, 38, 46, 0.7);
+        vertical-align: middle;
+    }
+    .sr-table tbody tr { transition: background 0.15s; }
+    .sr-table tbody tr:hover { background: rgba(169, 120, 74, 0.04); }
+    .sr-table tbody tr:last-child td { border-bottom: none; }
+
+    /* NEW badge */
+    .sr-new-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        border-radius: 6px;
+        text-transform: uppercase;
+        margin-left: 8px;
+        box-shadow: 0 3px 8px -2px rgba(34, 197, 94, 0.5);
+    }
+    .sr-new-badge::before {
+        content: '';
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: #fff;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* Store cell */
+    .sr-store-cell {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+    .sr-store-avatar {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        display: grid; place-items: center;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: 0 4px 10px -4px rgba(169, 120, 74, 0.5);
+    }
+    .sr-store-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sr-store-info { min-width: 0; }
+    .sr-store-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    .sr-store-code {
+        font-size: 10.5px;
+        color: var(--text-muted);
+        font-family: ui-monospace, monospace;
+    }
+
+    /* Owner/email */
+    .sr-meta-main { font-weight: 600; color: var(--text-primary); font-size: 12.5px; margin-bottom: 2px; }
+    .sr-meta-sub  { font-size: 11px; color: var(--text-muted); }
+
+    /* Date */
+    .sr-date-main { font-weight: 600; color: var(--text-primary); font-size: 12.5px; margin-bottom: 2px; }
+    .sr-date-sub  { font-size: 10.5px; color: var(--text-muted); }
+
+    /* Status badge */
+    .sr-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: capitalize;
+    }
+    .sr-status::before {
+        content: '';
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .sr-status.pending  { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .sr-status.approved { background: rgba(34, 197, 94, 0.12);  color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .sr-status.rejected { background: rgba(239, 68, 68, 0.12);  color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+
+    /* Action buttons */
+    .sr-actions {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+    .sr-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 7px;
+        font-size: 11.5px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+        cursor: pointer;
+        border: 1px solid transparent;
+        font-family: inherit;
+    }
+    .sr-btn.view {
+        background: rgba(169, 120, 74, 0.1);
+        border-color: rgba(169, 120, 74, 0.25);
+        color: var(--accent-light);
+    }
+    .sr-btn.view:hover { background: rgba(169, 120, 74, 0.2); }
+    .sr-btn.approve {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.25);
+        color: #22c55e;
+    }
+    .sr-btn.approve:hover { background: rgba(34, 197, 94, 0.22); }
+    .sr-btn.reject {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+    }
+    .sr-btn.reject:hover { background: rgba(239, 68, 68, 0.22); }
+
+    /* Empty */
+    .sr-empty {
+        padding: 60px 20px;
+        text-align: center;
+    }
+    .sr-empty-icon {
+        width: 64px; height: 64px;
+        margin: 0 auto 16px;
+        border-radius: 16px;
+        background: var(--accent-bg);
+        border: 1px solid var(--accent-border);
+        display: grid; place-items: center;
+        color: var(--accent-light);
+    }
+    .sr-empty-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    .sr-empty-text {
+        font-size: 12.5px;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+        .sr-stats { grid-template-columns: repeat(2, 1fr); }
+        .sr-toolbar { flex-direction: column; align-items: stretch; }
+        .sr-tabs { overflow-x: auto; }
+    }
+    @media (max-width: 500px) {
+        .sr-stats { grid-template-columns: 1fr; }
+    }
+</style>
+
+{{-- ===== STATS ===== --}}
+<div class="sr-stats">
+    <div class="sr-stat total">
+        <div class="sr-stat-head">
+            <div class="sr-stat-label">Total Stores</div>
+            <div class="sr-stat-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                </svg>
+            </div>
+        </div>
+        <div class="sr-stat-value">{{ $stats['total'] ?? 0 }}</div>
+    </div>
+
+    <div class="sr-stat pending">
+        <div class="sr-stat-head">
+            <div class="sr-stat-label">Pending</div>
+            <div class="sr-stat-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+        </div>
+        <div class="sr-stat-value">{{ $stats['pending'] ?? 0 }}</div>
+    </div>
+
+    <div class="sr-stat approved">
+        <div class="sr-stat-head">
+            <div class="sr-stat-label">Approved</div>
+            <div class="sr-stat-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+            </div>
+        </div>
+        <div class="sr-stat-value">{{ $stats['approved'] ?? 0 }}</div>
+    </div>
+
+    <div class="sr-stat rejected">
+        <div class="sr-stat-head">
+            <div class="sr-stat-label">Rejected</div>
+            <div class="sr-stat-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+            </div>
+        </div>
+        <div class="sr-stat-value">{{ $stats['rejected'] ?? 0 }}</div>
+    </div>
+</div>
+
+{{-- ===== TOOLBAR ===== --}}
+<form method="GET" class="sr-toolbar">
+    <div class="sr-tabs">
+        <a href="{{ route('store-registrations.index', ['status' => 'all']) }}"
+           class="sr-tab {{ ($status ?? 'all') === 'all' ? 'active' : '' }}">
+            All <span class="count">{{ $stats['total'] ?? 0 }}</span>
+        </a>
+        <a href="{{ route('store-registrations.index', ['status' => 'pending']) }}"
+           class="sr-tab {{ ($status ?? '') === 'pending' ? 'active' : '' }}">
+            Pending <span class="count">{{ $stats['pending'] ?? 0 }}</span>
+        </a>
+        <a href="{{ route('store-registrations.index', ['status' => 'approved']) }}"
+           class="sr-tab {{ ($status ?? '') === 'approved' ? 'active' : '' }}">
+            Approved <span class="count">{{ $stats['approved'] ?? 0 }}</span>
+        </a>
+        <a href="{{ route('store-registrations.index', ['status' => 'rejected']) }}"
+           class="sr-tab {{ ($status ?? '') === 'rejected' ? 'active' : '' }}">
+            Rejected <span class="count">{{ $stats['rejected'] ?? 0 }}</span>
+        </a>
+    </div>
+
+    <div class="sr-search">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" name="search" placeholder="Search store, owner, email..."
+               value="{{ $search ?? '' }}">
+        @if(($status ?? 'all') !== 'all')
+            <input type="hidden" name="status" value="{{ $status }}">
+        @endif
+    </div>
+
+    <button type="submit" class="sr-btn view" style="padding:10px 18px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        Filter
+    </button>
+
+    @if($search ?? false)
+        <a href="{{ route('store-registrations.index', ['status' => $status ?? 'all']) }}"
+           style="padding:10px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:10px;font-size:12px;font-weight:600;text-decoration:none;">
+            Clear
+        </a>
+    @endif
+</form>
+
+{{-- ===== TABLE ===== --}}
+<div class="sr-card">
+    @if($stores->count() > 0)
+        <div style="overflow-x:auto;">
+            <table class="sr-table">
+                <thead>
+                    <tr>
+                        <th>Store</th>
+                        <th>Owner</th>
+                        <th>Contact</th>
+                        <th>Registered</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($stores as $store)
+                        @php
+                            $isRecent = $store->created_at && $store->created_at->gte(now()->subDays(7));
+                        @endphp
+                        <tr>
+                            <td>
+                                <div class="sr-store-cell">
+                                    <div class="sr-store-avatar">
+                                        @if($store->logo_url)
+                                            <img src="{{ $store->logo_url }}" alt="">
+                                        @else
+                                            {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
+                                        @endif
+                                    </div>
+                                    <div class="sr-store-info">
+                                        <div class="sr-store-name">
+                                            {{ $store->store_name }}
+                                            @if($isRecent)
+                                                <span class="sr-new-badge">New</span>
+                                            @endif
+                                        </div>
+                                        <div class="sr-store-code">{{ $store->code }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="sr-meta-main">{{ $store->owner_name }}</div>
+                            </td>
+                            <td>
+                                <div class="sr-meta-main">{{ $store->email }}</div>
+                                <div class="sr-meta-sub">{{ $store->contact_number }}</div>
+                            </td>
+                            <td>
+                                <div class="sr-date-main">{{ $store->created_at?->format('M d, Y') }}</div>
+                                <div class="sr-date-sub">{{ $store->created_at?->diffForHumans() }}</div>
+                            </td>
+                            <td>
+                                <span class="sr-status {{ $store->registration_status ?? 'pending' }}">
+                                    {{ ucfirst($store->registration_status ?? 'pending') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="sr-actions">
+                                    @if(Route::has('store-registrations.show'))
+                                        <a href="{{ route('store-registrations.show', $store->id) }}" class="sr-btn view">
+                                            View
+                                        </a>
+                                    @endif
+
+                                    @if(($store->registration_status ?? '') === 'pending')
+                                        @if(Route::has('store-registrations.approve'))
+                                            <form method="POST" action="{{ route('store-registrations.approve', $store->id) }}" style="display:inline;">
+                                                @csrf
+                                                <button type="submit" class="sr-btn approve">Approve</button>
+                                            </form>
+                                        @endif
+                                        @if(Route::has('store-registrations.reject'))
+                                            <form method="POST" action="{{ route('store-registrations.reject', $store->id) }}" style="display:inline;">
+                                                @csrf
+                                                <button type="submit" class="sr-btn reject">Reject</button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        @if(method_exists($stores, 'links') && $stores->hasPages())
+            <div style="padding: 16px 18px; border-top: 1px solid var(--border);">
+                {{ $stores->links() }}
+            </div>
+        @endif
+    @else
+        <div class="sr-empty">
+            <div class="sr-empty-icon">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                </svg>
+            </div>
+            <div class="sr-empty-title">No stores found</div>
+            <div class="sr-empty-text">
+                @if($search ?? false)
+                    Walay match sa "{{ $search }}"
+                @else
+                    Wala pa'y bag-ong store registration
+                @endif
+            </div>
+        </div>
+    @endif
+</div>
+
+@endsection

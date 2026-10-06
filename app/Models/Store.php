@@ -3,20 +3,51 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Store extends Model
+class Store extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
-        'code', 'store_name', 'owner_name', 'contact_number', 'email',
-        'address', 'barangay', 'city', 'credit_limit', 'payment_terms',
-        'payment_day', 'status', 'notes',
+        'code',
+        'store_name',
+        'owner_name',
+        'contact_number',
+        'email',
+        'is_read_by_admin',
+        'is_read_at',
+        'login_count',
+        'logo',
+        'password',
+        'last_login_at',
+        'portal_enabled',
+        'address',
+        'barangay',
+        'city',
+        'credit_limit',
+        'payment_terms',
+        'payment_day',
+        'status',
+        'notes',
+        'registration_status',
+        'registration_notes',
+        'rejected_reason',
     ];
 
-    protected $casts = ['credit_limit' => 'decimal:2'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
+    protected $casts = [
+        'credit_limit'      => 'decimal:2',
+        'portal_enabled'    => 'boolean',
+        'last_login_at'     => 'datetime',
+    ];
+
+    // Relationships
     public function deliveryReceipts()
     {
         return $this->hasMany(DeliveryReceipt::class);
@@ -27,7 +58,7 @@ class Store extends Model
         return $this->hasMany(SalesReport::class);
     }
 
-    public function payments()
+    public function consignmentPayments()
     {
         return $this->hasMany(ConsignmentPayment::class);
     }
@@ -37,19 +68,56 @@ class Store extends Model
         return $this->hasMany(ReturnOrder::class);
     }
 
-    public function inventories()
+    public function storeInventories()
     {
         return $this->hasMany(StoreInventory::class);
     }
 
-    public function getTotalBalanceAttribute(): float
+    public function reorderRequests()
     {
-        return (float) $this->deliveryReceipts()->sum('balance');
+        return $this->hasMany(ReorderRequest::class);
     }
 
-    public static function generateCode(): string
+    // Helpers
+    public function getTotalDeliveredAttribute(): float
     {
-        $last = static::max('id') ?? 0;
-        return 'STORE-' . str_pad($last + 1, 4, '0', STR_PAD_LEFT);
+        return (float) $this->deliveryReceipts()->sum('total_amount');
+    }
+
+    public function getTotalPaidAttribute(): float
+    {
+        return (float) $this->consignmentPayments()->sum('amount');
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo) return null;
+        if (str_starts_with($this->logo, "http")) return $this->logo;
+        return asset("storage/" . $this->logo);
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        return strtoupper(substr($this->store_name ?? "ST", 0, 2));
+    }
+
+    public function getBalanceAttribute(): float
+    {
+        return (float) $this->salesReports()->sum('balance');
+    }
+
+    public function isPendingRegistration(): bool
+    {
+        return $this->registration_status === "pending";
+    }
+
+    public function isApprovedRegistration(): bool
+    {
+        return $this->registration_status === "approved";
+    }
+
+    public function isRejectedRegistration(): bool
+    {
+        return $this->registration_status === "rejected";
     }
 }

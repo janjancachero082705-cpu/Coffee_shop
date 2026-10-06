@@ -7,55 +7,18 @@ use App\Models\Store;
 use App\Models\DeliveryReceipt;
 use App\Models\SalesReport;
 use Illuminate\Http\Request;
+use App\Events\PaymentRecorded;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Events\PaymentCreated;
 
 class ConsignmentPaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $tab = $request->get('payment_status', 'all');
-        $stores = Store::orderBy('store_name')->get();
-
-        if ($tab === 'pending') {
-            $query = DeliveryReceipt::with('store')
-                ->where('status', 'pending')
-                ->where('balance', '>', 0);
-
-            if ($request->filled('search')) {
-                $s = $request->search;
-                $query->where(function ($q) use ($s) {
-                    $q->where('dr_number', 'like', "%{$s}%")
-                      ->orWhereHas('store', fn($sq) => $sq->where('store_name', 'like', "%{$s}%"));
-                });
-            }
-            if ($request->filled('store')) {
-                $query->where('store_id', $request->store);
-            }
-
-            $pendings = $query->latest()->paginate(15)->withQueryString();
-
-            $stats = [
-                'total'      => ConsignmentPayment::count(),
-                'all_amount' => (float) ConsignmentPayment::sum('amount'),
-                'this_month' => (float) ConsignmentPayment::where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
-                'today'      => (float) ConsignmentPayment::whereDate('payment_date', today())->sum('amount'),
-            ];
-
-            $tabCounts = [
-                'all'      => ConsignmentPayment::count(),
-                'pending'  => DeliveryReceipt::where('status', 'pending')->where('balance', '>', 0)->count(),
-                'partial'  => DeliveryReceipt::where('status', 'partial')->count(),
-                'full'     => DeliveryReceipt::where('status', 'paid')->count(),
-                'unlinked' => ConsignmentPayment::whereNull('delivery_receipt_id')->whereNull('sales_report_id')->count(),
-            ];
-
-            $payments = collect();
-            return view('payments.consignment.index', compact('payments', 'pendings', 'stores', 'stats', 'tabCounts'))
-                ->with('paymentStatus', $tab);
-        }
-
         $query = ConsignmentPayment::with('store');
 
+        // Search filter
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -65,13 +28,38 @@ class ConsignmentPaymentController extends Controller
             });
         }
 
+        // Store filter
         if ($request->filled('store')) {
             $query->where('store_id', $request->store);
         }
 
-        $payments = $query->latest()->paginate(15)->withQueryString();
-        $pendings = collect();
+        // Method filter
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
 
+        // Status filter (paid / partial / unlinked)
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'paid') {
+                $query->whereNotNull('sales_report_id');
+            } elseif ($status === 'partial') {
+                // Partial = linked pero naay remaining balance sa related sales report
+                $query->whereNotNull('sales_report_id')
+                      ->whereHas('salesReport', function ($q) {
+                          $q->where('balance', '>', 0);
+                      });
+            } elseif ($status === 'unlinked') {
+                $query->whereNull('sales_report_id')
+                      ->whereNull('delivery_receipt_id');
+            }
+        }
+
+        $payments = $query->latest()->paginate(15)->withQueryString();
+
+        $stores = Store::orderBy('store_name')->get();
+
+        // Stats
         $stats = [
             'total'      => ConsignmentPayment::count(),
             'all_amount' => (float) ConsignmentPayment::sum('amount'),
@@ -79,17 +67,20 @@ class ConsignmentPaymentController extends Controller
             'today'      => (float) ConsignmentPayment::whereDate('payment_date', today())->sum('amount'),
         ];
 
+        // Tab counts
         $tabCounts = [
             'all'      => ConsignmentPayment::count(),
-            'pending'  => DeliveryReceipt::where('status', 'pending')->where('balance', '>', 0)->count(),
-            'partial'  => DeliveryReceipt::where('status', 'partial')->count(),
-            'full'     => DeliveryReceipt::where('status', 'paid')->count(),
-            'unlinked' => ConsignmentPayment::whereNull('delivery_receipt_id')->whereNull('sales_report_id')->count(),
+            'paid'     => ConsignmentPayment::whereNotNull('sales_report_id')->count(),
+            'partial'  => ConsignmentPayment::whereNotNull('sales_report_id')
+                            ->whereHas('salesReport', function ($q) {
+                                $q->where('balance', '>', 0);
+                            })->count(),
+            'unlinked' => ConsignmentPayment::whereNull('sales_report_id')
+                            ->whereNull('delivery_receipt_id')
+                            ->count(),
         ];
 
-        $paymentStatus = $tab;
-
-        return view('payments.consignment.index', compact('payments', 'pendings', 'stores', 'stats', 'tabCounts', 'paymentStatus'));
+        return view('payments.consignment.index', compact('payments', 'stores', 'stats', 'tabCounts'));
     }
 
     public function create(Request $request)
@@ -180,6 +171,9 @@ class ConsignmentPaymentController extends Controller
 
                 $remaining -= $applied;
             }
+
+            // Broadcast the payment event (inside transaction)
+            PaymentCreated::dispatch($payment);
         });
 
         return redirect()

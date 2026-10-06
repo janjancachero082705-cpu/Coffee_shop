@@ -2,7 +2,7 @@
 
 @section('title', $product->name)
 @section('page-title', 'Product Details')
-@section('page-sub', $product->sku . ' Â· ' . ($product->category->name ?? 'Uncategorized'))
+@section('page-sub', $product->sku . ' - ' . ($product->category->name ?? 'Uncategorized'))
 
 @push('styles')
 <style>
@@ -71,7 +71,7 @@
 @section('content')
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
-    <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm">â† Back to Products</a>
+    <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm"><- Back to Products</a>
     <div style="display:flex;gap:8px;">
         <a href="{{ route('products.edit', $product) }}" class="btn btn-primary btn-sm">Edit Product</a>
         <form method="POST" action="{{ route('products.destroy', $product) }}"
@@ -89,7 +89,7 @@
             @if($product->image_url)
                 <img src="{{ $product->image_url }}" alt="{{ $product->name }}">
             @else
-                <div class="emoji">{{ $product->category->emoji ?? 'ðŸ«˜' }}</div>
+                <div class="emoji">{{ $product->category->emoji ?? '' }}</div>
             @endif
         </div>
 
@@ -100,7 +100,7 @@
                     <div style="font-size:12px;color:var(--text-muted);margin-top:4px;font-family:monospace;">{{ $product->sku }}</div>
                 </div>
                 @if($product->is_featured)
-                    <span class="badge badge-pending">â˜… Featured</span>
+                    <span class="badge badge-pending"> Featured</span>
                 @endif
             </div>
 
@@ -123,17 +123,17 @@
         <div class="price-hero">
             <div class="label-sm">Selling Price</div>
             <div class="amount">
-                â‚±{{ number_format($product->price, 2) }}
+                &#8369;{{ number_format($product->price, 2) }}
                 <small>/ {{ $product->base_unit }}</small>
             </div>
             @if($product->cost_price > 0)
                 <div style="margin-top:12px;display:flex;justify-content:space-between;font-size:12px;">
-                    <span style="color:var(--text-muted);">Cost: â‚±{{ number_format($product->cost_price, 2) }}</span>
+                    <span style="color:var(--text-muted);">Cost: &#8369;{{ number_format($product->cost_price, 2) }}</span>
                     <span style="color:var(--green);font-weight:700;">+{{ $product->profit_margin }}% margin</span>
                 </div>
             @endif
             @if($product->wholesale_price)
-                <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">Wholesale: â‚±{{ number_format($product->wholesale_price, 2) }}</div>
+                <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">Wholesale: &#8369;{{ number_format($product->wholesale_price, 2) }}</div>
             @endif
         </div>
 
@@ -155,7 +155,7 @@
             </div>
             <div class="spec-row">
                 <span>Stock Value</span>
-                <span>â‚±{{ number_format($product->stock * $product->price, 2) }}</span>
+                <span>&#8369;{{ number_format($product->stock * $product->price, 2) }}</span>
             </div>
         </div>
 

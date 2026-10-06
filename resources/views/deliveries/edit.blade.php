@@ -4,7 +4,7 @@
 @section('subtitle', $delivery->dr_number)
 
 @section('actions')
-    <a href="{{ route('deliveries.show', $delivery) }}" class="btn btn-ghost btn-sm">â† Back</a>
+    <a href="{{ route('deliveries.show', $delivery) }}" class="btn btn-ghost btn-sm"><- Back</a>
 @endsection
 
 @section('content')
@@ -23,7 +23,7 @@
         <div class="form-grid">
             <div class="field">
                 <label class="label">Store</label>
-                <input type="text" value="{{ $delivery->store->store_name ?? 'â€”' }}" class="input" disabled style="opacity:0.6;">
+                <input type="text" value="{{ $delivery->store->store_name ?? '' }}" class="input" disabled style="opacity:0.6;">
                 <div class="hint">Store cannot be changed after creation</div>
             </div>
 
@@ -82,10 +82,10 @@
             <tbody>
                 @foreach($delivery->items as $item)
                     <tr>
-                        <td>{{ $item->product->name ?? 'â€”' }}</td>
+                        <td>{{ $item->product->name ?? '' }}</td>
                         <td style="text-align:right;">{{ $item->quantity_delivered }}</td>
-                        <td style="text-align:right;">â‚±{{ number_format($item->unit_price, 2) }}</td>
-                        <td style="text-align:right; font-weight:700; color:#c9a961;">â‚±{{ number_format($item->subtotal, 2) }}</td>
+                        <td style="text-align:right;">&#8369;{{ number_format($item->unit_price, 2) }}</td>
+                        <td style="text-align:right; font-weight:700; color:#c9a961;">&#8369;{{ number_format($item->subtotal, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>

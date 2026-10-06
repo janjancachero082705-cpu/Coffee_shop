@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Admin') Ãƒâ€šÃ‚Â· Coffee Consignment</title>
+    <title>@yield('title', 'Admin') - Coffee Consignment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,24 +12,19 @@
             --sidebar-hover: #1a1a22;
             --sidebar-active: #1f1a17;
             --sidebar-border: #1e1e26;
-
             --bg-dark: #1a1a22;
             --bg-darker: #14141a;
             --bg-card: #22222c;
-
             --accent: #a9784a;
             --accent-light: #c9a961;
             --accent-dark: #8a5f36;
             --accent-bg: rgba(169, 120, 74, 0.12);
             --accent-border: rgba(169, 120, 74, 0.25);
-
             --text-primary: #f5f3f0;
             --text-secondary: #a8a5a0;
             --text-muted: #6b6862;
-
             --border: #26262e;
             --border-strong: #32323c;
-
             --success: #22c55e;
             --success-bg: rgba(34, 197, 94, 0.12);
             --danger: #ef4444;
@@ -38,7 +33,6 @@
             --warning-bg: rgba(245, 158, 11, 0.12);
             --info: #3b82f6;
             --info-bg: rgba(59, 130, 246, 0.12);
-
             --radius: 10px;
             --radius-sm: 8px;
             --radius-lg: 14px;
@@ -46,7 +40,13 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html, body { margin: 0; padding: 0; width: 100%; overflow-x: hidden; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -66,49 +66,44 @@
         ::-webkit-scrollbar-thumb { background: rgba(169, 120, 74, 0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(169, 120, 74, 0.4); }
 
-        .app { min-height: 100vh; display: flex; width: 100%; position: relative; }
+        .app { height: 100vh; display: flex; width: 100%; position: relative; overflow: hidden; }
 
+        /* ===== SIDEBAR ===== */
         .sidebar {
             width: 240px; min-width: 240px; max-width: 240px;
             height: 100vh; position: fixed; top: 0; left: 0; z-index: 100;
-            display: flex; flex-direction: column;
-            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px 24px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--sidebar-border);
+            overflow: hidden;
+        }
+
+        .sidebar-nav {
+            flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
+            margin-bottom: 12px;
         }
-
-        .sidebar::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 200px;
-            background: radial-gradient(ellipse at top, rgba(169, 120, 74, 0.08), transparent 70%);
-            pointer-events: none;
-        }
-
-        .sidebar > * { position: relative; z-index: 1; }
 
         .brand {
-            display: flex; align-items: center; gap: 10px;
-            padding: 0 8px 20px; margin-bottom: 16px;
-            border-bottom: 1px solid var(--sidebar-border);
+            display: flex; align-items: center; gap: 12px;
+            padding: 0 8px 20px; margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
         }
 
         .brand-icon {
-            width: 38px; height: 38px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            display: grid; place-items: center; font-size: 19px; color: #fff;
+            width: 42px; height: 42px; border-radius: 12px;
+            background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
+            display: grid; place-items: center; color: #fff;
             flex-shrink: 0;
-            box-shadow: 0 6px 16px -4px rgba(169, 120, 74, 0.6);
+            box-shadow: 0 8px 16px -4px rgba(169, 120, 74, 0.55);
         }
 
-        .brand-name {
-            font-size: 14px; font-weight: 800; color: var(--text-primary);
-            letter-spacing: -.01em; line-height: 1.2;
-        }
-
-        .brand-role {
-            font-size: 9px; font-weight: 700; color: var(--accent);
-            text-transform: uppercase; letter-spacing: .12em; margin-top: 2px;
-        }
+        .brand-name { font-size: 14px; font-weight: 800; color: #f5f3f0; line-height: 1.2; }
+        .brand-role { font-size: 9px; font-weight: 700; color: #c9a961; text-transform: uppercase; letter-spacing: 0.14em; margin-top: 3px; }
 
         .nav-section { margin-bottom: 20px; }
 
@@ -119,77 +114,97 @@
         }
 
         .nav-item {
-            display: flex; align-items: center; gap: 11px;
-            padding: 10px 12px; border-radius: var(--radius-sm);
-            color: var(--text-secondary); font-size: 13px; font-weight: 500;
-            transition: all .15s ease; position: relative; margin-bottom: 2px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; border-radius: 9px;
+            color: #a8a5a0; font-size: 13px; font-weight: 500;
+            transition: all 0.18s ease; position: relative;
+            margin-bottom: 2px; text-decoration: none;
         }
 
-        .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
-
-        .nav-item:hover { background: var(--sidebar-hover); color: var(--text-primary); }
-
-        .nav-item.active {
-            background: var(--sidebar-active);
-            color: var(--accent-light); font-weight: 600;
-        }
-
+        .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.04); color: #f5f3f0; }
+        .nav-item.active { background: linear-gradient(90deg, rgba(169, 120, 74, 0.18), rgba(169, 120, 74, 0.06)); color: #f5f3f0; font-weight: 600; }
         .nav-item.active::before {
-            content: ''; position: absolute; left: -12px; top: 50%;
-            transform: translateY(-50%); width: 3px; height: 20px;
-            background: var(--accent); border-radius: 0 3px 3px 0;
-            box-shadow: 0 0 8px rgba(169, 120, 74, 0.6);
+            content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 22px;
+            background: linear-gradient(180deg, #c9a961, #a9784a);
+            border-radius: 0 3px 3px 0;
         }
 
-        .nav-item.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
-
-        .nav-badge {
-            margin-left: auto; background: var(--danger-bg); color: var(--danger);
-            font-size: 10px; font-weight: 700; padding: 2px 7px;
-            border-radius: 5px; min-width: 20px; text-align: center;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+        .nav-count {
+            margin-left: auto; padding: 2px 8px;
+            background: rgba(169, 120, 74, 0.18); color: #c9a961;
+            font-size: 10px; font-weight: 800; border-radius: 10px;
+            min-width: 22px; text-align: center;
+            border: 1px solid rgba(169, 120, 74, 0.25);
         }
 
-        .sidebar-bottom { margin-top: auto; padding-top: 16px; }
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 16px;
+            padding-bottom: 8px;
+            flex-shrink: 0;
+        }
 
         .today-card {
-            padding: 16px; margin: 0 4px 12px; border-radius: var(--radius);
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            color: #fff; position: relative; overflow: hidden;
-            box-shadow: 0 12px 24px -8px rgba(169, 120, 74, 0.5);
+            position: relative; padding: 16px; margin: 0 4px 12px; border-radius: 14px;
+            background: linear-gradient(135deg, #b8845a 0%, #8a5f36 100%);
+            color: #fff; overflow: hidden;
+            box-shadow: 0 12px 24px -10px rgba(169, 120, 74, 0.6);
         }
 
-        .today-card::after {
-            content: ''; position: absolute; right: -25px; bottom: -25px;
-            width: 90px; height: 90px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
+        .today-label { font-size: 10px; font-weight: 800; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+        .today-value { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 12px; }
+        .today-meta { display: flex; align-items: center; gap: 8px; font-size: 10.5px; opacity: 0.95; font-weight: 600; }
+
+        .logout-form { margin: 0; }
+        .logout-btn {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.08);
+            color: #a8a5a0;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 11px 14px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-btn svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
         }
 
-        .today-label {
-            font-size: 10px; font-weight: 700; opacity: 0.85;
-            text-transform: uppercase; letter-spacing: .1em;
-            margin-bottom: 6px; position: relative; z-index: 1;
-        }
-
-        .today-value {
-            font-size: 22px; font-weight: 800; letter-spacing: -.02em;
-            line-height: 1; margin-bottom: 8px; position: relative; z-index: 1;
-        }
-
-        .today-meta {
-            display: flex; gap: 10px; font-size: 11px; opacity: 0.9;
-            font-weight: 500; position: relative; z-index: 1;
-        }
-
+        /* ===== MAIN ===== */
         .main {
-            flex: 1; min-width: 0; min-height: 100vh; margin-left: 240px;
-            display: flex; flex-direction: column; position: relative;
+            flex: 1;
+            min-width: 0;
+            height: 100vh;
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
             background-color: #1a1a22;
-            background-image:
-                linear-gradient(180deg, rgba(20, 20, 26, 0.65), rgba(15, 15, 20, 0.78)),
+            background-image: linear-gradient(180deg, rgba(20, 20, 26, 0.65), rgba(15, 15, 20, 0.78)),
                 url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80');
-            background-size: cover; background-position: center;
-            background-attachment: fixed; background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
         }
 
         .topbar {
@@ -200,36 +215,28 @@
             backdrop-filter: blur(20px) saturate(1.3);
             -webkit-backdrop-filter: blur(20px) saturate(1.3);
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .topbar-right { display: flex; align-items: center; gap: 8px; }
 
         .menu-toggle {
-            display: none; width: 36px; height: 36px; place-items: center;
-            border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-            color: var(--text-secondary); background: rgba(255, 255, 255, 0.02);
+            display: none; width: 36px; height: 36px;
+            place-items: center; border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm); color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
         }
 
-        .menu-toggle svg { width: 18px; height: 18px; }
-
-        .page-title {
-            font-size: 18px; font-weight: 700; color: var(--text-primary);
-            letter-spacing: -.02em; line-height: 1.2;
-        }
-
+        .page-title { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -.02em; line-height: 1.2; }
         .page-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-        .topbar-right { display: flex; align-items: center; gap: 8px; }
 
         .chip {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 7px 13px; border: 1px solid var(--border);
             border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.03);
             font-size: 12px; font-weight: 500; color: var(--text-secondary);
-            white-space: nowrap;
         }
-
-        .chip-icon { color: var(--text-muted); display: flex; }
 
         .user-menu {
             display: flex; align-items: center; gap: 9px;
@@ -242,15 +249,10 @@
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             display: grid; place-items: center; color: #fff;
             font-size: 13px; font-weight: 800;
-            box-shadow: 0 4px 10px -2px rgba(169, 120, 74, 0.5);
         }
 
         .user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); line-height: 1.1; }
-
-        .user-role {
-            font-size: 10px; color: var(--accent);
-            text-transform: uppercase; letter-spacing: .06em; font-weight: 700;
-        }
+        .user-role { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
 
         .content { flex: 1; padding: 24px 28px 32px; }
 
@@ -261,77 +263,6 @@
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px;
         }
-
-        .card-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 16px; gap: 12px;
-        }
-
-        .card-title {
-            font-size: 14px; font-weight: 700; color: var(--text-primary);
-            letter-spacing: -.01em;
-        }
-
-        .card-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 14px; margin-bottom: 20px;
-        }
-
-        .stat {
-            padding: 20px; background: rgba(34, 34, 44, 0.6);
-            backdrop-filter: blur(20px) saturate(1.4);
-            -webkit-backdrop-filter: blur(20px) saturate(1.4);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: var(--radius-lg);
-            transition: all .2s ease; position: relative; overflow: hidden;
-        }
-
-        .stat::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-            opacity: 0; transition: opacity .25s ease;
-        }
-
-        .stat:hover {
-            transform: translateY(-3px); border-color: var(--accent-border);
-            box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        .stat:hover::before { opacity: 1; }
-
-        .stat-head {
-            display: flex; justify-content: space-between;
-            align-items: flex-start; margin-bottom: 14px;
-        }
-
-        .stat-icon {
-            width: 42px; height: 42px; border-radius: 10px;
-            background: var(--accent-bg); border: 1px solid var(--accent-border);
-            display: grid; place-items: center;
-            font-size: 20px; color: var(--accent-light);
-        }
-
-        .stat-trend {
-            display: inline-flex; align-items: center; gap: 3px;
-            font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px;
-        }
-        .stat-trend.up { background: var(--success-bg); color: var(--success); }
-        .stat-trend.down { background: var(--danger-bg); color: var(--danger); }
-        .stat-trend.flat { background: var(--warning-bg); color: var(--warning); }
-
-        .stat-label {
-            font-size: 10px; font-weight: 700; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 24px; font-weight: 800; color: var(--text-primary);
-            letter-spacing: -.03em; line-height: 1; margin-bottom: 6px;
-        }
-
-        .stat-meta { font-size: 11px; color: var(--text-muted); font-weight: 500; }
 
         .btn {
             display: inline-flex; align-items: center; justify-content: center;
@@ -345,54 +276,34 @@
             color: #fff;
             box-shadow: 0 8px 16px -6px rgba(169, 120, 74, 0.5);
         }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 22px -8px rgba(169, 120, 74, 0.7);
-        }
+        .btn-primary:hover { transform: translateY(-1px); }
 
         .btn-ghost {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-secondary); border-color: var(--border-strong);
         }
-        .btn-ghost:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--accent-light); border-color: var(--accent-border);
-        }
-
-        .btn-danger {
-            background: var(--danger-bg); color: var(--danger);
-            border-color: rgba(239, 68, 68, 0.2);
-        }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-
-        .btn-sm { padding: 6px 12px; font-size: 11px; }
+        .btn-sm { padding: 7px 14px; font-size: 11.5px; }
 
         table { width: 100%; border-collapse: collapse; }
-
         thead th {
             text-align: left; font-size: 10px; font-weight: 700;
             color: var(--text-muted); text-transform: uppercase;
             letter-spacing: .1em; padding: 12px;
             border-bottom: 1px solid var(--border);
         }
-
         tbody td {
             padding: 14px 12px; font-size: 13px;
             border-bottom: 1px solid var(--border); color: var(--text-secondary);
         }
-
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr:hover td { background: rgba(169, 120, 74, 0.03); }
 
         .badge {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 4px 10px; border-radius: 5px;
             font-size: 11px; font-weight: 700;
         }
-
         .badge-pending { background: var(--warning-bg); color: var(--warning); }
-        .badge-completed, .badge-active, .badge-paid { background: var(--success-bg); color: var(--success); }
-        .badge-cancelled, .badge-suspended, .badge-overdue { background: var(--danger-bg); color: var(--danger); }
+        .badge-completed, .badge-active, .badge-paid, .badge-approved { background: var(--success-bg); color: var(--success); }
+        .badge-cancelled, .badge-suspended, .badge-overdue, .badge-rejected { background: var(--danger-bg); color: var(--danger); }
         .badge-info, .badge-inactive { background: var(--info-bg); color: var(--info); }
         .badge-partial, .badge-verified { background: var(--accent-bg); color: var(--accent-light); }
 
@@ -401,16 +312,8 @@
             padding: 13px 18px; border-radius: var(--radius);
             font-size: 13px; font-weight: 500; margin-bottom: 16px; border: 1px solid;
         }
-
-        .alert-success {
-            background: var(--success-bg); color: var(--success);
-            border-color: rgba(34, 197, 94, 0.25);
-        }
-
-        .alert-error {
-            background: var(--danger-bg); color: var(--danger);
-            border-color: rgba(239, 68, 68, 0.25);
-        }
+        .alert-success { background: var(--success-bg); color: var(--success); border-color: rgba(34, 197, 94, 0.25); }
+        .alert-error { background: var(--danger-bg); color: var(--danger); border-color: rgba(239, 68, 68, 0.25); }
 
         .input, select, textarea {
             width: 100%; padding: 10px 12px;
@@ -420,586 +323,389 @@
             color: var(--text-primary); font-size: 13px; font-family: inherit;
             outline: none; transition: all .15s;
         }
-
-        .input::placeholder, textarea::placeholder { color: var(--text-muted); }
         .input:focus, select:focus, textarea:focus {
             border-color: var(--accent);
-            background: rgba(20, 20, 26, 0.9);
             box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
         }
-
-        .label {
-            display: block; font-size: 11px; font-weight: 700;
-            color: var(--text-secondary); margin-bottom: 6px;
-            text-transform: uppercase; letter-spacing: .06em;
-        }
-
-        .grid { display: grid; gap: 16px; }
-        .grid-2 { grid-template-columns: 1fr 1fr; }
-        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
         .foot {
             display: flex; justify-content: space-between;
             padding: 16px 28px; border-top: 1px solid var(--border);
             font-size: 11px; color: var(--text-muted);
+            flex-shrink: 0;
         }
 
-        .scrim {
-            display: none !important; visibility: hidden; opacity: 0;
-            pointer-events: none;
-        }
+        .scrim { display: none !important; }
 
-        .empty {
-            text-align: center; padding: 60px 20px;
-            color: var(--text-muted);
-        }
-        .empty-icon {
-            width: 56px; height: 56px; border-radius: 14px;
-            background: var(--accent-bg); border: 1px solid var(--accent-border);
-            display: grid; place-items: center; margin: 0 auto 16px;
-            color: var(--accent-light); font-size: 24px;
-        }
-        .empty-title {
-            font-size: 15px; font-weight: 700;
-            color: var(--text-primary); margin-bottom: 6px;
-        }
-        .empty-text { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
-
-        .info-row {
-            display: flex; justify-content: space-between;
-            padding: 10px 0; border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: var(--text-muted); }
-        .info-value { color: var(--text-primary); font-weight: 600; }
-
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 1100px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            /* keep at least some grid handling on page level */
         }
 
         @media (max-width: 900px) {
-            .sidebar { transform: translateX(-100%); transition: transform .25s ease; }
-            body.nav-open .sidebar { transform: translateX(0); }
-            .main { margin-left: 0; }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+            }
+            body.nav-open .sidebar {
+                transform: translateX(0);
+            }
+            .main {
+                margin-left: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
             .menu-toggle { display: grid; }
             .content { padding: 16px; }
             .topbar { padding: 12px 16px; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
-            .chip:not(.chip-user) { display: none; }
-            body.nav-open .scrim {
-                display: block !important; visibility: visible; opacity: 1;
-                position: fixed; inset: 0; z-index: 90;
-                background: rgba(0, 0, 0, 0.7);
-                backdrop-filter: blur(2px); pointer-events: auto;
-            }
         }
-    
-    /* ============================================ */
-    /* PROFESSIONAL SIDEBAR ENHANCEMENTS            */
-    /* ============================================ */
 
-    .sidebar-nav {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 2px;
-        margin-right: -2px;
-    }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 0 8px 20px;
-        margin-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .brand-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
-        display: grid;
-        place-items: center;
-        color: #ffffff;
-        flex-shrink: 0;
-        box-shadow:
-            0 8px 16px -4px rgba(169, 120, 74, 0.55),
-            0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-        transition: transform 0.3s ease;
-    }
-
-    .brand-icon:hover {
-        transform: scale(1.05) rotate(-3deg);
-    }
-
-    .brand-icon svg {
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-    }
-
-    .brand-text {
-        min-width: 0;
-        overflow: hidden;
-    }
-
-    .brand-name {
-        font-size: 14px;
-        font-weight: 800;
-        color: #f5f3f0;
-        letter-spacing: -0.01em;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-
-    .brand-role {
-        font-size: 9px;
-        font-weight: 700;
-        color: #c9a961;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        margin-top: 3px;
-        white-space: nowrap;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 9px;
-        color: #a8a5a0;
-        font-size: 13px;
-        font-weight: 500;
-        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        margin-bottom: 2px;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .nav-item svg {
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-        transition: transform 0.18s ease;
-    }
-
-    .nav-item:hover {
-        background: rgba(255, 255, 255, 0.04);
-        color: #f5f3f0;
-    }
-
-    .nav-item:hover svg {
-        transform: scale(1.08);
-        color: #c9a961;
-    }
-
-    .nav-item.active {
-        background: linear-gradient(90deg, rgba(169, 120, 74, 0.18), rgba(169, 120, 74, 0.06));
-        color: #f5f3f0;
-        font-weight: 600;
-    }
-
-    .nav-item.active svg {
-        color: #c9a961;
-    }
-
-    .nav-item.active::before {
-        content: '';
-        position: absolute;
-        left: -12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 22px;
-        background: linear-gradient(180deg, #c9a961, #a9784a);
-        border-radius: 0 3px 3px 0;
-        box-shadow: 0 0 12px rgba(201, 169, 97, 0.55);
-    }
-
-    .nav-count {
-        margin-left: auto;
-        padding: 2px 8px;
-        background: rgba(169, 120, 74, 0.18);
-        color: #c9a961;
-        font-size: 10px;
-        font-weight: 800;
-        border-radius: 10px;
-        min-width: 22px;
-        text-align: center;
-        line-height: 1.4;
-        border: 1px solid rgba(169, 120, 74, 0.25);
-    }
-
-    .nav-count-info {
-        background: rgba(59, 130, 246, 0.18);
-        color: #60a5fa;
-        border-color: rgba(59, 130, 246, 0.3);
-    }
-
-    .nav-count-warn {
-        background: rgba(245, 158, 11, 0.18);
-        color: #f59e0b;
-        border-color: rgba(245, 158, 11, 0.3);
-    }
-
-    .sidebar-bottom {
-        margin-top: auto;
-        padding-top: 16px;
-    }
-
-    .today-card {
-        position: relative;
-        padding: 16px;
-        margin: 0 4px 12px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #b8845a 0%, #8a5f36 100%);
-        color: #ffffff;
-        overflow: hidden;
-        box-shadow:
-            0 12px 24px -10px rgba(169, 120, 74, 0.6),
-            0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .today-card:hover {
-        transform: translateY(-2px);
-        box-shadow:
-            0 16px 32px -12px rgba(169, 120, 74, 0.75),
-            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-    }
-
-    .today-glow {
-        position: absolute;
-        top: -40px;
-        right: -40px;
-        width: 120px;
-        height: 120px;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
-        pointer-events: none;
-    }
-
-    .today-content {
-        position: relative;
-        z-index: 1;
-    }
-
-    .today-label {
-        font-size: 10px;
-        font-weight: 800;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 8px;
-    }
-
-    .today-value {
-        font-size: 26px;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        line-height: 1;
-        margin-bottom: 12px;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .today-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 10.5px;
-        opacity: 0.95;
-        font-weight: 600;
-    }
-
-    .today-meta-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .today-meta-sep {
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.4);
-    }
-
-    .logout-form {
-        margin: 0;
-    }
-
-    .logout-btn {
-        width: 100%;
-        background: rgba(239, 68, 68, 0.06);
-        color: #a8a5a0;
-        border: 1px solid transparent;
-        font-family: inherit;
-        font-size: 13px;
-        font-weight: 500;
-        padding: 10px 12px;
-        border-radius: 9px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        transition: all 0.18s ease;
-    }
-
-    .logout-btn:hover {
-        background: rgba(239, 68, 68, 0.12);
-        color: #ef4444;
-        border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .logout-btn:hover svg {
-        color: #ef4444;
-        transform: translateX(2px);
-    }
-
-    .logout-btn svg {
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-        transition: all 0.18s ease;
-    }
-</style>
+        /* ===== NOTIFICATION BELL ===== */
+        .notif-wrap { position: relative; display: inline-block; }
+        .notif-bell {
+            position: relative; display: inline-flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 10px;
+            background: rgba(169, 120, 74, 0.1);
+            border: 1px solid rgba(169, 120, 74, 0.25);
+            color: #c9a961; cursor: pointer; transition: all 0.15s;
+            font-family: inherit; padding: 0;
+        }
+        .notif-bell:hover { background: rgba(169, 120, 74, 0.2); }
+        .notif-badge {
+            position: absolute; top: -4px; right: -4px;
+            min-width: 20px; height: 20px; padding: 0 5px;
+            background: #ef4444; color: #fff; border-radius: 10px;
+            font-size: 10px; font-weight: 800; display: grid; place-items: center;
+            border: 2px solid #14141a;
+        }
+        .notif-dropdown {
+            position: absolute; top: calc(100% + 10px); right: 0;
+            width: 340px; max-width: calc(100vw - 30px);
+            background: rgba(20, 20, 26, 0.98); backdrop-filter: blur(20px);
+            border: 1px solid rgba(169, 120, 74, 0.25); border-radius: 14px;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8);
+            opacity: 0; visibility: hidden; transform: translateY(-8px);
+            transition: all 0.2s; z-index: 9999; overflow: hidden;
+            pointer-events: none;
+        }
+        .notif-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+        .notif-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid rgba(169, 120, 74, 0.15); }
+        .notif-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #f0f0f0; }
+        .notif-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+        .notif-mark-all { background: none; border: none; color: #c9a961; font-size: 11px; font-weight: 700; cursor: pointer; padding: 4px 8px; }
+        .notif-body { max-height: 380px; overflow-y: auto; }
+        .notif-empty { padding: 32px 20px; text-align: center; color: #7a7a85; font-size: 12.5px; }
+        .notif-item {
+            display: flex; gap: 12px; padding: 12px 16px;
+            text-decoration: none; border-bottom: 1px solid rgba(169, 120, 74, 0.08);
+            transition: background 0.15s; cursor: pointer;
+        }
+        .notif-item:hover { background: rgba(169, 120, 74, 0.08); }
+        .notif-item-avatar {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, #c9a961, #8a5f36);
+            display: grid; place-items: center; color: #fff;
+            font-size: 13px; font-weight: 800; overflow: hidden; flex-shrink: 0;
+            position: relative;
+        }
+        .notif-item-body { flex: 1; min-width: 0; }
+        .notif-item-store { font-size: 12.5px; font-weight: 700; color: #f0f0f0; margin-bottom: 3px; }
+        .notif-item-meta { display: flex; justify-content: space-between; font-size: 11px; color: #7a7a85; gap: 8px; }
+        .notif-item-amount { color: #c9a961; font-weight: 800; }
+        .notif-foot {
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+            padding: 12px; background: rgba(169, 120, 74, 0.08);
+            border-top: 1px solid rgba(169, 120, 74, 0.15);
+            color: #c9a961; font-size: 12px; font-weight: 700; text-decoration: none;
+        }
+    </style>
     @stack('styles')
 </head>
 <body>
+    <div class="app">
 
-@php
-    try {
-        $navStoreCount = \App\Models\Store::count();
-        $navPendingPayments = \App\Models\ConsignmentPayment::whereDate('created_at', today())->count();
-        $navTodayDeliveries = \App\Models\DeliveryReceipt::whereDate('delivery_date', today())->count();
-        $navTodaySales = (float) \App\Models\ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
-    } catch (\Throwable $e) {
-        $navStoreCount = 0; $navPendingPayments = 0; $navTodayDeliveries = 0; $navTodaySales = 0;
-    }
-@endphp
-
-<div class="app">
-    <aside class="sidebar">
-    {{-- BRAND --}}
-    <div class="brand">
-        <div class="brand-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                <line x1="6" y1="1" x2="6" y2="4"/>
-                <line x1="10" y1="1" x2="10" y2="4"/>
-                <line x1="14" y1="1" x2="14" y2="4"/>
-            </svg>
-        </div>
-        <div class="brand-text">
-            <div class="brand-name">Coffee Beans</div>
-            <div class="brand-role">Consignment</div>
-        </div>
-    </div>
-
-    {{-- NAVIGATION --}}
-    <nav class="sidebar-nav">
-
-        <div class="nav-section">
-            <div class="nav-label">Main</div>
-            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="7" height="9" rx="1"/>
-                    <rect x="14" y="3" width="7" height="5" rx="1"/>
-                    <rect x="14" y="12" width="7" height="9" rx="1"/>
-                    <rect x="3" y="16" width="7" height="5" rx="1"/>
-                </svg>
-                <span>Dashboard</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-label">Consignment</div>
-
-            <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <path d="M9 22V12h6v10"/>
-                </svg>
-                <span>Stores</span>
-                @if(isset($navStoreCount) && $navStoreCount > 0)
-                    <span class="nav-count">{{ $navStoreCount }}</span>
-                @endif
-            </a>
-
-            <a href="{{ route('deliveries.index') }}" class="nav-item {{ request()->routeIs('deliveries.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <rect x="1" y="3" width="15" height="13" rx="1"/>
-                    <path d="M16 8h4l3 3v5h-7V8z"/>
-                    <circle cx="5.5" cy="18.5" r="2.5"/>
-                    <circle cx="18.5" cy="18.5" r="2.5"/>
-                </svg>
-                <span>Deliveries</span>
-                @if(isset($navTodayDeliveries) && $navTodayDeliveries > 0)
-                    <span class="nav-count nav-count-info">{{ $navTodayDeliveries }}</span>
-                @endif
-            </a>
-
-            <a href="{{ route('consignment.reports.index') }}" class="nav-item {{ request()->routeIs('consignment.reports.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <path d="M9 17V7"/>
-                    <path d="M4 20h16"/>
-                    <path d="M9 7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V7z"/>
-                    <path d="M14 12h6"/>
-                    <path d="M14 16h6"/>
-                    <path d="M14 8h6"/>
-                </svg>
-                <span>Sales Reports</span>
-            </a>
-
-            <a href="{{ route('consignment.payments.index') }}" class="nav-item {{ request()->routeIs('consignment.payments.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                    <path d="M2 10h20"/>
-                    <circle cx="12" cy="15" r="1"/>
-                </svg>
-                <span>Payments</span>
-                @if(isset($navPendingPayments) && $navPendingPayments > 0)
-                    <span class="nav-count nav-count-warn">{{ $navPendingPayments }}</span>
-                @endif
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-label">Products</div>
-            <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-                <span>Products</span>
-            </a>
-        </div>
-
-    </nav>
-
-    {{-- BOTTOM --}}
-    <div class="sidebar-bottom">
-
-        <div class="today-card">
-            <div class="today-glow"></div>
-            <div class="today-content">
-                <div class="today-label">Today's Collected</div>
-                <div class="today-value">&#8369;{{ number_format($navTodaySales ?? 0, 0) }}</div>
-                <div class="today-meta">
-                    <span class="today-meta-item">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <rect x="1" y="3" width="15" height="13" rx="1"/>
-                            <path d="M16 8h4l3 3v5h-7V8z"/>
-                        </svg>
-                        {{ $navTodayDeliveries ?? 0 }} deliveries
-                    </span>
-                    <span class="today-meta-sep"></span>
-                    <span class="today-meta-item">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        </svg>
-                        {{ $navStoreCount ?? 0 }} stores
-                    </span>
+        {{-- ===== SIDEBAR ===== --}}
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                        <path d="M6 1v3M10 1v3M14 1v3"/>
+                    </svg>
                 </div>
-            </div>
-        </div>
-
-        <form method="POST" action="{{ route('logout') }}" class="logout-form">
-            @csrf
-            <button type="submit" class="nav-item logout-btn">
-                <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                <span>Logout</span>
-            </button>
-        </form>
-
-    </div>
-</aside>
-
-    <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
-
-    <main class="main">
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="menu-toggle" onclick="document.body.classList.toggle('nav-open')">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
                 <div>
-                    <div class="page-title">@yield('title', 'Dashboard')</div>
-                    <div class="page-sub">@yield('subtitle', now()->format('l, F j, Y'))</div>
+                    <div class="brand-name">Coffee Beans</div>
+                    <div class="brand-role">Consignment</div>
                 </div>
             </div>
-            <div class="topbar-right">
-                <div class="chip">
-                    <span class="chip-icon"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-                    {{ now()->format('g:i A') }}
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Main</div>
+                    <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Dashboard
+                    </a>
                 </div>
-                @yield('actions')
-                <div class="user-menu">
-                    <div class="user-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
-                    <div>
-                        <div class="user-name">{{ auth()->user()->name ?? 'User' }}</div>
-                        <div class="user-role">Admin</div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Consignment</div>
+                    <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                        Stores
+                        @php $storeCount = \App\Models\Store::count(); @endphp
+                        @if($storeCount > 0)<span class="nav-count">{{ $storeCount }}</span>@endif
+                    </a>
+                    <a href="{{ route('deliveries.index') }}" class="nav-item {{ request()->routeIs('deliveries.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        Deliveries
+                    </a>
+                    <a href="{{ route('store-registrations.index') }}" class="nav-item {{ request()->routeIs('store-registrations.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M19 8v6M22 11h-6"/>
+                        </svg>
+                        Store Registrations
+                    </a>
+                    <a href="{{ route('reorder-requests.index') }}" class="nav-item {{ request()->routeIs('reorder-requests.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>
+                        Orders
+                        @php $unread = \App\Models\ReorderRequest::where('is_read_by_admin', false)->count(); @endphp
+                        @if($unread > 0)<span class="nav-count">{{ $unread }}</span>@endif
+                    </a>
+                    <a href="{{ route('consignment.reports.index') }}" class="nav-item {{ request()->routeIs('consignment.reports.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+                        Sales Reports
+                    </a>
+                    <a href="{{ route('consignment.payments.index') }}" class="nav-item {{ request()->routeIs('consignment.payments.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                        Payments
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Products</div>
+                    <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        Products
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="today-card">
+                    <div class="today-label">Today's Collected</div>
+                    <div class="today-value">&#8369;{{ number_format(\App\Models\ConsignmentPayment::whereDate('created_at', today())->sum('amount') ?? 0, 2) }}</div>
+                    <div class="today-meta">
+                        <span>{{ \App\Models\DeliveryReceipt::whereDate('created_at', today())->count() }} deliveries</span>
                     </div>
                 </div>
+
+                <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                    @csrf
+                    <button type="submit" class="logout-btn">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                        Logout
+                    </button>
+                </form>
             </div>
-        </header>
+        </aside>
 
-        <div class="content">
-            @if(session('success'))
-                <div class="alert alert-success">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-error">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                    {{ session('error') }}
-                </div>
-            @endif
-            @if($errors->any())
-                <div class="alert alert-error">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {{-- ===== MAIN ===== --}}
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="document.body.classList.toggle('nav-open')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                    </button>
                     <div>
-                        <strong>Please fix:</strong>
-                        <ul style="margin:4px 0 0 16px; font-size:12px;">
-                            @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-                        </ul>
+                        <div class="page-title">@yield('title', 'Dashboard')</div>
+                        <div class="page-sub">@yield('subtitle', '')</div>
                     </div>
                 </div>
-            @endif
+                <div class="topbar-right">
 
-            @yield('content')
+                    {{-- NOTIFICATION BELL --}}
+                    <div class="notif-wrap" id="notifWrap">
+                        <button type="button" class="notif-bell" id="notifBell" onclick="toggleNotif(event)">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+                            </svg>
+                            <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                        </button>
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-head">
+                                <div class="notif-title"><span class="notif-dot"></span>New Orders</div>
+                                <button type="button" class="notif-mark-all" onclick="markAllRead(event)">Mark all read</button>
+                            </div>
+                            <div class="notif-body" id="notifBody">
+                                <div class="notif-empty">Loading...</div>
+                            </div>
+                            <a href="{{ route('reorder-requests.index') }}" class="notif-foot">View all orders</a>
+                        </div>
+                    </div>
+
+                    <div class="chip">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        {{ now()->format('g:i A') }}
+                    </div>
+
+                    <div class="user-menu">
+                        <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</div>
+                        <div>
+                            <div class="user-name">{{ Auth::user()->name ?? 'Admin' }}</div>
+                            <div class="user-role">Admin</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="content">
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-error">{{ session('error') }}</div>
+                @endif
+
+                @yield('content')
+            </main>
+
+            <footer class="foot">
+                <div>&copy; {{ date('Y') }} Coffee Beans - Consignment System</div>
+                <div>v1.0</div>
+            </footer>
         </div>
+    </div>
 
-        <footer class="foot">
-            <span>&copy; {{ now()->format('Y') }} Coffee Beans - Consignment System</span>
-            <span>v1.0</span>
-        </footer>
-    </main>
-</div>
+    <script>
+        // ===== NOTIFICATIONS =====
+        var notifUrl = "{{ route('notifications.index') }}";
+        var markReadBase = "{{ url('/notifications') }}";
+        var markAllUrl = "{{ route('notifications.read-all') }}";
+        var csrfToken = "{{ csrf_token() }}";
 
-<script>
-    document.querySelectorAll('.sidebar .nav-item:not(.disabled)').forEach(item => {
-        item.addEventListener('click', () => {
-            if (window.innerWidth <= 900) document.body.classList.remove('nav-open');
+        function toggleNotif(e) {
+            if (e) e.stopPropagation();
+            var dd = document.getElementById('notifDropdown');
+            dd.classList.toggle('open');
+            if (dd.classList.contains('open')) loadNotifications();
+        }
+
+        function loadNotifications() {
+            var body = document.getElementById('notifBody');
+            body.innerHTML = '<div class="notif-empty">Loading...</div>';
+
+            fetch(notifUrl, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                updateBadge(data.count || 0);
+                renderNotifications(data.orders || []);
+            })
+            .catch(function(err) {
+                console.error('Notif error:', err);
+                body.innerHTML = '<div class="notif-empty">Failed to load</div>';
+            });
+        }
+
+        function updateBadge(count) {
+            var badge = document.getElementById('notifBadge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'grid';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderNotifications(orders) {
+            var body = document.getElementById('notifBody');
+            if (!orders || orders.length === 0) {
+                body.innerHTML = '<div class="notif-empty">Walay bag-ong notifications</div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < orders.length; i++) {
+                var o = orders[i];
+                var avatar = o.store_logo
+                    ? '<img src="' + o.store_logo + '" style="width:100%;height:100%;object-fit:cover;">'
+                    : o.store_initials;
+
+                var label = '', amountHtml = '';
+                if (o.type === 'order') {
+                    label = (o.items || 0) + ' items';
+                    amountHtml = '<span class="notif-item-amount">&#8369;' + o.total + '</span>';
+                } else if (o.type === 'register') {
+                    label = 'New registration';
+                    amountHtml = '<span style="color:#22c55e;font-weight:800;font-size:10px;">NEW</span>';
+                } else if (o.type === 'login') {
+                    label = 'Logged in';
+                    amountHtml = '<span style="color:#3b82f6;font-weight:700;font-size:10px;">LOGIN</span>';
+                }
+
+                html += '<a href="' + o.url + '" class="notif-item" onclick="markRead(' + o.id + ')">';
+                html += '<div class="notif-item-avatar">' + avatar + '</div>';
+                html += '<div class="notif-item-body">';
+                html += '<div class="notif-item-store">' + o.store_name + '</div>';
+                html += '<div class="notif-item-meta">';
+                html += '<span>' + label + ' - ' + o.ago + '</span>';
+                html += amountHtml;
+                html += '</div></div></a>';
+            }
+            body.innerHTML = html;
+        }
+
+        function markRead(id) {
+            fetch(markReadBase + '/' + id + '/read', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            }).catch(function() {});
+        }
+
+        function markAllRead(e) {
+            if (e) e.stopPropagation();
+            fetch(markAllUrl, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            }).then(function() {
+                updateBadge(0);
+                renderNotifications([]);
+            }).catch(function() {});
+        }
+
+        document.addEventListener('click', function(e) {
+            var wrap = document.getElementById('notifWrap');
+            var dd = document.getElementById('notifDropdown');
+            if (wrap && dd && !wrap.contains(e.target)) dd.classList.remove('open');
         });
-    });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') document.body.classList.remove('nav-open');
-    });
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 900) document.body.classList.remove('nav-open');
-    });
-</script>
 
-@stack('scripts')
+        function poll() {
+            fetch(notifUrl, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data) return;
+                updateBadge(data.count || 0);
+                var dd = document.getElementById('notifDropdown');
+                if (dd && dd.classList.contains('open')) renderNotifications(data.orders || []);
+            })
+            .catch(function() {});
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            poll();
+            setInterval(poll, 20000);
+        });
+    </script>
+
+    @stack('scripts')
 </body>
 </html>

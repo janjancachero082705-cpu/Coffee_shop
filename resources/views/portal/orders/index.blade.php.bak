@@ -1,0 +1,199 @@
+@extends('portal.layouts.app')
+
+@section('title', 'My Orders')
+
+@section('content')
+
+{{-- HEADER --}}
+<div class="page-header">
+    <div class="page-header-left">
+        <div>
+            <div class="page-title">My Orders</div>
+            <div class="page-sub">Stock requests</div>
+        </div>
+    </div>
+    <a href="{{ route('portal.orders.create') }}" class="btn btn-primary">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New Order</span>
+    </a>
+</div>
+
+{{-- SUMMARY --}}
+<div class="summary-grid">
+    <div class="summary">
+        <div class="summary-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        </div>
+        <div>
+            <div class="summary-value">{{ $stats['total'] }}</div>
+            <div class="summary-label">Total</div>
+        </div>
+    </div>
+    <div class="summary">
+        <div class="summary-icon amber">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+            <div class="summary-value">{{ $stats['pending'] }}</div>
+            <div class="summary-label">Pending</div>
+        </div>
+    </div>
+    <div class="summary">
+        <div class="summary-icon green">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        </div>
+        <div>
+            <div class="summary-value">{{ $stats['approved'] }}</div>
+            <div class="summary-label">Approved</div>
+        </div>
+    </div>
+    <div class="summary">
+        <div class="summary-icon red">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        </div>
+        <div>
+            <div class="summary-value">{{ $stats['rejected'] }}</div>
+            <div class="summary-label">Rejected</div>
+        </div>
+    </div>
+</div>
+
+{{-- TABS --}}
+<div class="tabs">
+    <a href="{{ route('portal.orders.index') }}" class="tab {{ !request('status') ? 'active' : '' }}">All</a>
+    <a href="{{ route('portal.orders.index', ['status' => 'pending']) }}" class="tab {{ request('status')==='pending' ? 'active' : '' }}">Pending</a>
+    <a href="{{ route('portal.orders.index', ['status' => 'approved']) }}" class="tab {{ request('status')==='approved' ? 'active' : '' }}">Approved</a>
+    <a href="{{ route('portal.orders.index', ['status' => 'rejected']) }}" class="tab {{ request('status')==='rejected' ? 'active' : '' }}">Rejected</a>
+</div>
+
+{{-- ORDERS LIST (Mobile cards) --}}
+@if($orders->isEmpty())
+    <div class="card">
+        <div class="empty-box">
+            <div class="empty-icon">
+                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            </div>
+            <div class="empty-title">No orders yet</div>
+            <div class="empty-text">Tap "New Order" para mo-request og stock</div>
+        </div>
+    </div>
+@else
+    <div class="orders-list">
+        @foreach($orders as $order)
+            <a href="{{ route('portal.orders.show', $order->id) }}" class="order-card">
+                <div class="order-head">
+                    <div class="order-number">{{ $order->request_number }}</div>
+                    <span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
+                </div>
+                <div class="order-body">
+                    <div class="order-date">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        {{ \Carbon\Carbon::parse($order->requested_date)->format('M d, Y') }}
+                    </div>
+                    <div class="order-items">{{ $order->items->count() }} item(s)</div>
+                </div>
+                <div class="order-foot">
+                    <div class="order-total">&#8369;{{ number_format($order->total_amount, 2) }}</div>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+            </a>
+        @endforeach
+    </div>
+
+    @if(method_exists($orders, 'links'))
+        <div class="pagination-wrap">{{ $orders->withQueryString()->links('vendor.pagination.custom') }}</div>
+    @endif
+@endif
+
+@endsection
+
+@push('styles')
+<style>
+    .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 16px;
+        padding: 4px;
+        background: rgba(34, 34, 44, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: all 0.15s;
+    }
+    .tab.active {
+        background: linear-gradient(135deg, rgba(169, 120, 74, 0.25), rgba(169, 120, 74, 0.15));
+        color: var(--accent-light);
+        box-shadow: inset 0 0 0 1px rgba(169, 120, 74, 0.4);
+    }
+
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .order-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        background: rgba(34, 34, 44, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        transition: all 0.2s;
+    }
+    .order-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-border);
+    }
+    .order-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    .order-number {
+        font-family: ui-monospace, monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent-light);
+    }
+    .order-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    .order-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .order-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .order-total {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--accent-light);
+        font-variant-numeric: tabular-nums;
+    }
+    .order-foot svg { color: var(--text-muted); }
+</style>
+@endpush

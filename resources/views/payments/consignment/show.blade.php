@@ -35,7 +35,7 @@
     </div>
     <div class="hero-pay-right">
         <div class="hero-pay-amount-label">Amount Paid</div>
-        <div class="hero-pay-amount">â‚±{{ number_format($payment->amount, 2) }}</div>
+        <div class="hero-pay-amount">&#8369;{{ number_format($payment->amount, 2) }}</div>
     </div>
 </div>
 
@@ -89,7 +89,7 @@
                         <div class="linked-icon">ðŸšš</div>
                         <div class="linked-info">
                             <div class="linked-title">Delivery Receipt</div>
-                            <div class="linked-sub">{{ $payment->deliveryReceipt->dr_number }} Â· â‚±{{ number_format($payment->deliveryReceipt->total_amount, 2) }}</div>
+                            <div class="linked-sub">{{ $payment->deliveryReceipt->dr_number }} Â· &#8369;{{ number_format($payment->deliveryReceipt->total_amount, 2) }}</div>
                         </div>
                         <div class="linked-arrow">â†’</div>
                     </a>
@@ -100,7 +100,7 @@
                         <div class="linked-icon">ðŸ“Š</div>
                         <div class="linked-info">
                             <div class="linked-title">Sales Report</div>
-                            <div class="linked-sub">{{ $payment->salesReport->report_number }} Â· â‚±{{ number_format($payment->salesReport->total_sales, 2) }}</div>
+                            <div class="linked-sub">{{ $payment->salesReport->report_number }} Â· &#8369;{{ number_format($payment->salesReport->total_sales, 2) }}</div>
                         </div>
                         <div class="linked-arrow">â†’</div>
                     </a>
@@ -113,7 +113,7 @@
     <div>
         <div class="card">
             <div class="card-header"><div class="card-title">Amount</div></div>
-            <div class="amount-big">â‚±{{ number_format($payment->amount, 2) }}</div>
+            <div class="amount-big">&#8369;{{ number_format($payment->amount, 2) }}</div>
             <div class="amount-label">Received via {{ ucfirst(str_replace('_',' ',$payment->method)) }}</div>
         </div>
 

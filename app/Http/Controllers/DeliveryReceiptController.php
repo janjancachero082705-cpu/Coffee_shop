@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\StoreInventory;
 use App\Models\InventoryTransaction;
 use App\Models\SalesReport;
+use App\Events\DeliveryCreated;
 use App\Models\SalesReportItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -166,6 +167,8 @@ class DeliveryReceiptController extends Controller
                 ]);
             }
         });
+
+        DeliveryCreated::dispatch($dr);
 
         return redirect()->route('deliveries.index')->with('success', 'Delivery receipt created.');
     }

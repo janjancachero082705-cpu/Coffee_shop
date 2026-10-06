@@ -1,518 +1,218 @@
 @extends('layouts.admin')
 
-@section('title', isset($product) ? 'Edit Product' : 'New Product')
-@section('page-title', isset($product) ? 'Edit Product' : 'Add New Product')
-@section('page-sub', isset($product) ? 'Update product details' : 'Add new item to your catalog')
+@section('title', $product->exists ? 'Edit Product' : 'New Product')
+@section('subtitle', $product->exists ? $product->name : 'Add a new product')
 
-@push('styles')
-<style>
-    .form-layout {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 16px;
-        align-items: start;
-    }
-    @media (max-width: 1100px) { .form-layout { grid-template-columns: 1fr; } }
-
-    .form-section {
-        padding-bottom: 20px;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--border);
-    }
-    .form-section:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
-
-    .section-head {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-    .section-num {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--accent-bg);
-        border: 1px solid var(--accent-border);
-        display: grid;
-        place-items: center;
-        font-size: 11px;
-        font-weight: 800;
-        color: var(--accent);
-        flex-shrink: 0;
-    }
-    .section-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-    .section-sub {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-top: 1px;
-    }
-
-    .form-field { margin-bottom: 14px; }
-    .form-field:last-child { margin-bottom: 0; }
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-    .form-row-3 {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 12px;
-    }
-    @media (max-width: 600px) {
-        .form-row, .form-row-3 { grid-template-columns: 1fr; }
-    }
-
-    .input, select, textarea {
-        width: 100%;
-        padding: 10px 12px;
-        background: var(--bg-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        color: var(--text-primary);
-        font-size: 13px;
-        font-family: inherit;
-        outline: none;
-        transition: all .12s;
-    }
-    .input:focus, select:focus, textarea:focus {
-        border-color: var(--accent);
-        background: var(--bg-1);
-        box-shadow: 0 0 0 3px rgba(201,169,97,.1);
-    }
-
-    /* Image upload */
-    .image-upload {
-        position: relative;
-        border: 2px dashed var(--border-strong);
-        border-radius: var(--radius);
-        padding: 24px;
-        text-align: center;
-        cursor: pointer;
-        transition: all .15s ease;
-        background: var(--bg-2);
-        min-height: 220px;
-        display: grid;
-        place-items: center;
-        overflow: hidden;
-    }
-    .image-upload:hover { border-color: var(--accent); background: var(--bg-1); }
-    .image-upload.has-image { padding: 0; border-style: solid; border-color: var(--accent); }
-    .image-upload input[type=file] {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-    }
-    .image-preview {
-        width: 100%;
-        max-height: 320px;
-        object-fit: cover;
-        display: block;
-    }
-    .upload-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        background: var(--accent-bg);
-        border: 1px solid var(--accent-border);
-        display: grid;
-        place-items: center;
-        margin: 0 auto 12px;
-        font-size: 24px;
-        color: var(--accent);
-    }
-    .upload-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-    .upload-hint { font-size: 11px; color: var(--text-muted); }
-
-    .image-actions { display: flex; gap: 8px; margin-top: 10px; }
-    .image-remove {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: var(--radius-sm);
-        background: var(--red-bg);
-        color: var(--red);
-        font-size: 11px;
-        font-weight: 600;
-        border: 1px solid rgba(248,113,113,.2);
-        cursor: pointer;
-        font-family: inherit;
-    }
-    .image-remove:hover { background: rgba(248,113,113,.15); }
-
-    /* Toggle */
-    .toggle-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 14px;
-        background: var(--bg-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        cursor: pointer;
-        margin-bottom: 8px;
-    }
-    .toggle-row:last-child { margin-bottom: 0; }
-    .toggle-row .info { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .toggle-row .info small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
-    .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-        position: absolute;
-        inset: 0;
-        background: var(--border-strong);
-        border-radius: 999px;
-        cursor: pointer;
-        transition: .2s;
-    }
-    .toggle-slider::before {
-        content: '';
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        left: 3px;
-        top: 3px;
-        background: #fff;
-        border-radius: 50%;
-        transition: .2s;
-    }
-    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
-    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
-
-    /* Profit preview */
-    .profit-box {
-        padding: 12px 14px;
-        background: var(--green-bg);
-        border: 1px solid rgba(74,222,128,.2);
-        border-radius: var(--radius);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-    }
-    .profit-box .label-sm { font-size: 11px; color: var(--green); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
-    .profit-box .value { font-size: 18px; font-weight: 800; color: var(--green); }
-
-    .error-msg { color: var(--red); font-size: 11px; margin-top: 4px; }
-</style>
-@endpush
+@section('actions')
+    <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+    </a>
+@endsection
 
 @section('content')
 
-@if($errors->any())
-    <div class="alert alert-error">
-        <div>
-            @foreach($errors->all() as $error)
-                <div>âš  {{ $error }}</div>
-            @endforeach
-        </div>
-    </div>
-@endif
+@php
+    $isEdit = $product->exists;
+@endphp
 
-<form method="POST"
-      action="{{ isset($product) ? route('products.update', $product) : route('products.store') }}"
-      enctype="multipart/form-data"
-      id="productForm">
+<form method="POST" action="{{ $isEdit ? route('products.update', $product) : route('products.store') }}" enctype="multipart/form-data">
     @csrf
-    @if(isset($product)) @method('PUT') @endif
+    @if($isEdit) @method('PUT') @endif
 
     <div class="form-layout">
 
         {{-- LEFT: MAIN FORM --}}
-        <div>
-            {{-- Section 1: Basic Info --}}
+        <div class="form-main">
+
+            {{-- IMAGE UPLOAD --}}
             <div class="card">
-                <div class="form-section">
-                    <div class="section-head">
-                        <div class="section-num">1</div>
-                        <div>
-                            <div class="section-title">Basic Information</div>
-                            <div class="section-sub">Product name, category, and identifier</div>
-                        </div>
+                <div class="card-head">
+                    <div class="card-head-icon gold">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </div>
+                    <div>
+                        <div class="card-head-title">Product Image</div>
+                        <div class="card-head-sub">Upload a JPG, PNG or WebP (max 2MB)</div>
+                    </div>
+                </div>
+
+                <div class="image-upload">
+                    <div class="image-preview" id="imagePreview">
+                        @if($product->image_url)
+                            <img src="{{ $product->image_url }}" alt="Product image" id="previewImg">
+                        @else
+                            <div class="preview-placeholder" id="previewPlaceholder">
+                                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <path d="M21 15l-5-5L5 21"/>
+                                </svg>
+                                <div class="preview-text">No image</div>
+                            </div>
+                        @endif
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label class="label">Product Name *</label>
-                            <input type="text" name="name" class="input"
-                                   value="{{ old('name', $product->name ?? '') }}"
-                                   placeholder="e.g. Arabica Roasted" required>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">SKU / Product Code</label>
-                            <input type="text" name="sku" class="input"
-                                   value="{{ old('sku', $product->sku ?? '') }}"
-                                   placeholder="Auto-generated if empty"
-                                   style="font-family: monospace;">
-                        </div>
+                    <div class="image-actions">
+                        <label for="imageInput" class="btn-upload">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Choose Image
+                        </label>
+                        <input type="file" name="image" id="imageInput" accept="image/*" style="display:none;" onchange="previewImage(event)">
+                        <span class="image-hint">or drag and drop</span>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label class="label">Category *</label>
-                            <select name="category_id" class="input" required>
-                                <option value="">â€” Select â€”</option>
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id ?? '') == $cat->id)>
-                                        {{ $cat->emoji ?? 'â˜•' }} {{ $cat->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Variety</label>
-                            <select name="variety" class="input">
-                                <option value="">â€” Select â€”</option>
-                                @foreach(['Arabica', 'Robusta', 'Liberica', 'Excelsa', 'Mixed', 'Blend'] as $v)
-                                    <option value="{{ $v }}" @selected(old('variety', $product->variety ?? '') == $v)>{{ $v }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    @error('image')<div class="field-error">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            {{-- BASIC INFO --}}
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-icon">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <div>
+                        <div class="card-head-title">Basic Information</div>
+                        <div class="card-head-sub">Product name, SKU, and category</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field field-full">
+                        <label class="label">Product Name <span class="req">*</span></label>
+                        <input type="text" name="name" value="{{ old('name', $product->name) }}" class="input" placeholder="e.g. Coffee House Instant 30g" required>
+                        @error('name')<div class="field-error">{{ $message }}</div>@enderror
                     </div>
 
-                    <div class="form-field">
+                    <div class="field">
+                        <label class="label">SKU</label>
+                        <input type="text" name="sku" value="{{ old('sku', $product->sku) }}" class="input" placeholder="e.g. CB-00001">
+                        @error('sku')<div class="field-error">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Category</label>
+                        <select name="category_id" class="input">
+                            <option value="">- Select -</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id)==$cat->id?'selected':'' }}>{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="field field-full">
                         <label class="label">Description</label>
-                        <textarea name="description" rows="3" class="input"
-                                  placeholder="Short product description...">{{ old('description', $product->description ?? '') }}</textarea>
-                    </div>
-                </div>
-
-                {{-- Section 2: Coffee Details --}}
-                <div class="form-section">
-                    <div class="section-head">
-                        <div class="section-num">2</div>
-                        <div>
-                            <div class="section-title">Coffee Details</div>
-                            <div class="section-sub">Origin, processing, and quality information</div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label class="label">Origin / Farm</label>
-                            <input type="text" name="origin" class="input"
-                                   value="{{ old('origin', $product->origin ?? '') }}"
-                                   placeholder="e.g. Benguet, Sagada">
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Altitude</label>
-                            <input type="text" name="altitude" class="input"
-                                   value="{{ old('altitude', $product->altitude ?? '') }}"
-                                   placeholder="e.g. 1,500 masl">
-                        </div>
-                    </div>
-
-                    <div class="form-row-3">
-                        <div class="form-field">
-                            <label class="label">Roast Level</label>
-                            <select name="roast_level" class="input">
-                                <option value="">â€” Select â€”</option>
-                                @foreach(['Light', 'Medium', 'Medium-Dark', 'Dark', 'Extra Dark', 'Green'] as $r)
-                                    <option value="{{ $r }}" @selected(old('roast_level', $product->roast_level ?? '') == $r)>{{ $r }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Process Method</label>
-                            <select name="process_method" class="input">
-                                <option value="">â€” Select â€”</option>
-                                @foreach(['Washed', 'Natural', 'Honey', 'Anaerobic', 'Wet-Hulled', 'Semi-Washed'] as $p)
-                                    <option value="{{ $p }}" @selected(old('process_method', $product->process_method ?? '') == $p)>{{ $p }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Harvest Year</label>
-                            <input type="text" name="harvest_year" class="input"
-                                   value="{{ old('harvest_year', $product->harvest_year ?? '') }}"
-                                   placeholder="e.g. 2024">
-                        </div>
-                    </div>
-
-                    <div class="form-field">
-                        <label class="label">Cupping Notes</label>
-                        <textarea name="cupping_notes" rows="2" class="input"
-                                  placeholder="e.g. Chocolate, caramel, citrus finish">{{ old('cupping_notes', $product->cupping_notes ?? '') }}</textarea>
-                    </div>
-                </div>
-
-                {{-- Section 3: Pricing & Stock --}}
-                <div class="form-section">
-                    <div class="section-head">
-                        <div class="section-num">3</div>
-                        <div>
-                            <div class="section-title">Pricing & Stock</div>
-                            <div class="section-sub">Set prices and inventory levels</div>
-                        </div>
-                    </div>
-
-                    <div class="form-row-3">
-                        <div class="form-field">
-                            <label class="label">Cost Price (â‚±) *</label>
-                            <input type="number" step="0.01" name="cost_price" id="costPrice" class="input"
-                                   value="{{ old('cost_price', $product->cost_price ?? '') }}"
-                                   placeholder="0.00" min="0" required oninput="updateProfit()">
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Selling Price (â‚±) *</label>
-                            <input type="number" step="0.01" name="price" id="sellingPrice" class="input"
-                                   value="{{ old('price', $product->price ?? '') }}"
-                                   placeholder="0.00" min="0" required oninput="updateProfit()">
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Wholesale Price (â‚±)</label>
-                            <input type="number" step="0.01" name="wholesale_price" class="input"
-                                   value="{{ old('wholesale_price', $product->wholesale_price ?? '') }}"
-                                   placeholder="Optional" min="0">
-                        </div>
-                    </div>
-
-                    <div class="profit-box" id="profitBox" style="display:none;">
-                        <span class="label-sm">Profit Margin</span>
-                        <span class="value" id="profitValue">0%</span>
-                    </div>
-                </div>
-
-                {{-- Section 4: Unit & Package --}}
-                <div class="form-section">
-                    <div class="section-head">
-                        <div class="section-num">4</div>
-                        <div>
-                            <div class="section-title">Unit & Package</div>
-                            <div class="section-sub">How is this product packaged?</div>
-                        </div>
-                    </div>
-
-                    <div class="form-row-3">
-                        <div class="form-field">
-                            <label class="label">Unit Type *</label>
-                            <select name="unit_type" class="input" required>
-                                <option value="pack" @selected(old('unit_type', $product->unit_type ?? 'pack') == 'pack')>Pack</option>
-                                <option value="kg" @selected(old('unit_type', $product->unit_type ?? '') == 'kg')>Kilo (kg)</option>
-                                <option value="sako" @selected(old('unit_type', $product->unit_type ?? '') == 'sako')>Sako (bulk)</option>
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Base Unit *</label>
-                            <input type="text" name="base_unit" class="input"
-                                   value="{{ old('base_unit', $product->base_unit ?? '250g') }}"
-                                   placeholder="e.g. 250g, 500g, 1kg" required>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Weight (grams)</label>
-                            <input type="number" name="weight_grams" class="input"
-                                   value="{{ old('weight_grams', $product->weight_grams ?? '') }}"
-                                   placeholder="e.g. 250" min="0">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label class="label">Stock Quantity *</label>
-                            <input type="number" name="stock" class="input"
-                                   value="{{ old('stock', $product->stock ?? 0) }}"
-                                   placeholder="0" min="0" required>
-                        </div>
-                        <div class="form-field">
-                            <label class="label">Reorder Level *</label>
-                            <input type="number" name="reorder_level" class="input"
-                                   value="{{ old('reorder_level', $product->reorder_level ?? 10) }}"
-                                   placeholder="10" min="0" required>
-                            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Alert when stock drops below this</div>
-                        </div>
+                        <textarea name="description" rows="3" class="input" placeholder="Optional description...">{{ old('description', $product->description) }}</textarea>
                     </div>
                 </div>
             </div>
+
+            {{-- PRICING & STOCK --}}
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-icon green">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div>
+                        <div class="card-head-title">Pricing & Stock</div>
+                        <div class="card-head-sub">Prices and inventory levels</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label class="label">Selling Price <span class="req">*</span></label>
+                        <div class="input-prefix">
+                            <span class="prefix">&#8369;</span>
+                            <input type="number" step="0.01" name="price" value="{{ old('price', $product->price) }}" class="input input-with-prefix" placeholder="0.00" required>
+                        </div>
+                        @error('price')<div class="field-error">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Cost Price</label>
+                        <div class="input-prefix">
+                            <span class="prefix">&#8369;</span>
+                            <input type="number" step="0.01" name="cost_price" value="{{ old('cost_price', $product->cost_price) }}" class="input input-with-prefix" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Wholesale Price</label>
+                        <div class="input-prefix">
+                            <span class="prefix">&#8369;</span>
+                            <input type="number" step="0.01" name="wholesale_price" value="{{ old('wholesale_price', $product->wholesale_price) }}" class="input input-with-prefix" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Unit</label>
+                        <input type="text" name="unit" value="{{ old('unit', $product->unit) }}" class="input" placeholder="e.g. 30g, 1kg, pcs">
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Stock Quantity <span class="req">*</span></label>
+                        <input type="number" name="stock" value="{{ old('stock', $product->stock ?? 0) }}" class="input" min="0" required>
+                        @error('stock')<div class="field-error">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Reorder Level</label>
+                        <input type="number" name="reorder_level" value="{{ old('reorder_level', $product->reorder_level ?? 10) }}" class="input" min="0">
+                        <div class="hint">Alert when stock drops below this number</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- STATUS --}}
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-icon blue">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div>
+                        <div class="card-head-title">Status</div>
+                        <div class="card-head-sub">Active or inactive</div>
+                    </div>
+                </div>
+
+                <label class="toggle-wrap">
+                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active ?? true) ? 'checked' : '' }}>
+                    <span class="toggle"></span>
+                    <span class="toggle-text">Product is active</span>
+                </label>
+            </div>
+
+            {{-- ACTIONS --}}
+            <div class="form-actions">
+                <a href="{{ route('products.index') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                    {{ $isEdit ? 'Update Product' : 'Save Product' }}
+                </button>
+            </div>
+
         </div>
 
-        {{-- RIGHT: SIDE PANEL --}}
-        <div>
-            {{-- Image --}}
-            <div class="card">
-                <div class="section-head" style="margin-bottom:12px;">
-                    <div class="section-num">ðŸ“·</div>
-                    <div>
-                        <div class="section-title">Product Image</div>
-                        <div class="section-sub">JPG, PNG Â· Max 3MB</div>
-                    </div>
+        {{-- RIGHT: PREVIEW --}}
+        <div class="preview-panel">
+            <div class="preview-card">
+                <div class="preview-head">Preview</div>
+                <div class="preview-image-wrap" id="livePreview">
+                    @if($product->image_url)
+                        <img src="{{ $product->image_url }}" alt="Preview" id="liveImg">
+                    @else
+                        <div class="live-placeholder" id="livePlaceholder">
+                            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                        </div>
+                    @endif
                 </div>
-
-                @php
-                    $currentImage = (isset($product) && $product->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image))
-                        ? asset('storage/' . $product->image)
-                        : null;
-                @endphp
-
-                <div class="image-upload {{ $currentImage ? 'has-image' : '' }}" id="imageUpload">
-                    <input type="file" name="image" accept="image/*" onchange="previewImage(this)" id="imageInput">
-
-                    <div id="uploadPlaceholder" style="{{ $currentImage ? 'display:none' : '' }}">
-                        <div class="upload-icon">ðŸ“·</div>
-                        <div class="upload-title">Click to upload</div>
-                        <div class="upload-hint">or drag and drop</div>
-                    </div>
-
-                    <img id="imagePreview" class="image-preview" src="{{ $currentImage ?? '' }}"
-                         style="{{ $currentImage ? '' : 'display:none' }}" alt="">
-                </div>
-
-                @if($currentImage)
-                    <div class="image-actions">
-                        <button type="button" class="image-remove" onclick="removeImage()">
-                            ðŸ—‘ Remove Image
-                        </button>
-                    </div>
-                @endif
-            </div>
-
-            {{-- Visibility --}}
-            <div class="card">
-                <div class="section-head" style="margin-bottom:12px;">
-                    <div class="section-num">ðŸ‘</div>
-                    <div>
-                        <div class="section-title">Visibility</div>
-                        <div class="section-sub">Control product display</div>
-                    </div>
-                </div>
-
-                <label class="toggle-row">
-                    <div class="info">
-                        Active product
-                        <small>Show in menu and POS</small>
-                    </div>
-                    <div class="toggle-switch">
-                        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $product->is_active ?? true))>
-                        <span class="toggle-slider"></span>
-                    </div>
-                </label>
-
-                <label class="toggle-row">
-                    <div class="info">
-                        Featured product
-                        <small>Highlight as bestseller</small>
-                    </div>
-                    <div class="toggle-switch">
-                        <input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $product->is_featured ?? false))>
-                        <span class="toggle-slider"></span>
-                    </div>
-                </label>
-            </div>
-
-            {{-- Actions --}}
-            <div class="card" style="margin-bottom:0;">
-                <div style="display:flex;gap:8px;">
-                    <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;">
-                        {{ isset($product) ? 'âœ“ Update Product' : '+ Create Product' }}
-                    </button>
-                    <a href="{{ route('products.index') }}" class="btn btn-ghost" style="padding:12px;">Cancel</a>
+                <div class="preview-info">
+                    <div class="preview-name" id="previewName">{{ $product->name ?? 'Product Name' }}</div>
+                    <div class="preview-price" id="previewPrice">&#8369;0.00</div>
                 </div>
             </div>
         </div>
@@ -521,57 +221,281 @@
 
 @endsection
 
+@push('styles')
+<style>
+    .form-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        align-items: start;
+    }
+    .form-main { min-width: 0; }
+
+    .card-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .card-head-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.2);
+        color: #c9a961;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+    }
+    .card-head-icon.gold  { background: rgba(169, 120, 74, 0.1); border-color: rgba(169, 120, 74, 0.2); color: #c9a961; }
+    .card-head-icon.green { background: rgba(34, 197, 94, 0.1);  border-color: rgba(34, 197, 94, 0.2);  color: #22c55e; }
+    .card-head-icon.blue  { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .card-head-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .card-head-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .field-full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; }
+    .req { color: #ef4444; font-weight: 700; }
+    .field-error { font-size: 11px; color: #ef4444; margin-top: 5px; font-weight: 500; }
+    .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+    .input-prefix { position: relative; display: flex; align-items: center; }
+    .prefix {
+        position: absolute; left: 12px;
+        color: var(--text-muted); font-size: 13px;
+        font-weight: 600; pointer-events: none;
+    }
+    .input-with-prefix { padding-left: 28px; }
+
+    /* IMAGE UPLOAD */
+    .image-upload { display: flex; gap: 20px; align-items: flex-start; }
+    .image-preview {
+        width: 160px;
+        height: 160px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(20, 20, 26, 0.6);
+        border: 2px dashed rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+    }
+    .image-preview img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .preview-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+    .preview-text { font-size: 11px; font-weight: 600; }
+
+    .image-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-top: 8px;
+    }
+    .btn-upload {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.25);
+        border-radius: 8px;
+        color: #c9a961;
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-upload:hover {
+        background: rgba(169, 120, 74, 0.2);
+    }
+    .image-hint { font-size: 11px; color: var(--text-muted); }
+
+    /* TOGGLE */
+    .toggle-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
+        user-select: none;
+    }
+    .toggle-wrap input { display: none; }
+    .toggle {
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        position: relative;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    .toggle::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .toggle-wrap input:checked + .toggle {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+    .toggle-wrap input:checked + .toggle::after {
+        left: 23px;
+    }
+    .toggle-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 8px;
+    }
+
+    /* PREVIEW PANEL */
+    .preview-panel {
+        position: sticky;
+        top: 90px;
+    }
+    .preview-card {
+        background: rgba(34, 34, 44, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(169, 120, 74, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+    }
+    .preview-head {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-bottom: 16px;
+    }
+    .preview-image-wrap {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(169, 120, 74, 0.15), rgba(34, 34, 44, 0.5));
+        display: grid;
+        place-items: center;
+        margin-bottom: 16px;
+    }
+    .preview-image-wrap img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .live-placeholder {
+        color: rgba(201, 169, 97, 0.4);
+    }
+    .preview-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        text-align: center;
+        min-height: 20px;
+    }
+    .preview-price {
+        font-size: 22px;
+        font-weight: 800;
+        color: #c9a961;
+        text-align: center;
+        letter-spacing: -0.02em;
+    }
+
+    @media (max-width: 1000px) {
+        .form-layout { grid-template-columns: 1fr; }
+        .preview-panel { position: static; }
+    }
+    @media (max-width: 700px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .image-upload { flex-direction: column; }
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
-    function previewImage(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById('imagePreview').src = e.target.result;
-            document.getElementById('imagePreview').style.display = 'block';
-            document.getElementById('uploadPlaceholder').style.display = 'none';
-            document.getElementById('imageUpload').classList.add('has-image');
+    // Image preview
+    function previewImage(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var preview = document.getElementById('imagePreview');
+            preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+
+            var live = document.getElementById('livePreview');
+            if (live) {
+                live.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+            }
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
     }
 
-    function removeImage() {
-        if (!confirm('Remove image?')) return;
-        document.getElementById('imageInput').value = '';
-        document.getElementById('imagePreview').style.display = 'none';
-        document.getElementById('imagePreview').src = '';
-        document.getElementById('uploadPlaceholder').style.display = 'block';
-        document.getElementById('imageUpload').classList.remove('has-image');
+    // Live name + price update
+    document.addEventListener('DOMContentLoaded', function() {
+        var nameInput = document.querySelector('input[name="name"]');
+        var priceInput = document.querySelector('input[name="price"]');
+        var previewName = document.getElementById('previewName');
+        var previewPrice = document.getElementById('previewPrice');
 
-        let flag = document.getElementById('removeImageFlag');
-        if (!flag) {
-            flag = document.createElement('input');
-            flag.type = 'hidden';
-            flag.name = 'remove_image';
-            flag.id = 'removeImageFlag';
-            flag.value = '1';
-            document.getElementById('productForm').appendChild(flag);
+        if (nameInput && previewName) {
+            nameInput.addEventListener('input', function() {
+                previewName.textContent = this.value || 'Product Name';
+            });
         }
-        const actions = document.querySelector('.image-actions');
-        if (actions) actions.style.display = 'none';
-    }
 
-    function updateProfit() {
-        const cost = parseFloat(document.getElementById('costPrice').value) || 0;
-        const price = parseFloat(document.getElementById('sellingPrice').value) || 0;
-        const box = document.getElementById('profitBox');
-        const val = document.getElementById('profitValue');
-
-        if (cost > 0 && price > 0) {
-            const margin = ((price - cost) / price) * 100;
-            val.textContent = (margin > 0 ? '+' : '') + margin.toFixed(1) + '%';
-            val.style.color = margin > 0 ? 'var(--green)' : 'var(--red)';
-            box.style.display = 'flex';
-        } else {
-            box.style.display = 'none';
+        if (priceInput && previewPrice) {
+            priceInput.addEventListener('input', function() {
+                var val = parseFloat(this.value) || 0;
+                previewPrice.innerHTML = '&#8369;' + val.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            });
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', updateProfit);
+        // Init preview price
+        if (priceInput && previewPrice) {
+            var val = parseFloat(priceInput.value) || 0;
+            if (val > 0) {
+                previewPrice.innerHTML = '&#8369;' + val.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+    });
 </script>
 @endpush

@@ -4,165 +4,259 @@
 @section('subtitle', 'Consignment payments from stores')
 
 @section('actions')
-    <a href="{{ route('consignment.payments.create') }}" class="btn btn-primary btn-sm">+ Record Payment</a>
+    <a href="{{ route('consignment.payments.create') }}" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Record Payment
+    </a>
 @endsection
 
 @section('content')
 
-<div class="summary-grid">
-    <div class="summary">
-        <div class="summary-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+@php
+    use App\Models\ConsignmentPayment;
+    use App\Models\Store;
+    use Illuminate\Support\Facades\DB;
+
+    // Stats
+    $totalPayments = ConsignmentPayment::count();
+    $totalCollected = (float) ConsignmentPayment::sum('amount');
+    $thisMonth = (float) ConsignmentPayment::whereYear('payment_date', now()->year)
+        ->whereMonth('payment_date', now()->month)
+        ->sum('amount');
+    $todayCollected = (float) ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
+
+    // Recent vs unlinked
+    $linkedCount = ConsignmentPayment::whereNotNull('sales_report_id')->count() ?? 0;
+    $unlinkedCount = $totalPayments - $linkedCount;
+
+    $totalStores = Store::whereHas('consignmentPayments')->count();
+@endphp
+
+{{-- ===== STATS GRID ===== --}}
+<div class="py-stats">
+    <div class="py-stat">
+        <div class="py-stat-icon gold">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <path d="M2 10h20"/>
+            </svg>
         </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $stats['total'] }}</div>
-            <div class="summary-label">Total Payments</div>
+        <div class="py-stat-body">
+            <div class="py-stat-label">Total Payments</div>
+            <div class="py-stat-value">{{ number_format($totalPayments) }}</div>
+            <div class="py-stat-meta">{{ $totalStores }} stores</div>
         </div>
     </div>
-    <div class="summary">
-        <div class="summary-icon green">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+
+    <div class="py-stat">
+        <div class="py-stat-icon green">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
         </div>
-        <div class="summary-content">
-            <div class="summary-value">&#8369;{{ number_format($stats['all_amount']/1000, 1) }}k</div>
-            <div class="summary-label">Total Collected</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon blue">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">&#8369;{{ number_format($stats['this_month']/1000, 1) }}k</div>
-            <div class="summary-label">This Month</div>
+        <div class="py-stat-body">
+            <div class="py-stat-label">Total Collected</div>
+            <div class="py-stat-value">&#8369;{{ number_format($totalCollected/1000, 1) }}k</div>
+            <div class="py-stat-meta">All time</div>
         </div>
     </div>
-    <div class="summary">
-        <div class="summary-icon amber">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+
+    <div class="py-stat">
+        <div class="py-stat-icon blue">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
         </div>
-        <div class="summary-content">
-            <div class="summary-value">&#8369;{{ number_format($stats['today'], 0) }}</div>
-            <div class="summary-label">Today</div>
+        <div class="py-stat-body">
+            <div class="py-stat-label">This Month</div>
+            <div class="py-stat-value">&#8369;{{ number_format($thisMonth/1000, 1) }}k</div>
+            <div class="py-stat-meta">{{ now()->format('F') }}</div>
+        </div>
+    </div>
+
+    <div class="py-stat">
+        <div class="py-stat-icon amber">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        </div>
+        <div class="py-stat-body">
+            <div class="py-stat-label">Today</div>
+            <div class="py-stat-value">&#8369;{{ number_format($todayCollected, 0) }}</div>
+            <div class="py-stat-meta">{{ now()->format('M d') }}</div>
         </div>
     </div>
 </div>
 
-<div class="tabs">
-    @php
-        $tabs = [
-            'all'      => ['label' => 'All Payments'],
-            'pending'  => ['label' => 'Pending'],
-            'partial'  => ['label' => 'Partial'],
-            'full'     => ['label' => 'Fully Paid'],
-            'unlinked' => ['label' => 'Unlinked'],
-        ];
-    @endphp
-
-    @foreach($tabs as $key => $tab)
-        <a href="{{ route('consignment.payments.index', array_merge(request()->only(['search','store']), ['payment_status' => $key])) }}"
-           class="tab {{ $paymentStatus === $key ? 'active' : '' }}">
-            <span>{{ $tab['label'] }}</span>
-            <span class="tab-count">{{ $tabCounts[$key] ?? 0 }}</span>
-        </a>
-    @endforeach
+{{-- ===== STATUS TABS ===== --}}
+<div class="py-tabs">
+    <a href="{{ route('consignment.payments.index', request()->except(['status', 'page'])) }}"
+       class="py-tab {{ !request('status') ? 'active' : '' }}">
+        All
+        <span class="py-tab-count">{{ $tabCounts['all'] ?? 0 }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', array_merge(request()->except(['status', 'page']), ['status' => 'paid'])) }}"
+       class="py-tab {{ request('status') === 'paid' ? 'active' : '' }}">
+        <span class="dot green"></span>
+        Paid
+        <span class="py-tab-count">{{ $tabCounts['paid'] ?? 0 }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', array_merge(request()->except(['status', 'page']), ['status' => 'partial'])) }}"
+       class="py-tab {{ request('status') === 'partial' ? 'active' : '' }}">
+        <span class="dot amber"></span>
+        Partial
+        <span class="py-tab-count">{{ $tabCounts['partial'] ?? 0 }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', array_merge(request()->except(['status', 'page']), ['status' => 'unlinked'])) }}"
+       class="py-tab {{ request('status') === 'unlinked' ? 'active' : '' }}">
+        <span class="dot red"></span>
+        Unlinked
+        <span class="py-tab-count">{{ $tabCounts['unlinked'] ?? 0 }}</span>
+    </a>
 </div>
+{{-- ===== TOOLBAR ===== --}}
+<div class="py-toolbar">
+    <div class="py-toolbar-left">
+        <div class="py-toolbar-heading">All Payments</div>
+        <div class="py-toolbar-sub">{{ $totalPayments }} records</div>
+    </div>
 
-<div class="toolbar">
-    <form method="GET" class="toolbar-form">
-        <input type="hidden" name="payment_status" value="{{ $paymentStatus }}">
-
-        <div class="search-box">
-            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search payment # or reference..." class="search-input">
+    <form method="GET" class="py-toolbar-form">
+        <div class="py-search">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search payment #...">
         </div>
 
-        <select name="store" class="filter-select" onchange="this.form.submit()">
+        <select name="store" class="py-filter" onchange="this.form.submit()">
             <option value="">All Stores</option>
-            @foreach($stores as $s)
-                <option value="{{ $s->id }}" {{ request('store')==$s->id?'selected':'' }}>{{ $s->store_name }}</option>
+            @foreach($stores ?? \App\Models\Store::orderBy('store_name')->get() as $s)
+                <option value="{{ $s->id }}" {{ request('store') == $s->id ? 'selected' : '' }}>
+                    {{ $s->store_name }}
+                </option>
             @endforeach
         </select>
 
-        <button type="submit" class="btn-filter">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        <select name="method" class="py-filter" onchange="this.form.submit()">
+            <option value="">All Methods</option>
+            <option value="cash" {{ request('method') == 'cash' ? 'selected' : '' }}>Cash</option>
+            <option value="gcash" {{ request('method') == 'gcash' ? 'selected' : '' }}>GCash</option>
+            <option value="bank_transfer" {{ request('method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+            <option value="check" {{ request('method') == 'check' ? 'selected' : '' }}>Check</option>
+            <option value="maya" {{ request('method') == 'maya' ? 'selected' : '' }}>Maya</option>
+        </select>
+
+        <button type="submit" class="py-btn-filter">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+            </svg>
             Filter
         </button>
 
-        @if(request()->hasAny(['search','store']))
-            <a href="{{ route('consignment.payments.index', ['payment_status' => $paymentStatus]) }}" class="btn-clear" title="Clear filters">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        @if(request()->hasAny(['search', 'store', 'method']))
+            <a href="{{ route('consignment.payments.index') }}" class="py-btn-clear" title="Clear filters">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
             </a>
         @endif
     </form>
 </div>
 
-@if($paymentStatus === 'pending')
-    @if($pendings->isEmpty())
-        <div class="card">
-            <div class="empty">
-                <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div class="empty-title">No pending deliveries</div>
-                <div class="empty-text">All delivery receipts have been paid</div>
-            </div>
+{{-- ===== PAYMENTS LIST ===== --}}
+@if($payments->isEmpty())
+    <div class="py-empty">
+        <div class="py-empty-icon">
+            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <path d="M2 10h20"/>
+            </svg>
         </div>
-    @else
-        <div class="pending-summary">
-            <div class="pending-summary-icon">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            </div>
-            <div class="pending-summary-text">
-                <div class="pending-summary-title">Pending Delivery Receipts</div>
-                <div class="pending-summary-sub">Not yet paid - click to record payment</div>
-            </div>
-            <div class="pending-summary-total">
-                <div class="pending-summary-label">Total Unpaid</div>
-                <div class="pending-summary-value">&#8369;{{ number_format($pendings->sum('balance'), 2) }}</div>
-            </div>
+        <div class="py-empty-title">No payments found</div>
+        <div class="py-empty-text">
+            @if(request()->hasAny(['search', 'store', 'method']))
+                Try adjusting your filters
+            @else
+                Start by recording your first payment
+            @endif
         </div>
-
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <table>
+        <a href="{{ route('consignment.payments.create') }}" class="py-btn-add">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Record Payment
+        </a>
+    </div>
+@else
+    <div class="py-table-card">
+        <div class="py-table-wrap">
+            <table class="py-table">
                 <thead>
                     <tr>
-                        <th>DR Number</th>
+                        <th>Payment #</th>
                         <th>Store</th>
-                        <th>Delivery Date</th>
-                        <th style="text-align:right;">Total</th>
-                        <th style="text-align:right;">Balance</th>
-                        <th>Status</th>
-                        <th></th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th style="text-align: center;">Status</th>
+                        <th style="text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($pendings as $dr)
-                        <tr style="cursor:pointer;" onclick="window.location='{{ route('deliveries.show', $dr) }}'">
+                    @foreach($payments as $payment)
+                        <tr>
                             <td>
-                                <span style="color:#c9a961; font-family:ui-monospace; font-weight:700; font-size:12px;">{{ $dr->dr_number }}</span>
-                            </td>
-                            <td>
-                                <div style="font-weight:600; color:var(--text-primary);">{{ $dr->store->store_name ?? '-' }}</div>
-                                <div style="font-size:11px; color:var(--text-muted);">{{ $dr->store->code ?? '' }}</div>
+                                <div class="py-number">{{ $payment->payment_number }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:500; font-size:12px;">{{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}</div>
-                            </td>
-                            <td style="text-align:right; font-weight:600; color:var(--text-primary); font-size:13px;">
-                                &#8369;{{ number_format($dr->total_amount, 2) }}
-                            </td>
-                            <td style="text-align:right; font-weight:800; color:#f59e0b; font-size:14px;">
-                                &#8369;{{ number_format($dr->balance, 2) }}
+                                <div class="py-store">
+                                    <div class="py-store-avatar">
+                                        @if($payment->store && $payment->store->logo_url)
+                                            <img src="{{ $payment->store->logo_url }}" alt="">
+                                        @else
+                                            {{ strtoupper(substr($payment->store->store_name ?? 'ST', 0, 2)) }}
+                                        @endif
+                                    </div>
+                                    <div class="py-store-info">
+                                        <div class="py-store-name">{{ $payment->store->store_name ?? '-' }}</div>
+                                        <div class="py-store-code">{{ $payment->store->code ?? '' }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <span class="badge badge-pending">Pending</span>
+                                <div class="py-date-main">{{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}</div>
+                                <div class="py-date-sub">{{ \Carbon\Carbon::parse($payment->created_at)->diffForHumans() }}</div>
                             </td>
-                            <td style="text-align:right;">
-                                <a href="{{ route('consignment.payments.create') }}?store_id={{ $dr->store_id }}&delivery_receipt_id={{ $dr->id }}"
-                                   class="btn btn-primary btn-sm"
-                                   onclick="event.stopPropagation();">
-                                    + Pay
+                            <td>
+                                <span class="py-method-badge method-{{ $payment->method }}">
+                                    {{ ucfirst(str_replace('_', ' ', $payment->method)) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="py-ref">{{ $payment->reference_number ?? '-' }}</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="py-amount">+ &#8369;{{ number_format($payment->amount, 2) }}</div>
+                            </td>
+                            <td style="text-align: center;">
+                                @if($payment->sales_report_id)
+                                    <span class="py-status linked">Linked</span>
+                                @else
+                                    <span class="py-status unlinked">Unlinked</span>
+                                @endif
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{{ route('consignment.payments.show', $payment->id) }}" class="py-btn-view">
+                                    View
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
                                 </a>
                             </td>
                         </tr>
@@ -170,110 +264,12 @@
                 </tbody>
             </table>
         </div>
+    </div>
 
-        @if(method_exists($pendings, 'links'))
-            <div class="pagination-wrap">{{ $pendings->links() }}</div>
-        @endif
-    @endif
-@else
-    @if($payments->isEmpty())
-        <div class="card">
-            <div class="empty">
-                <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                </div>
-                <div class="empty-title">No payments found</div>
-                <div class="empty-text">
-                    @if(request()->hasAny(['search','store']) || $paymentStatus !== 'all')
-                        Try adjusting your filters or tab
-                    @else
-                        Record your first payment to get started
-                    @endif
-                </div>
-                @if(!request()->hasAny(['search','store']) && $paymentStatus === 'all')
-                    <a href="{{ route('consignment.payments.create') }}" class="btn btn-primary">+ Record Payment</a>
-                @endif
-            </div>
+    @if(method_exists($payments, 'links') && $payments->hasPages())
+        <div class="py-pagination">
+            {{ $payments->withQueryString()->links() }}
         </div>
-    @else
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Payment #</th>
-                        <th>Store</th>
-                        <th>Date</th>
-                        <th>Linked To</th>
-                        <th>Method</th>
-                        <th style="text-align:right;">Amount</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($payments as $p)
-                        @php
-                            $linkedType = '-';
-                            $linkedNumber = null;
-                            $linkedStatus = null;
-
-                            if ($p->deliveryReceipt) {
-                                $linkedType = 'Delivery';
-                                $linkedNumber = $p->deliveryReceipt->dr_number;
-                                $linkedStatus = $p->deliveryReceipt->status;
-                            } elseif ($p->salesReport) {
-                                $linkedType = 'Report';
-                                $linkedNumber = $p->salesReport->report_number;
-                                $linkedStatus = $p->salesReport->status;
-                            }
-                        @endphp
-                        <tr style="cursor:pointer;" onclick="window.location='{{ route('consignment.payments.show', $p) }}'">
-                            <td>
-                                <span style="color:#c9a961; font-family:ui-monospace; font-weight:700; font-size:12px;">{{ $p->payment_number }}</span>
-                            </td>
-                            <td>
-                                <div style="font-weight:600; color:var(--text-primary);">{{ $p->store->store_name ?? '-' }}</div>
-                                <div style="font-size:11px; color:var(--text-muted);">{{ $p->store->code ?? '' }}</div>
-                            </td>
-                            <td>
-                                <div style="font-weight:500; font-size:12px;">{{ $p->payment_date }}</div>
-                                <div style="font-size:11px; color:var(--text-muted);">{{ $p->created_at->diffForHumans() }}</div>
-                            </td>
-                            <td>
-                                @if($linkedNumber)
-                                    <div style="font-family:ui-monospace; font-size:11px; font-weight:600; color:#60a5fa;">{{ $linkedNumber }}</div>
-                                    <div style="font-size:10px; color:var(--text-muted);">{{ $linkedType }}</div>
-                                @else
-                                    <span style="color:var(--text-muted); font-size:12px;">-</span>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="method-badge method-{{ $p->method }}">
-                                    {{ ucfirst(str_replace('_',' ',$p->method)) }}
-                                </span>
-                            </td>
-                            <td style="text-align:right; font-weight:700; color:#22c55e; font-size:14px;">
-                                + &#8369;{{ number_format($p->amount, 2) }}
-                            </td>
-                            <td>
-                                @if($linkedStatus)
-                                    <span class="badge badge-{{ $linkedStatus }}">{{ ucfirst($linkedStatus) }}</span>
-                                @else
-                                    <span class="badge" style="background:rgba(107,104,98,0.15); color:var(--text-muted);">Unlinked</span>
-                                @endif
-                            </td>
-                            <td style="text-align:right;">
-                                <a href="{{ route('consignment.payments.show', $p) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">View</a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        @if(method_exists($payments, 'links'))
-            <div class="pagination-wrap">{{ $payments->links() }}</div>
-        @endif
     @endif
 @endif
 
@@ -281,229 +277,512 @@
 
 @push('styles')
 <style>
-    .summary-grid {
+    /* ===== STATS ===== */
+    .py-stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 16px;
+        gap: 14px;
+        margin-bottom: 20px;
     }
-    .summary {
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px) saturate(1.4);
-        -webkit-backdrop-filter: blur(20px) saturate(1.4);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        transition: all 0.2s;
-    }
-    .summary:hover {
-        transform: translateY(-2px);
-        border-color: rgba(169, 120, 74, 0.25);
-    }
-    .summary-icon {
-        width: 40px; height: 40px; border-radius: 10px;
-        background: rgba(169, 120, 74, 0.1);
-        border: 1px solid rgba(169, 120, 74, 0.2);
-        display: grid; place-items: center;
-        color: #c9a961; flex-shrink: 0;
-    }
-    .summary-icon.green { background: rgba(34, 197, 94, 0.1);  border-color: rgba(34, 197, 94, 0.2);  color: #22c55e; }
-    .summary-icon.blue  { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-    .summary-icon.amber { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-    .summary-value {
-        font-size: 20px; font-weight: 800;
-        color: var(--text-primary);
-        letter-spacing: -0.02em; line-height: 1;
-    }
-    .summary-label {
-        font-size: 10px; color: var(--text-muted);
-        text-transform: uppercase; letter-spacing: 0.1em;
-        font-weight: 700; margin-top: 3px;
-    }
-
-    .tabs {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 16px;
-        padding: 5px;
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
-        overflow-x: auto;
-    }
-    .tab {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 16px;
-        border-radius: 8px;
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--text-secondary);
-        transition: all 0.15s;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .tab:hover {
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text-primary);
-    }
-    .tab.active {
-        background: linear-gradient(135deg, rgba(169, 120, 74, 0.25), rgba(169, 120, 74, 0.15));
-        color: #c9a961;
-        box-shadow: inset 0 0 0 1px rgba(169, 120, 74, 0.4);
-    }
-    .tab-count {
-        padding: 2px 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        font-size: 10.5px;
-        font-weight: 800;
-        min-width: 22px;
-        text-align: center;
-        color: var(--text-muted);
-    }
-    .tab.active .tab-count {
-        background: rgba(169, 120, 74, 0.3);
-        color: #f0e6dc;
-    }
-
-    .toolbar { margin-bottom: 16px; }
-    .toolbar-form {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: nowrap;
-    }
-    .search-box {
-        flex: 1; min-width: 0; max-width: 380px;
-        position: relative;
-        display: flex; align-items: center;
-    }
-    .search-icon { position: absolute; left: 12px; color: var(--text-muted); pointer-events: none; }
-    .search-input {
-        width: 100%;
-        padding: 9px 14px 9px 36px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid var(--border-strong);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 13px; font-family: inherit; outline: none; transition: all 0.15s;
-    }
-    .search-input::placeholder { color: var(--text-muted); }
-    .search-input:focus {
-        border-color: var(--accent);
-        background: rgba(20, 20, 26, 0.9);
-        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
-    }
-
-    .filter-select {
-        padding: 9px 32px 9px 12px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid var(--border-strong);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 13px; font-family: inherit;
-        outline: none; cursor: pointer; transition: all 0.15s;
-        appearance: none; -webkit-appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6862' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        width: 170px; flex-shrink: 0;
-    }
-    .filter-select:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
-    }
-
-    .btn-filter {
-        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-        padding: 9px 16px;
-        background: linear-gradient(135deg, #a9784a, #8a5f36);
-        color: #fff; border: none; border-radius: 8px;
-        font-size: 13px; font-weight: 600; font-family: inherit;
-        cursor: pointer; transition: all 0.15s; flex-shrink: 0;
-        box-shadow: 0 4px 10px -4px rgba(169, 120, 74, 0.5);
-    }
-    .btn-filter:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px -6px rgba(169, 120, 74, 0.7);
-    }
-    .btn-clear {
-        width: 36px; height: 36px;
-        border-radius: 8px;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        color: #ef4444;
-        display: grid; place-items: center;
-        cursor: pointer; transition: all 0.15s; flex-shrink: 0;
-    }
-    .btn-clear:hover { background: rgba(239, 68, 68, 0.2); }
-
-    .pagination-wrap { margin-top: 20px; display: flex; justify-content: center; }
-
-    .method-badge {
-        display: inline-flex; align-items: center; gap: 4px;
-        padding: 3px 9px; border-radius: 6px;
-        font-size: 11px; font-weight: 700;
-    }
-    .method-cash          { background: rgba(34, 197, 94, 0.1);  color: #22c55e; }
-    .method-gcash         { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-    .method-maya          { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-    .method-bank_transfer { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-    .method-check         { background: rgba(169, 120, 74, 0.15); color: #c9a961; }
-
-    .pending-summary {
+    .py-stat {
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 14px 18px;
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(34, 34, 44, 0.6));
-        border: 1px solid rgba(245, 158, 11, 0.25);
-        border-radius: 12px;
-        margin-bottom: 14px;
+        padding: 18px;
+        background: rgba(34, 34, 44, 0.35);
+        backdrop-filter: blur(24px) saturate(1.5);
+        -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        transition: all 0.25s;
     }
-    .pending-summary-icon {
-        width: 40px; height: 40px;
-        border-radius: 10px;
-        background: rgba(245, 158, 11, 0.15);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        color: #f59e0b;
+    .py-stat:hover {
+        transform: translateY(-3px);
+        border-color: rgba(169, 120, 74, 0.3);
+        background: rgba(34, 34, 44, 0.45);
+    }
+    .py-stat-icon {
+        width: 46px; height: 46px;
+        border-radius: 12px;
         display: grid; place-items: center;
         flex-shrink: 0;
+        border: 1px solid;
     }
-    .pending-summary-text { flex: 1; min-width: 0; }
-    .pending-summary-title {
-        font-size: 14px; font-weight: 700;
+    .py-stat-icon.gold  { background: rgba(169, 120, 74, 0.14); border-color: rgba(169, 120, 74, 0.3); color: #c9a961; }
+    .py-stat-icon.green { background: rgba(34, 197, 94, 0.14);  border-color: rgba(34, 197, 94, 0.3);  color: #22c55e; }
+    .py-stat-icon.blue  { background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.3); color: #3b82f6; }
+    .py-stat-icon.amber { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b; }
+
+    .py-stat-body { flex: 1; min-width: 0; }
+    .py-stat-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 5px;
+    }
+    .py-stat-value {
+        font-size: 22px;
+        font-weight: 800;
         color: var(--text-primary);
+        letter-spacing: -0.03em;
+        line-height: 1;
+        margin-bottom: 4px;
+        font-variant-numeric: tabular-nums;
     }
-    .pending-summary-sub {
-        font-size: 11px; color: var(--text-muted);
-        margin-top: 2px;
-    }
-    .pending-summary-total { text-align: right; }
-    .pending-summary-label {
-        font-size: 10px; color: var(--text-muted);
-        text-transform: uppercase; letter-spacing: 0.1em;
-        font-weight: 700; margin-bottom: 4px;
-    }
-    .pending-summary-value {
-        font-size: 20px; font-weight: 800;
-        color: #f59e0b;
-        letter-spacing: -0.02em;
+    .py-stat-meta {
+        font-size: 11px;
+        color: var(--text-muted);
     }
 
-    @media (max-width: 1100px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 900px) {
-        .toolbar-form { flex-wrap: wrap; }
-        .search-box { max-width: 100%; flex: 1 1 100%; }
-        .filter-select { flex: 1; width: auto; }
+    /* ===== STATUS TABS ===== */
+    .py-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 4px;
+        background: rgba(20, 20, 26, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 13px;
+        margin-bottom: 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
     }
-    @media (max-width: 700px)  { .summary-grid { grid-template-columns: 1fr; } }
+    .py-tabs::-webkit-scrollbar { display: none; }
+    .py-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 16px;
+        border-radius: 10px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .py-tab:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-primary);
+    }
+    .py-tab.active {
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        box-shadow: 0 6px 16px -6px rgba(169, 120, 74, 0.6);
+    }
+    .py-tab .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .py-tab .dot.green {
+        background: #22c55e;
+        box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+    }
+    .py-tab .dot.amber {
+        background: #f59e0b;
+        box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+    }
+    .py-tab .dot.red {
+        background: #ef4444;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+    }
+    .py-tab.active .dot {
+        background: #fff;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+    .py-tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 18px;
+        padding: 0 6px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        font-size: 10.5px;
+        font-weight: 800;
+    }
+    .py-tab:not(.active) .py-tab-count {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-muted);
+    }
+    /* ===== TOOLBAR ===== */
+    .py-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .py-toolbar-left {
+        flex-shrink: 0;
+    }
+    .py-toolbar-heading {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .py-toolbar-sub {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    .py-toolbar-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+        justify-content: flex-end;
+        min-width: 0;
+    }
+    .py-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1 1 200px;
+        max-width: 280px;
+        min-width: 180px;
+    }
+    .py-search svg {
+        position: absolute;
+        left: 12px;
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+    .py-search input {
+        width: 100%;
+        padding: 9px 14px 9px 38px;
+        background: rgba(20, 20, 26, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.15s;
+    }
+    .py-search input::placeholder { color: var(--text-muted); }
+    .py-search input:focus {
+        border-color: #c9a961;
+        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.12);
+    }
+    .py-filter {
+        padding: 9px 32px 9px 12px;
+        background: rgba(20, 20, 26, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6862' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        width: 150px;
+        flex-shrink: 0;
+    }
+    .py-btn-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 12.5px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 6px 16px -6px rgba(169, 120, 74, 0.6);
+    }
+    .py-btn-clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        text-decoration: none;
+    }
+
+    /* ===== TABLE ===== */
+    .py-table-card {
+        background: rgba(34, 34, 44, 0.35);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .py-table-wrap {
+        overflow-x: auto;
+    }
+    .py-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .py-table thead th {
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(20, 20, 26, 0.4);
+        white-space: nowrap;
+    }
+    .py-table tbody td {
+        padding: 14px 18px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        border-bottom: 1px solid rgba(38, 38, 46, 0.5);
+        vertical-align: middle;
+    }
+    .py-table tbody tr {
+        transition: background 0.15s;
+    }
+    .py-table tbody tr:hover {
+        background: rgba(169, 120, 74, 0.04);
+    }
+    .py-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .py-number {
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #c9a961;
+    }
+
+    .py-store {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .py-store-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .py-store-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .py-store-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+    .py-store-code {
+        font-size: 10px;
+        color: var(--text-muted);
+        font-family: ui-monospace, monospace;
+    }
+
+    .py-date-main {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    .py-date-sub {
+        font-size: 10.5px;
+        color: var(--text-muted);
+    }
+
+    .py-method-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: capitalize;
+    }
+    .py-method-badge.method-cash {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .py-method-badge.method-gcash,
+    .py-method-badge.method-maya {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+    .py-method-badge.method-bank_transfer,
+    .py-method-badge.method-check {
+        background: rgba(169, 120, 74, 0.12);
+        color: #c9a961;
+        border: 1px solid rgba(169, 120, 74, 0.25);
+    }
+
+    .py-ref {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .py-amount {
+        font-size: 14px;
+        font-weight: 800;
+        color: #22c55e;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .py-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 10.5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .py-status::before {
+        content: '';
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 5px;
+    }
+    .py-status.linked {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+    }
+    .py-status.unlinked {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+
+    .py-btn-view {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.25);
+        border-radius: 8px;
+        color: #c9a961;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .py-btn-view:hover {
+        background: rgba(169, 120, 74, 0.2);
+        border-color: rgba(169, 120, 74, 0.4);
+    }
+
+    /* ===== EMPTY ===== */
+    .py-empty {
+        padding: 60px 20px;
+        text-align: center;
+        background: rgba(34, 34, 44, 0.3);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+    }
+    .py-empty-icon {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 16px;
+        border-radius: 20px;
+        background: rgba(169, 120, 74, 0.1);
+        border: 1px solid rgba(169, 120, 74, 0.25);
+        display: grid;
+        place-items: center;
+        color: #c9a961;
+    }
+    .py-empty-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    .py-empty-text {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+    }
+    .py-btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 11px 20px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        border-radius: 11px;
+        color: #fff;
+        font-size: 12.5px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 6px 16px -6px rgba(169, 120, 74, 0.6);
+    }
+
+    /* ===== PAGINATION ===== */
+    .py-pagination {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1200px) {
+        .py-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+        .py-toolbar-form {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .py-search {
+            max-width: 100%;
+            flex: 1 1 100%;
+        }
+        .py-filter {
+            flex: 1 1 auto;
+            width: auto;
+        }
+    }
+    @media (max-width: 700px) {
+        .py-stats { grid-template-columns: 1fr; }
+        .py-toolbar-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .py-search { width: 100%; max-width: 100%; }
+        .py-filter { width: 100%; }
+        .py-btn-filter { width: 100%; justify-content: center; }
+    }
 </style>
 @endpush

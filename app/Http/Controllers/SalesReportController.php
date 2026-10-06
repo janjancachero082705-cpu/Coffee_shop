@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ConsignmentPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Events\SalesReportCreated;
 
 class SalesReportController extends Controller
 {
@@ -146,6 +147,8 @@ class SalesReportController extends Controller
                 }
             }
         });
+
+        SalesReportCreated::dispatch($report);
 
         return redirect()->route('consignment.reports.index')->with('success', 'Sales report created successfully.');
     }
