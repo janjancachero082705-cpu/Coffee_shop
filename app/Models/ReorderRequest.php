@@ -57,9 +57,7 @@ class ReorderRequest extends Model
     // Scopes
     public function scopePending($q)
     {
-        return $q->where('status',
-        'is_read_by_admin',
-        'is_read_at', 'pending');
+        return $q->where('status', 'pending');
     }
 
     public function scopeForStore($q, $storeId)

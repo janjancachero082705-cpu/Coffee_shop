@@ -171,7 +171,21 @@
                                 &#8369;{{ number_format($dr->balance, 2) }}
                             </td>
                             <td>
-                                <span class="badge badge-{{ $dr->status }}">{{ ucfirst($dr->status) }}</span>
+                                @if($dr->status === 'out_for_delivery' || ($dr->out_for_delivery_at && !$dr->customer_confirmed))
+                                    <span class="badge" style="background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);">
+                                        🚚 Out for Delivery
+                                    </span>
+                                @elseif($dr->status === 'delivered' || $dr->customer_confirmed)
+                                    <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);">
+                                        ✓ Delivered
+                                    </span>
+                                @elseif($dr->status === 'partial')
+                                    <span class="badge badge-partial">Partial</span>
+                                @elseif($dr->status === 'paid')
+                                    <span class="badge badge-paid">Paid</span>
+                                @else
+                                    <span class="badge badge-pending">Pending</span>
+                                @endif
                             </td>
                             <td style="text-align:right;">
                                 <a href="{{ route('deliveries.show', $dr) }}" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">View</a>

@@ -11,6 +11,7 @@ class SalesReport extends Model
 
     protected $fillable = [
         'report_number',
+        'delivery_receipt_id',
         'store_id',
         'user_id',
         'period_from',
@@ -36,6 +37,11 @@ class SalesReport extends Model
     public function store()
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function deliveryReceipt()
+    {
+        return $this->belongsTo(DeliveryReceipt::class);
     }
 
     public function user()

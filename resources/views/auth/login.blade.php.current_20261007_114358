@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login - Coffee Beans</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f0f14;
+            color: #f5f3f0;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+        }
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background: linear-gradient(180deg, rgba(15,15,20,0.78), rgba(10,10,16,0.88));
+            z-index: -1;
+        }
+
+        .login-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: linear-gradient(165deg, #1e1a16 0%, #15120f 100%);
+            border: 1px solid rgba(201, 169, 97, 0.25);
+            border-radius: 24px;
+            padding: 32px 28px 28px;
+            box-shadow:
+                0 30px 60px -20px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                0 0 80px -30px rgba(201, 169, 97, 0.35);
+            animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* LOGO */
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 12px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #c9a961, #8a5f36);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 12px 32px -10px rgba(201, 169, 97, 0.7);
+        }
+        .logo-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #f5f3f0;
+            letter-spacing: -0.02em;
+        }
+        .logo-title span { color: #c9a961; }
+        .logo-sub {
+            font-size: 11.5px;
+            color: #8a8378;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+        }
+
+        /* TABS */
+        .login-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            margin-bottom: 22px;
+            position: relative;
+        }
+        .login-tab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: #8a8378;
+            font-size: 12.5px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .login-tab:hover { color: #c4bdb4; }
+        .login-tab.active {
+            background: linear-gradient(135deg, #c9a961, #8a5f36);
+            color: #fff;
+            box-shadow: 0 6px 16px -6px rgba(201, 169, 97, 0.7);
+        }
+        .login-tab svg { flex-shrink: 0; }
+
+        /* FORMS */
+        .login-form {
+            display: none;
+            animation: formFade 0.25s ease;
+        }
+        .login-form.active { display: block; }
+        @keyframes formFade {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+        .field-label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #c4bdb4;
+            margin-bottom: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .field-input {
+            width: 100%;
+            padding: 13px 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #f5f3f0;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field-input:focus {
+            border-color: #c9a961;
+            box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.12);
+        }
+        .field-input::placeholder { color: #5a544c; }
+
+        .field-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            font-size: 12.5px;
+            color: #a8a5a0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .field-check input {
+            width: 16px;
+            height: 16px;
+            accent-color: #c9a961;
+            cursor: pointer;
+        }
+
+        .btn-login {
+            width: 100%;
+            min-height: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #c9a961, #8a5f36);
+            border: none;
+            border-radius: 13px;
+            color: #fff;
+            font-size: 14.5px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 12px 28px -10px rgba(201, 169, 97, 0.7);
+            letter-spacing: 0.02em;
+            transition: transform 0.1s, background 0.15s;
+        }
+        .btn-login:hover { background: linear-gradient(135deg, #d4b673, #9a6b3f); }
+        .btn-login:active { transform: scale(0.98); }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* FOOTER — varies per tab */
+        .tab-footer {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            font-size: 12.5px;
+            color: #8a8378;
+        }
+        .tab-footer a {
+            color: #c9a961;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .tab-footer a:hover { color: #d4b673; }
+
+        /* ERROR */
+        .login-error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 13px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 11px;
+            color: #f87171;
+            font-size: 12.5px;
+            margin-bottom: 16px;
+        }
+        .login-error svg { flex-shrink: 0; }
+
+        /* HINT BOX */
+        .tab-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(201, 169, 97, 0.08);
+            border: 1px solid rgba(201, 169, 97, 0.2);
+            border-radius: 10px;
+            font-size: 11px;
+            color: #c9a961;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .tab-hint svg { flex-shrink: 0; margin-top: 1px; }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 26px 20px 22px; border-radius: 20px; }
+            .logo-icon { width: 56px; height: 56px; }
+            .logo-title { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrap">
+    <div class="login-card">
+
+        {{-- LOGO --}}
+        <div class="logo-wrap">
+            <div class="logo-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round">
+                    <path d="M17 8h1a4 4 0 110 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+                </svg>
+            </div>
+            <div class="logo-title">Coffee <span>Beans</span></div>
+            <div class="logo-sub">Consignment System</div>
+        </div>
+
+        {{-- TABS --}}
+        <div class="login-tabs">
+            <button type="button" class="login-tab active" data-tab="admin" id="tabAdmin">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 7a4 4 0 100 8 4 4 0 000-8z"/>
+                </svg>
+                Admin
+            </button>
+            <button type="button" class="login-tab" data-tab="store" id="tabStore">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18M9 13h6"/>
+                </svg>
+                Store
+            </button>
+        </div>
+
+        {{-- ============ ADMIN FORM ============ --}}
+        <form method="POST" action="{{ route('login.store') }}" class="login-form active" data-form="admin" id="formAdmin">
+            @csrf
+
+            @if($errors->any() && !old('_tab_store'))
+                <div class="login-error">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                    {{ $errors->first() }}
+                </div>
+            @endif
+
+            <div class="field">
+                <label class="field-label">Email Address</label>
+                <input type="email" name="email" class="field-input"
+                       value="{{ old('_tab_store') ? '' : old('email') }}"
+                       placeholder="admin@coffeebeans.com" required autocomplete="email">
+            </div>
+
+            <div class="field">
+                <label class="field-label">Password</label>
+                <input type="password" name="password" class="field-input"
+                       placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <label class="field-check">
+                <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                Remember me on this device
+            </label>
+
+            <button type="submit" class="btn-login" id="btnAdmin">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+                </svg>
+                Login as Admin
+            </button>
+
+            {{-- NO registration link for admin --}}
+            <div class="tab-footer">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+                Admin access is restricted. Contact system owner.
+            </div>
+        </form>
+
+        {{-- ============ STORE FORM ============ --}}
+        <form method="POST" action="{{ route('portal.login.store') }}" class="login-form" data-form="store" id="formStore">
+            @csrf
+            <input type="hidden" name="_tab_store" value="1">
+
+            @if($errors->any() && old('_tab_store'))
+                <div class="login-error">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                    {{ $errors->first() }}
+                </div>
+            @endif
+
+            <div class="tab-hint">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                Kung na-approve na ang imong registration, gamita ang email ug password nga gi-register.
+            </div>
+
+            <div class="field">
+                <label class="field-label">Store Email</label>
+                <input type="email" name="email" class="field-input"
+                       value="{{ old('_tab_store') ? old('email') : '' }}"
+                       placeholder="store@example.com" required autocomplete="email">
+            </div>
+
+            <div class="field">
+                <label class="field-label">Password</label>
+                <input type="password" name="password" class="field-input"
+                       placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <label class="field-check">
+                <input type="checkbox" name="remember">
+                Remember me on this device
+            </label>
+
+            <button type="submit" class="btn-login" id="btnStore">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+                </svg>
+                Login as Store
+            </button>
+
+            {{-- Registration link for store --}}
+            <div class="tab-footer">
+                Wala pa kay account?
+                <a href="{{ route('portal.register') }}">Mag-register dinhi →</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+(function() {
+    const tabs = document.querySelectorAll('.login-tab');
+    const forms = document.querySelectorAll('.login-form');
+
+    // Detect initial tab: query param > old input > default
+    const initialTab = "{{ $initialTab ?? (old('_tab_store') ? 'store' : 'admin') }}";
+    switchTab(initialTab);
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    function switchTab(name) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+        forms.forEach(f => f.classList.toggle('active', f.dataset.form === name));
+    }
+
+    // Add loading spinner on submit
+    document.querySelectorAll('.login-form').forEach(form => {
+        form.addEventListener('submit', function() {
+            const btn = form.querySelector('.btn-login');
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M22 12a10 10 0 0 1-10 10" stroke-linecap="round"/></svg> Logging in...';
+        });
+    });
+})();
+</script>
+
+</body>
+</html>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ConsignmentPayment;
 
 class PortalPaymentController extends Controller
 {
@@ -27,5 +28,109 @@ class PortalPaymentController extends Controller
         $store = Auth::guard('store')->user();
         $payment = $store->consignmentPayments()->findOrFail($id);
         return view('portal.payments.show', compact('store', 'payment'));
+    }
+
+    public function create()
+    {
+        $store = Auth::guard('store')->user();
+
+        // Compute total unpaid balance across all DRs
+        $totalBalance = (float) $store->deliveryReceipts()
+            ->where('customer_confirmed', true)
+            ->get()
+            ->sum(fn($dr) => max(0, $dr->balance));
+
+        return view('portal.payments.create', compact('store', 'totalBalance'));
+    }
+
+    public function store(Request $request)
+    {
+        $store = Auth::guard('store')->user();
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'method' => 'required|in:cash,gcash,maya,bank_transfer,check,online',
+            'reference_number' => 'nullable|string|max:100',
+            'payment_date' => 'required|date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if (in_array($validated['method'], ['gcash', 'maya', 'bank_transfer', 'online'])
+            && empty($validated['reference_number'])) {
+            return back()
+                ->withErrors(['reference_number' => 'Reference number is required for online payments.'])
+                ->withInput();
+        }
+
+        // === AUTO-LINK TO OLDEST UNPAID DR ===
+        $targetDR = $store->deliveryReceipts()
+            ->where('customer_confirmed', true)
+            ->whereRaw('total_amount > (SELECT COALESCE(SUM(amount),0) FROM consignment_payments WHERE delivery_receipt_id = delivery_receipts.id)')
+            ->orderBy('delivery_date', 'asc')
+            ->first();
+
+        $payment = ConsignmentPayment::create([
+            'payment_number' => ConsignmentPayment::generateNumber(),
+            'store_id' => $store->id,
+            'delivery_receipt_id' => $targetDR?->id,
+            'user_id' => null,
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+            'payment_date' => $validated['payment_date'],
+            'notes' => $validated['notes'] ?? null,
+            'is_read_by_admin' => false,
+        ]);
+
+        if ($targetDR) {
+            $this->recalculateDR($targetDR);
+            $this->syncSalesReport($targetDR);
+        }
+
+        return redirect()
+            ->route('portal.payments.show', $payment->id)
+            ->with('success', 'Payment recorded successfully!');
+    }
+
+    protected function recalculateDR($dr): void
+    {
+        $totalPaid = $dr->payments()->sum('amount');
+        $balance = max(0, $dr->total_amount - $totalPaid);
+
+        $newStatus = $dr->status;
+        if (!in_array($dr->status, ['out_for_delivery', 'delivered'])) {
+            if ($balance <= 0.01) {
+                $newStatus = 'paid';
+            } elseif ($totalPaid > 0) {
+                $newStatus = 'partial';
+            } else {
+                $newStatus = 'pending';
+            }
+        }
+
+        $dr->update([
+            'amount_paid' => $totalPaid,
+            'balance' => $balance,
+            'status' => $newStatus,
+        ]);
+    }
+
+    protected function syncSalesReport($dr): void
+    {
+        try {
+            $sr = \App\Models\SalesReport::where('delivery_receipt_id', $dr->id)->first();
+            if (!$sr) {
+                \Log::info('syncSalesReport: walay SalesReport para sa DR ' . $dr->id);
+                return;
+            }
+
+            // Sync sa DR state (total paid na across all payments)
+            $sr->amount_paid = $dr->amount_paid;
+            $sr->recalculate();
+
+            \Log::info('syncSalesReport OK: SR ' . $sr->report_number . ' | Paid: ' . $sr->amount_paid . ' | Status: ' . $sr->status);
+        } catch (\Exception $e) {
+            \Log::warning('syncSalesReport failed: ' . $e->getMessage());
+        }
     }
 }

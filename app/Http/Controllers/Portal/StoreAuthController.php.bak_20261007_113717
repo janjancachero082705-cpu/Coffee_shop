@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers\Portal;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class StoreAuthController extends Controller
+{
+    public function showLogin()
+    {
+        if (Auth::guard('store')->check()) {
+            return redirect()->route('portal.dashboard');
+        }
+        return view('portal.auth.login');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $remember = $request->boolean('remember');
+
+        if (Auth::guard('store')->attempt($credentials, $remember)) {
+            $store = Auth::guard('store')->user();
+
+            if (!$store->portal_enabled) {
+                Auth::guard('store')->logout();
+                return back()->withErrors(['email' => 'Portal access not enabled. Contact admin.']);
+            }
+
+            if ($store->status !== 'active') {
+                Auth::guard('store')->logout();
+                return back()->withErrors(['email' => 'Account is ' . $store->status . '.']);
+            }
+
+            $store->update(['last_login_at' => now()]);
+            $request->session()->regenerate();
+
+            return redirect()->intended(route('portal.dashboard'));
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->only('email', 'remember'));
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::guard('store')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('portal.login');
+    }
+}

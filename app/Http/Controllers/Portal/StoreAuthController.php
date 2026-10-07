@@ -13,7 +13,8 @@ class StoreAuthController extends Controller
         if (Auth::guard('store')->check()) {
             return redirect()->route('portal.dashboard');
         }
-        return view('portal.auth.login');
+        // Redirect sa unified login with store tab pre-selected
+        return redirect()->route('login', ['tab' => 'store']);
     }
 
     public function login(Request $request)
@@ -30,12 +31,12 @@ class StoreAuthController extends Controller
 
             if (!$store->portal_enabled) {
                 Auth::guard('store')->logout();
-                return back()->withErrors(['email' => 'Portal access not enabled. Contact admin.']);
+                return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Portal access not enabled. Contact admin.'])->withInput(['_tab_store' => 1, 'email' => $request->email]);
             }
 
             if ($store->status !== 'active') {
                 Auth::guard('store')->logout();
-                return back()->withErrors(['email' => 'Account is ' . $store->status . '.']);
+                return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Account is ' . $store->status . '.'])->withInput(['_tab_store' => 1, 'email' => $request->email]);
             }
 
             $store->update(['last_login_at' => now()]);
@@ -44,7 +45,7 @@ class StoreAuthController extends Controller
             return redirect()->intended(route('portal.dashboard'));
         }
 
-        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->only('email', 'remember'));
+        return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Invalid credentials.'])->withInput(['_tab_store' => 1, 'email' => $request->email, 'remember' => $request->boolean('remember')]);
     }
 
     public function logout(Request $request)

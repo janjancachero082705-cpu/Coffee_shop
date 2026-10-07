@@ -120,4 +120,27 @@ class Store extends Authenticatable
     {
         return $this->registration_status === "rejected";
     }
+
+    // ===== NAME ALIAS (maps ->name to store_name) =====
+    public function getNameAttribute(): ?string
+    {
+        return $this->attributes['store_name'] ?? $this->attributes['name'] ?? null;
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->store_name 
+            ?? $this->name 
+            ?? 'Store #' . $this->id;
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(StoreNotification::class)->latest();
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->hasMany(StoreNotification::class)->whereNull('read_at')->latest();
+    }
 }

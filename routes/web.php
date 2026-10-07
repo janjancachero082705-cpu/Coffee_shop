@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::post('reorder-requests/{reorderRequest}/reject', [\App\Http\Controllers\ReorderRequestController::class, 'reject'])->name('reorder-requests.reject');
 
     Route::resource('deliveries', DeliveryReceiptController::class);
+    Route::post('deliveries/{id}/out-for-delivery', [\App\Http\Controllers\DeliveryReceiptController::class, 'markOutForDelivery'])->name('deliveries.out-for-delivery');
 
     // Consignment
     Route::prefix('consignment')->name('consignment.')->group(function () {
@@ -104,6 +105,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
         // Deliveries
         Route::get('/deliveries', [PortalDeliveryController::class, 'index'])->name('deliveries.index');
         Route::get('/deliveries/{id}', [PortalDeliveryController::class, 'show'])->name('deliveries.show');
+        Route::post('/deliveries/{id}/confirm', [PortalDeliveryController::class, 'confirm'])->name('deliveries.confirm');
 
         // Sales Reports
         Route::get('/reports', [PortalSalesReportController::class, 'index'])->name('reports.index');
@@ -111,7 +113,14 @@ Route::prefix('portal')->name('portal.')->group(function () {
 
         // Payments
         Route::get('/payments', [PortalPaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/create', [PortalPaymentController::class, 'create'])->name('payments.create');
+        Route::post('/payments', [PortalPaymentController::class, 'store'])->name('payments.store');
         Route::get('/payments/{id}', [PortalPaymentController::class, 'show'])->name('payments.show');
+
+        // Notifications
+        Route::get('/notifications/unread', [\App\Http\Controllers\Portal\NotificationController::class, 'unread'])->name('notifications.unread');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Portal\NotificationController::class, 'markRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Portal\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     });
 });
 

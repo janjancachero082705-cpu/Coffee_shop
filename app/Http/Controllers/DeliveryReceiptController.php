@@ -11,11 +11,14 @@ use App\Models\InventoryTransaction;
 use App\Models\SalesReport;
 use App\Events\DeliveryCreated;
 use App\Models\SalesReportItem;
+use App\Traits\NotifiesStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DeliveryReceiptController extends Controller
 {
+    use NotifiesStore;
+
     public function index(Request $request)
     {
         $query = DeliveryReceipt::with('store', 'items');
@@ -39,6 +42,11 @@ class DeliveryReceiptController extends Controller
             $query->where('status', 'partial');
         } elseif ($tab === 'paid') {
             $query->where('status', 'paid');
+        } elseif ($tab === 'out_for_delivery') {
+            $query->whereNotNull('out_for_delivery_at')
+                  ->where('customer_confirmed', false);
+        } elseif ($tab === 'confirmed') {
+            $query->where('customer_confirmed', true);
         }
 
         $deliveries = $query->latest()->paginate(15)->withQueryString();
@@ -49,14 +57,19 @@ class DeliveryReceiptController extends Controller
             'pending'      => DeliveryReceipt::where('status', 'pending')->count(),
             'partial'      => DeliveryReceipt::where('status', 'partial')->count(),
             'paid'         => DeliveryReceipt::where('status', 'paid')->count(),
+            'out_delivery' => DeliveryReceipt::whereNotNull('out_for_delivery_at')
+                                ->where('customer_confirmed', false)->count(),
+            'confirmed'    => DeliveryReceipt::where('customer_confirmed', true)->count(),
             'outstanding'  => (float) DeliveryReceipt::sum('balance'),
         ];
 
         $tabCounts = [
-            'all'     => $stats['total'],
-            'pending' => $stats['pending'],
-            'partial' => $stats['partial'],
-            'paid'    => $stats['paid'],
+            'all'              => $stats['total'],
+            'pending'          => $stats['pending'],
+            'partial'          => $stats['partial'],
+            'paid'             => $stats['paid'],
+            'out_for_delivery' => $stats['out_delivery'],
+            'confirmed'        => $stats['confirmed'],
         ];
 
         return view('deliveries.index', compact('deliveries', 'stores', 'stats', 'tabCounts', 'tab'));
@@ -214,5 +227,41 @@ class DeliveryReceiptController extends Controller
         });
 
         return redirect()->route('deliveries.index')->with('success', 'Delivery deleted.');
+    }
+
+    /**
+     * Mark delivery as "out for delivery"
+     */
+    public function markOutForDelivery($id)
+    {
+        $delivery = \App\Models\DeliveryReceipt::findOrFail($id);
+
+        if ($delivery->customer_confirmed) {
+            return back()->with('error', 'Cannot mark out for delivery — already confirmed.');
+        }
+
+        $delivery->markOutForDelivery();
+
+        // Notify customer via portal bell + popup
+        $this->notifyStore(
+            $delivery->store_id,
+            'delivery_out',
+            '🚚 Out for Delivery',
+            "Ang imong delivery {$delivery->dr_number} gi-ship na. I-confirm kung nadawat na nimo.",
+            [
+                'url' => route('portal.deliveries.show', $delivery->id),
+                'dr_number' => $delivery->dr_number,
+                'delivery_id' => $delivery->id,
+            ]
+        );
+
+        // Fire real-time event
+        try {
+            event(new \App\Events\DeliveryOutForDelivery($delivery));
+        } catch (\Throwable $e) {
+            \Log::warning('Delivery event failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Delivery marked as out for delivery. Customer notified.');
     }
 }

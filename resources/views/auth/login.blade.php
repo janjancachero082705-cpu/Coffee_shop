@@ -389,6 +389,83 @@
             .brand-icon { width: 50px; height: 50px; }
             .brand-name { font-size: 18px; }
         }
+    
+        /* ============ TABS ============ */
+        .login-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .login-tab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: #8a8378;
+            font-size: 12.5px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .login-tab:hover { color: #c4bdb4; }
+        .login-tab.active {
+            background: linear-gradient(135deg, #c9a961, #8a5f36);
+            color: #fff;
+            box-shadow: 0 6px 16px -6px rgba(201, 169, 97, 0.7);
+        }
+        .login-tab svg { flex-shrink: 0; }
+
+        /* FORMS */
+        .login-form { display: none; }
+        .login-form.active { display: block; animation: formFade 0.25s ease; }
+        @keyframes formFade {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* TAB FOOTER */
+        .tab-footer {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            font-size: 12px;
+            color: #8a8378;
+        }
+        .tab-footer a {
+            color: #c9a961;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .tab-footer a:hover { color: #d4b673; }
+
+        /* TAB HINT */
+        .tab-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(201, 169, 97, 0.08);
+            border: 1px solid rgba(201, 169, 97, 0.2);
+            border-radius: 10px;
+            font-size: 11px;
+            color: #c9a961;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+        .tab-hint svg { flex-shrink: 0; margin-top: 1px; }
     </style>
 </head>
 <body>
@@ -414,6 +491,22 @@
         <div class="brand-sub">Consignment System</div>
     </div>
 
+    {{-- TABS --}}
+    <div class="login-tabs">
+        <button type="button" class="login-tab active" data-tab="admin">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 7a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            Admin
+        </button>
+        <button type="button" class="login-tab" data-tab="store">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18M9 13h6"/>
+            </svg>
+            Store
+        </button>
+    </div>
+
     {{-- ERROR --}}
     @if($errors->any())
         <div class="alert alert-danger">
@@ -426,7 +519,7 @@
     @endif
 
     {{-- FORM --}}
-    <form method="POST" action="{{ route('login.store') }}" id="loginForm">
+    <form method="POST" action="{{ route('login.store') }}" id="loginForm" class="login-form active" data-form="admin">
         @csrf
 
         <div class="form-group">
@@ -474,6 +567,81 @@
                 <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
         </button>
+
+        {{-- Admin: no registration --}}
+        <div class="tab-footer">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px;">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Admin access is restricted.
+        </div>
+    </form>
+
+    {{-- STORE FORM --}}
+    <form method="POST" action="{{ route('portal.login.store') }}" id="storeForm" class="login-form" data-form="store">
+        @csrf
+        <input type="hidden" name="_tab_store" value="1">
+
+        <div class="tab-hint">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Kung na-approve na ang imong registration, gamita ang email ug password.
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="store_email">Store Email</label>
+            <div class="input-wrap">
+                <span class="input-icon">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <path d="M22 6l-10 7L2 6"/>
+                    </svg>
+                </span>
+                <input type="email" id="store_email" name="email" value="{{ old('_tab_store') ? old('email') : '' }}" class="input" placeholder="store@example.com" required autocomplete="email">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="store_password">Password</label>
+            <div class="input-wrap">
+                <span class="input-icon">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </span>
+                <input type="password" id="store_password" name="password" class="input input-with-toggle" placeholder="Enter your password" required autocomplete="current-password">
+                <button type="button" class="pw-toggle" id="storePwToggle" title="Show password">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-options">
+            <label class="checkbox-wrap">
+                <input type="checkbox" name="remember" value="1" {{ old('_tab_store') && old('remember') ? 'checked' : '' }}>
+                <span>Remember me</span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn-submit" id="storeSubmitBtn">
+            <span>Sign In</span>
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+        </button>
+
+        {{-- Store: registration link --}}
+        <div class="tab-footer">
+            Wala pa kay account?
+            <a href="{{ route('portal.register') }}">Mag-register dinhi →</a>
+        </div>
     </form>
 
     <div class="form-footer">
@@ -532,7 +700,39 @@
             });
         }
     })();
-</script>
 
+    // === TAB SWITCHING ===
+    (function() {
+        const tabs = document.querySelectorAll('.login-tab');
+        const forms = document.querySelectorAll('.login-form');
+
+        if (!tabs.length) return;
+
+        // Initial tab from PHP
+        const initialTab = "{{ $initialTab ?? (old('_tab_store') ? 'store' : 'admin') }}";
+
+        function switchTab(name) {
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            forms.forEach(f => f.classList.toggle('active', f.dataset.form === name));
+        }
+
+        switchTab(initialTab);
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        });
+
+        // Store password toggle
+        const storePwToggle = document.getElementById('storePwToggle');
+        const storePwInput = document.getElementById('store_password');
+        if (storePwToggle && storePwInput) {
+            storePwToggle.addEventListener('click', function() {
+                const isPw = storePwInput.type === 'password';
+                storePwInput.type = isPw ? 'text' : 'password';
+                this.style.color = isPw ? '#c9a961' : '';
+            });
+        }
+    })();
+</script>
 </body>
 </html>

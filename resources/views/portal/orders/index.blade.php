@@ -19,12 +19,20 @@
         <div class="pp-title">My Orders</div>
         <div class="pp-sub">Stock requests & status</div>
     </div>
-    <a href="{{ route('portal.orders.create') }}" class="pp-action">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path d="M12 5v14M5 12h14"/>
-        </svg>
-        New
-    </a>
+    <div class="pp-head-actions">
+        <a href="{{ route('portal.orders.create') }}" class="pp-action-secondary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            Browse
+        </a>
+        <a href="{{ route('portal.orders.create') }}" class="pp-action">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            New
+        </a>
+    </div>
 </div>
 
 {{-- STATS --}}
@@ -146,4 +154,40 @@
     @endif
 @endif
 
+
+@push('styles')
+<style>
+
+        /* Header actions */
+        .pp-head-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .pp-action-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            background: rgba(201, 169, 97, 0.1);
+            border: 1px solid rgba(201, 169, 97, 0.3);
+            color: #c9a961;
+            font-size: 12.5px;
+            font-weight: 800;
+            border-radius: 11px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pp-action-secondary:hover {
+            background: rgba(201, 169, 97, 0.2);
+            border-color: #c9a961;
+            color: #fff;
+        }
+        .pp-action-secondary:active {
+            transform: scale(0.97);
+        }
+</style>
+@endpush
 @endsection

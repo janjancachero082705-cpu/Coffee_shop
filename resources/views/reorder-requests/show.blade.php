@@ -178,6 +178,59 @@
         .rr-item-col-value { font-size: 12px; }
     }
 </style>
+
+{{-- APPROVE CONFIRM MODAL --}}
+<div id="approveModal" class="appr-modal-overlay" style="display:none;" aria-hidden="true">
+    <div class="appr-modal" role="dialog" aria-modal="true">
+        <div class="appr-modal-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+        </div>
+
+        <div class="appr-modal-title">Approve this request?</div>
+        <div class="appr-modal-sub">
+            Request #<strong>{{ $reorderRequest->id }}</strong>
+        </div>
+
+        <div class="appr-modal-body">
+            <div class="appr-modal-row">
+                <span>Store</span>
+                <strong>{{ $reorderRequest->store->name ?? "—" }}</strong>
+            </div>
+            <div class="appr-modal-row">
+                <span>Items</span>
+                <strong>{{ $reorderRequest->items->count() }} product(s)</strong>
+            </div>
+            <div class="appr-modal-row">
+                <span>Total</span>
+                <strong style="color:#c9a961;">&#8369;{{ number_format($reorderRequest->total_amount ?? 0, 2) }}</strong>
+            </div>
+        </div>
+
+        <div class="appr-modal-info">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <div>
+                <strong>Automatic DR creation</strong><br>
+                Ma-create dayon ang Delivery Receipt para ani nga request.
+            </div>
+        </div>
+
+        <div class="appr-modal-actions">
+            <button type="button" class="appr-modal-btn-cancel" data-appr-close>
+                Cancel
+            </button>
+            <button type="button" class="appr-modal-btn-confirm" id="apprModalConfirm">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+                Yes, Approve & Create DR
+            </button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('content')
@@ -326,7 +379,7 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('reorder-requests.approve', $reorderRequest) }}">
+                <form method="POST" action="{{ route('reorder-requests.approve', $reorderRequest) }}" id="approveForm">
                     @csrf
 
                     <div class="field">
@@ -339,8 +392,8 @@
                         <textarea name="admin_notes" rows="2" class="input" placeholder="Internal notes..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px;"
-                            onclick="return confirm('Approve this request? A delivery receipt will be created automatically.');">
+                    <button type="button" id="openApproveModal" class="btn btn-primary" style="width:100%; margin-top:14px;"
+
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
                         Approve & Create DR
                     </button>
@@ -594,6 +647,59 @@
         .rr-item-col-value { font-size: 12px; }
     }
 </style>
+
+{{-- APPROVE CONFIRM MODAL --}}
+<div id="approveModal" class="appr-modal-overlay" style="display:none;" aria-hidden="true">
+    <div class="appr-modal" role="dialog" aria-modal="true">
+        <div class="appr-modal-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+        </div>
+
+        <div class="appr-modal-title">Approve this request?</div>
+        <div class="appr-modal-sub">
+            Request #<strong>{{ $reorderRequest->id }}</strong>
+        </div>
+
+        <div class="appr-modal-body">
+            <div class="appr-modal-row">
+                <span>Store</span>
+                <strong>{{ $reorderRequest->store->name ?? "—" }}</strong>
+            </div>
+            <div class="appr-modal-row">
+                <span>Items</span>
+                <strong>{{ $reorderRequest->items->count() }} product(s)</strong>
+            </div>
+            <div class="appr-modal-row">
+                <span>Total</span>
+                <strong style="color:#c9a961;">&#8369;{{ number_format($reorderRequest->total_amount ?? 0, 2) }}</strong>
+            </div>
+        </div>
+
+        <div class="appr-modal-info">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <div>
+                <strong>Automatic DR creation</strong><br>
+                Ma-create dayon ang Delivery Receipt para ani nga request.
+            </div>
+        </div>
+
+        <div class="appr-modal-actions">
+            <button type="button" class="appr-modal-btn-cancel" data-appr-close>
+                Cancel
+            </button>
+            <button type="button" class="appr-modal-btn-confirm" id="apprModalConfirm">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+                Yes, Approve & Create DR
+            </button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -664,4 +770,156 @@
         .detail-grid { grid-template-columns: 1fr; }
     }
 </style>
+@endpush
+
+@push('styles')
+<style>
+    .appr-modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(10, 8, 6, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        animation: apprFadeIn 0.2s ease;
+    }
+    @keyframes apprFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .appr-modal {
+        width: 100%; max-width: 420px;
+        background: linear-gradient(165deg, #1e1a16 0%, #15120f 100%);
+        border: 1px solid rgba(201, 169, 97, 0.35);
+        border-radius: 20px;
+        padding: 26px 24px 22px;
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.75),
+                    0 0 0 1px rgba(255,255,255,0.03) inset,
+                    0 0 80px -20px rgba(201,169,97,0.25);
+        animation: apprModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: center;
+    }
+    @keyframes apprModalIn {
+        from { opacity: 0; transform: scale(0.92) translateY(10px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .appr-modal-icon {
+        width: 64px; height: 64px;
+        margin: 0 auto 16px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(201,169,97,0.28), rgba(138,95,54,0.15));
+        border: 1px solid rgba(201,169,97,0.35);
+        color: #c9a961;
+        display: grid; place-items: center;
+        box-shadow: 0 10px 30px -10px rgba(201,169,97,0.5);
+    }
+    .appr-modal-title {
+        font-size: 19px; font-weight: 800;
+        color: #f5f3f0; margin-bottom: 6px;
+    }
+    .appr-modal-sub { font-size: 12.5px; color: #9a9188; margin-bottom: 20px; }
+    .appr-modal-sub strong { color: #c9a961; font-weight: 700; }
+
+    .appr-modal-body {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        text-align: left;
+    }
+    .appr-modal-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 6px 0; font-size: 12.5px;
+    }
+    .appr-modal-row + .appr-modal-row { border-top: 1px solid rgba(255,255,255,0.05); }
+    .appr-modal-row span { color: #8a8378; }
+    .appr-modal-row strong { color: #f5f3f0; font-weight: 700; }
+
+    .appr-modal-info {
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 10px 12px;
+        background: rgba(59,130,246,0.08);
+        border: 1px solid rgba(59,130,246,0.22);
+        border-radius: 10px;
+        font-size: 11.5px; color: #7da5e0;
+        text-align: left; margin-bottom: 20px; line-height: 1.5;
+    }
+    .appr-modal-info svg { flex-shrink: 0; margin-top: 2px; color: #3b82f6; }
+    .appr-modal-info strong { color: #93bff5; font-weight: 700; }
+
+    .appr-modal-actions { display: flex; gap: 10px; }
+    .appr-modal-btn-cancel, .appr-modal-btn-confirm {
+        flex: 1; min-height: 46px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        border: none; border-radius: 12px;
+        font-size: 13.5px; font-weight: 800;
+        font-family: inherit; cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .appr-modal-btn-cancel {
+        background: rgba(255,255,255,0.06);
+        color: #c4bdb4;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+    .appr-modal-btn-cancel:hover { background: rgba(255,255,255,0.1); color: #f5f3f0; }
+    .appr-modal-btn-confirm {
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        box-shadow: 0 10px 24px -8px rgba(201,169,97,0.7);
+    }
+    .appr-modal-btn-confirm:hover { background: linear-gradient(135deg, #d4b673, #9a6b3f); }
+    .appr-modal-btn-confirm:active, .appr-modal-btn-cancel:active { transform: scale(0.98); }
+
+    @media (max-width: 480px) {
+        .appr-modal { padding: 22px 18px 18px; border-radius: 18px; }
+        .appr-modal-title { font-size: 17px; }
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+(function() {
+    const openBtn = document.getElementById('openApproveModal');
+    const modal = document.getElementById('approveModal');
+    const form = document.getElementById('approveForm');
+    const confirmBtn = document.getElementById('apprModalConfirm');
+
+    if (!openBtn || !modal || !form) {
+        console.warn('Approve modal: elements not found');
+        return;
+    }
+
+    openBtn.addEventListener('click', function() {
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    });
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M22 12a10 10 0 0 1-10 10" stroke-linecap="round"/></svg> Approving...';
+            form.submit();
+        });
+    }
+
+    modal.querySelectorAll('[data-appr-close]').forEach(function(el) {
+        el.addEventListener('click', closeModal);
+    });
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+    });
+
+    function closeModal() {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+})();
+</script>
 @endpush

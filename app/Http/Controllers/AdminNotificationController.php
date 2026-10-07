@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use App\Models\ConsignmentPayment;
 use App\Models\ReorderRequest;
 
 class AdminNotificationController extends Controller
@@ -78,25 +79,56 @@ class AdminNotificationController extends Controller
                 ];
             });
 
+        // ===== NEW PAYMENTS (unread by admin) =====
+        $payments = ConsignmentPayment::with(['store', 'deliveryReceipt'])
+            ->where('is_read_by_admin', false)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get()
+            ->map(function ($p) {
+                $storeName = $p->store->store_name ?? $p->store->name ?? ('Store #' . $p->store_id);
+                return [
+                    'type' => 'payment',
+                    'id' => $p->id,
+                    'code' => $p->payment_number,
+                    'store_name' => $storeName,
+                    'store_logo' => $p->store->logo_url ?? null,
+                    'store_initials' => $p->store->initials ?? 'ST',
+                    'amount' => number_format($p->amount, 2),
+                    'method' => $p->method_label ?? ucfirst($p->method),
+                    'method_icon' => $p->method_icon ?? '💰',
+                    'method_color' => $p->method_color ?? '#c9a961',
+                    'dr_number' => $p->deliveryReceipt->dr_number ?? null,
+                    'reference' => $p->reference_number,
+                    'total' => number_format($p->amount, 2),
+                    'items' => null,
+                    'ago' => $p->created_at->diffForHumans(),
+                    'url' => route('consignment.payments.show', $p->id),
+                    'created_at' => $p->created_at,
+                ];
+            });
+
         // Combine + sort by created_at
         $all = collect()
             ->merge($requests)
             ->merge($newStores)
             ->merge($recentLogins)
+            ->merge($payments)
             ->sortByDesc('created_at')
             ->take(15)
             ->values();
 
         return response()->json([
             'count' => ReorderRequest::where('is_read_by_admin', false)->count()
-                     + Store::where('is_read_by_admin', false)->count(),
+                     + Store::where('is_read_by_admin', false)->count()
+                     + ConsignmentPayment::where('is_read_by_admin', false)->count(),
             'orders' => $all,
         ]);
     }
 
     public function markRead($id)
     {
-        // Try reorder request una
+        // Try reorder request
         $req = ReorderRequest::find($id);
         if ($req) {
             $req->update(['is_read_by_admin' => true, 'is_read_at' => now()]);
@@ -110,6 +142,13 @@ class AdminNotificationController extends Controller
             return response()->json(['ok' => true, 'type' => 'store']);
         }
 
+        // Try payment
+        $payment = ConsignmentPayment::find($id);
+        if ($payment) {
+            $payment->update(['is_read_by_admin' => true, 'is_read_at' => now()]);
+            return response()->json(['ok' => true, 'type' => 'payment']);
+        }
+
         return response()->json(['ok' => false], 404);
     }
 
@@ -121,6 +160,11 @@ class AdminNotificationController extends Controller
         ]);
 
         Store::where('is_read_by_admin', false)->update([
+            'is_read_by_admin' => true,
+            'is_read_at' => now(),
+        ]);
+
+        ConsignmentPayment::where('is_read_by_admin', false)->update([
             'is_read_by_admin' => true,
             'is_read_at' => now(),
         ]);

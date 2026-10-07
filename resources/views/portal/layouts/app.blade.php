@@ -2691,5 +2691,604 @@
     console.log('[Echo] Initialized sa host: {{ env("REVERB_HOST", "10.236.154.40") }}:{{ env("REVERB_PORT", 8080) }}');
 </script>
 @stack('scripts')
+
+
+
+{{-- ===== FLOATING NOTIFICATION BELL ===== --}}
+@auth('store')
+<div id="pnBell" class="pn-bell">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+    <span class="pn-badge" id="pnBadge" style="display:none;">0</span>
+</div>
+
+<div id="pnPanel" class="pn-panel">
+    <div class="pn-head">
+        <div class="pn-head-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            Notifications
+        </div>
+        <button type="button" id="pnMarkAll" class="pn-mark-all">Mark all read</button>
+    </div>
+    <div class="pn-body" id="pnBody">
+        <div class="pn-loading">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:pnSpin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" opacity="0.2"/>
+                <path d="M22 12a10 10 0 0 1-10 10"/>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<div id="pnPopups" class="pn-popups"></div>
+
+<style>
+    /* ==== FLOATING BELL ==== */
+    .pn-bell {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        z-index: 9998;
+        box-shadow:
+            0 10px 28px -6px rgba(201, 169, 97, 0.6),
+            0 0 0 0 rgba(201, 169, 97, 0.5);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+        animation: pnFloat 3s ease-in-out infinite;
+    }
+    .pn-bell:hover {
+        transform: scale(1.08) rotate(-5deg);
+        box-shadow:
+            0 14px 36px -6px rgba(201, 169, 97, 0.8),
+            0 0 0 8px rgba(201, 169, 97, 0.15);
+    }
+    .pn-bell:active { transform: scale(0.96); }
+    .pn-bell.has-new { animation: pnRing 0.6s ease-in-out infinite; }
+    @keyframes pnFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    @keyframes pnRing {
+        0%, 100% { transform: rotate(0); }
+        25% { transform: rotate(-12deg); }
+        75% { transform: rotate(12deg); }
+    }
+
+    .pn-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        background: #ef4444;
+        color: #fff;
+        border-radius: 11px;
+        font-size: 11px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        border: 2.5px solid #0f0f14;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 3px 8px rgba(239, 68, 68, 0.5);
+    }
+
+    /* ==== PANEL ==== */
+    .pn-panel {
+        position: fixed;
+        bottom: 88px;
+        right: 24px;
+        width: calc(100vw - 32px);
+        max-width: 380px;
+        max-height: 70vh;
+        background: linear-gradient(165deg, #1e1a16, #15120f);
+        border: 1px solid rgba(201, 169, 97, 0.3);
+        border-radius: 18px;
+        box-shadow:
+            0 24px 60px -12px rgba(0, 0, 0, 0.85),
+            0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        z-index: 9999;
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+        animation: pnPanelIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .pn-panel.open { display: flex; }
+    @keyframes pnPanelIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .pn-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+    }
+    .pn-head-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #f5f3f0;
+    }
+    .pn-head-title svg { color: #c9a961; }
+    .pn-mark-all {
+        background: none;
+        border: none;
+        color: #c9a961;
+        font-size: 11.5px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-family: inherit;
+        transition: background 0.15s;
+    }
+    .pn-mark-all:hover { background: rgba(201, 169, 97, 0.15); }
+    .pn-mark-all:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .pn-body {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .pn-body::-webkit-scrollbar { width: 4px; }
+    .pn-body::-webkit-scrollbar-thumb { background: rgba(201, 169, 97, 0.3); border-radius: 2px; }
+
+    .pn-loading, .pn-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #8a8378;
+        font-size: 12.5px;
+    }
+    .pn-loading svg { margin: 0 auto 12px; color: #c9a961; }
+    .pn-empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+    .pn-empty-title { font-size: 13px; font-weight: 700; color: #a8a5a0; margin-bottom: 4px; }
+    .pn-empty-sub { font-size: 11.5px; }
+    @keyframes pnSpin { to { transform: rotate(360deg); } }
+
+    .pn-item {
+        display: flex;
+        gap: 12px;
+        padding: 13px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        cursor: pointer;
+        transition: background 0.15s;
+        text-decoration: none;
+        color: inherit;
+    }
+    .pn-item:last-child { border-bottom: none; }
+    .pn-item:hover { background: rgba(201, 169, 97, 0.08); }
+    .pn-item.unread { background: rgba(201, 169, 97, 0.04); }
+    .pn-item.unread::before {
+        content: '';
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #c9a961;
+        border-radius: 50%;
+        margin-left: -8px;
+        margin-top: 8px;
+    }
+
+    .pn-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        background: rgba(201, 169, 97, 0.15);
+    }
+    .pn-content { flex: 1; min-width: 0; }
+    .pn-title {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #f5f3f0;
+        margin-bottom: 3px;
+        line-height: 1.3;
+    }
+    .pn-message {
+        font-size: 11.5px;
+        color: #a8a5a0;
+        line-height: 1.45;
+        margin-bottom: 5px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .pn-time {
+        font-size: 10.5px;
+        color: #8a8378;
+        font-weight: 600;
+    }
+
+    /* ==== POPUP TOAST ==== */
+    .pn-popups {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: calc(100vw - 32px);
+        max-width: 340px;
+        z-index: 9997;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .pn-popup {
+        pointer-events: auto;
+        background: linear-gradient(165deg, #1e1a16, #15120f);
+        border: 1px solid rgba(201, 169, 97, 0.4);
+        border-radius: 14px;
+        padding: 13px 15px;
+        box-shadow: 0 16px 44px -10px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(201, 169, 97, 0.35);
+        display: flex;
+        gap: 12px;
+        cursor: pointer;
+        animation: pnPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.15s;
+        text-decoration: none;
+        color: inherit;
+    }
+    .pn-popup:hover { transform: translateX(-4px); }
+    .pn-popup.closing { animation: pnPopOut 0.25s ease forwards; }
+    @keyframes pnPopIn {
+        from { opacity: 0; transform: translateX(30px) scale(0.92); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes pnPopOut {
+        to { opacity: 0; transform: translateX(30px) scale(0.92); }
+    }
+    .pn-popup .pn-icon { width: 42px; height: 42px; font-size: 20px; }
+    .pn-popup .pn-title { font-size: 13px; }
+    .pn-popup .pn-message { -webkit-line-clamp: 2; margin-bottom: 0; }
+
+    @media (max-width: 480px) {
+        .pn-bell { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+        .pn-panel { bottom: 82px; right: 16px; left: 16px; width: auto; max-width: none; }
+        .pn-popups { top: 12px; right: 12px; left: 12px; width: auto; max-width: none; }
+    }
+</style>
+
+<script>
+(function() {
+    const bell = document.getElementById('pnBell');
+    const panel = document.getElementById('pnPanel');
+    const body = document.getElementById('pnBody');
+    const badge = document.getElementById('pnBadge');
+    const markAll = document.getElementById('pnMarkAll');
+    const popups = document.getElementById('pnPopups');
+
+    if (!bell || !panel) return;
+
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;
+    const UNREAD_URL = '{{ route("portal.notifications.unread") }}';
+    const READ_URL_TPL = '{{ route("portal.notifications.read", ":id") }}';
+    const MARK_ALL_URL = '{{ route("portal.notifications.read-all") }}';
+
+    let lastCount = 0;
+    let initialized = false;
+    let shownIds = new Set();
+    let isOpen = false;
+
+    // Start polling
+    setTimeout(fetchNotifications, 1500);
+    setInterval(fetchNotifications, 15000);
+
+    async function fetchNotifications() {
+        try {
+            const res = await fetch(UNREAD_URL, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CSRF,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (res.status === 401 || res.status === 419) return;
+            if (!res.ok) return;
+
+            const data = await res.json();
+            updateBadge(data.count);
+            renderList(data.notifications);
+
+            // Auto-popup new ones
+            if (initialized && data.count > lastCount) {
+                data.notifications.forEach(n => {
+                    if (!shownIds.has(n.id)) {
+                        showPopup(n);
+                        shownIds.add(n.id);
+                    }
+                });
+            }
+
+            lastCount = data.count;
+            initialized = true;
+        } catch (e) {
+            console.warn('Notif fetch error:', e);
+        }
+    }
+
+    function updateBadge(count) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'grid';
+            bell.classList.add('has-new');
+        } else {
+            badge.style.display = 'none';
+            bell.classList.remove('has-new');
+        }
+    }
+
+    function renderList(items) {
+        if (!items.length) {
+            body.innerHTML = `
+                <div class="pn-empty">
+                    <div class="pn-empty-icon">🔔</div>
+                    <div class="pn-empty-title">No new notifications</div>
+                    <div class="pn-empty-sub">Wala kay bag-ong updates</div>
+                </div>
+            `;
+            markAll.disabled = true;
+            return;
+        }
+
+        markAll.disabled = false;
+        body.innerHTML = '';
+
+        items.forEach(n => {
+            const item = document.createElement('div');
+            item.className = 'pn-item unread';
+            item.dataset.id = n.id;
+            item.innerHTML = `
+                <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
+                <div class="pn-content">
+                    <div class="pn-title">${esc(n.title)}</div>
+                    <div class="pn-message">${esc(n.message)}</div>
+                    <div class="pn-time">${esc(n.created_at)}</div>
+                </div>
+            `;
+            item.addEventListener('click', () => handleClick(n));
+            body.appendChild(item);
+        });
+    }
+
+    function handleClick(n) {
+        markRead(n.id).then(() => {
+            if (n.url) {
+                window.location.href = n.url;
+            } else {
+                fetchNotifications();
+            }
+        });
+    }
+
+    function showPopup(n) {
+        const el = document.createElement('div');
+        el.className = 'pn-popup';
+        el.innerHTML = `
+            <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
+            <div class="pn-content">
+                <div class="pn-title">${esc(n.title)}</div>
+                <div class="pn-message">${esc(n.message)}</div>
+            </div>
+        `;
+        el.addEventListener('click', () => {
+            el.classList.add('closing');
+            setTimeout(() => el.remove(), 250);
+            handleClick(n);
+        });
+        popups.appendChild(el);
+
+        // Auto dismiss 8s
+        setTimeout(() => {
+            if (!el.parentNode) return;
+            el.classList.add('closing');
+            setTimeout(() => el.remove(), 250);
+        }, 8000);
+    }
+
+    async function markRead(id) {
+        try {
+            const url = READ_URL_TPL.replace(':id', id);
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CSRF,
+                },
+                credentials: 'same-origin',
+            });
+        } catch (e) {}
+    }
+
+    async function markAllRead() {
+        try {
+            await fetch(MARK_ALL_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CSRF,
+                },
+                credentials: 'same-origin',
+            });
+            fetchNotifications();
+        } catch (e) {}
+    }
+
+    function esc(t) {
+        const d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML;
+    }
+
+    // Toggle panel
+    bell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isOpen = !isOpen;
+        if (isOpen) {
+            panel.classList.add('open');
+            fetchNotifications();
+        } else {
+            panel.classList.remove('open');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (isOpen && !panel.contains(e.target) && !bell.contains(e.target)) {
+            panel.classList.remove('open');
+            isOpen = false;
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen) {
+            panel.classList.remove('open');
+            isOpen = false;
+        }
+    });
+
+    markAll.addEventListener('click', (e) => {
+        e.stopPropagation();
+        markAllRead();
+    });
+})();
+</script>
+@endauth
+
+{{-- ===== UNIVERSAL MODAL BACK BUTTON ===== --}}
+<style>
+    .pp-modal-back-btn {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(201, 169, 97, 0.12);
+        border: 1px solid rgba(201, 169, 97, 0.3);
+        color: #c9a961;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        z-index: 10;
+        -webkit-tap-highlight-color: transparent;
+        padding: 0;
+        font-family: inherit;
+    }
+    .pp-modal-back-btn:hover {
+        background: rgba(201, 169, 97, 0.25);
+        border-color: #c9a961;
+        color: #fff;
+        transform: translateX(-2px);
+    }
+    .pp-modal-back-btn:active {
+        transform: scale(0.92);
+    }
+    .pp-modal-back-btn svg {
+        display: block;
+    }
+</style>
+
+<script>
+(function() {
+    // Auto-inject back button sa tanan modal headers
+    function injectBackButtons() {
+        const modals = document.querySelectorAll(
+            '.pp-modal, .cr-modal, .ship-modal, .appr-modal, .rej-modal, .pp-modal-overlay > div, [class*="modal-overlay"] > [class*="modal"]'
+        );
+
+        modals.forEach(function(modal) {
+            // Skip kung naa nay back button
+            if (modal.querySelector('.pp-modal-back-btn')) return;
+
+            // Skip kung naa nay close button sa upper-left
+            const backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'pp-modal-back-btn';
+            backBtn.setAttribute('aria-label', 'Back');
+            backBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
+
+            backBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal(modal);
+            });
+
+            // Insert as first child
+            modal.insertBefore(backBtn, modal.firstChild);
+
+            // Ensure modal is positioned
+            if (getComputedStyle(modal).position === 'static') {
+                modal.style.position = 'relative';
+            }
+        });
+    }
+
+    function closeModal(modal) {
+        // Try common close mechanisms
+        const closeBtn = modal.querySelector(
+            '.pp-modal-close, .cr-modal-btn-cancel, .ship-modal-btn-cancel, .appr-modal-btn-cancel, .rej-modal-btn-cancel, [data-modal-close], [data-cr-close], [data-appr-close], [data-rej-close]'
+        );
+
+        if (closeBtn) {
+            closeBtn.click();
+            return;
+        }
+
+        // Fallback: hide directly
+        const overlay = modal.closest('[class*="overlay"]') || modal.parentElement;
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Run on page load
+    injectBackButtons();
+
+    // Run when new modals appear (dynamic)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.addedNodes.length) {
+                setTimeout(injectBackButtons, 100);
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Also poll every 2s para sigurado
+    setInterval(injectBackButtons, 2000);
+})();
+</script>
 </body>
 </html>

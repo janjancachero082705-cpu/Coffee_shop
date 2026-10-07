@@ -7,9 +7,24 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function showLogin()
+    public function showLogin(Request $request)
     {
-        return view('auth.login');
+        // Kung already logged in as admin, redirect to dashboard
+        if (auth()->check()) {
+            return redirect()->route('dashboard');
+        }
+        // Kung already logged in as store, redirect to portal
+        if (auth('store')->check()) {
+            return redirect()->route('portal.dashboard');
+        }
+
+        // Detect tab from query param (?tab=store or ?tab=admin)
+        $tab = $request->query('tab', 'admin');
+        if (!in_array($tab, ['admin', 'store'])) {
+            $tab = 'admin';
+        }
+
+        return view('auth.login', ['initialTab' => $tab]);
     }
 
     public function login(Request $request)
@@ -24,9 +39,9 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        return back()->withErrors([
+        return redirect()->route('login')->withErrors([
             'email' => 'Invalid email or password.',
-        ])->onlyInput('email');
+        ])->withInput(['email' => $request->email]);
     }
 
     public function logout(Request $request)
