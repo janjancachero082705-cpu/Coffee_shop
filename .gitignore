@@ -26,3 +26,11 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Backup files
+*.bak
+*.bak_*
+*.broken-backup
+*.current_*
+*.old
+*.orig
