@@ -34,3 +34,35 @@ Thumbs.db
 *.current_*
 *.old
 *.orig
+# ============================================================
+# Backup & temp files (from automated scripts)
+# ============================================================
+*.bak
+*.bak_*
+*.broken
+*.broken_*
+*.guba
+*.guba_*
+*.old
+*~
+
+# Tinker / temp scripts
+tinker_*.php
+tinker.php
+temp_*.php
+tmp_*.php
+
+# PowerShell mishap garbage files
+= @(
+s = @'
+t OK:*
+t INFO:*
+: 100px
+ourcesviews*
+*remember(*
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
