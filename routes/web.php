@@ -33,6 +33,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Finance Dashboard
+    Route::get('/finance', [\App\Http\Controllers\FinanceController::class, 'dashboard'])->name('finance.dashboard');
+
+        // Transactions (Activity Log)
+    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
+
     // Products
     Route::resource('products', ProductController::class);
 
@@ -130,3 +136,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/read-all', [\App\Http\Controllers\AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('notifications/{id}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markRead'])->name('notifications.read');
 });
+// Nav badge polling endpoint
+Route::middleware('auth')->get('/nav/pending-orders', function () {
+    return response()->json([
+        'pending'  => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count(),
+        'total'    => \App\Models\ReorderRequest::count(),
+        'approved' => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['approved'])->count(),
+        'rejected' => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['rejected'])->count(),
+    ]);
+})->name('nav.pending-orders');

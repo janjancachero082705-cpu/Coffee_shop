@@ -418,7 +418,72 @@
             border-top: 1px solid rgba(169, 120, 74, 0.15);
             color: #c9a961; font-size: 12px; font-weight: 700; text-decoration: none;
         }
-    </style>
+    
+        /* ========== UNIVERSAL BACK BUTTON ========== */
+        .universal-back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary, #a1a1aa);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+            padding: 0;
+            font-family: inherit;
+            margin-right: 4px;
+        }
+        .universal-back-btn:hover {
+            background: rgba(201, 169, 97, 0.15);
+            border-color: rgba(201, 169, 97, 0.35);
+            color: #c9a961;
+            transform: translateX(-2px);
+        }
+        .universal-back-btn:active {
+            transform: scale(0.94);
+        }
+        .universal-back-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 600px) {
+            .universal-back-btn {
+                width: 32px;
+                height: 32px;
+                margin-right: 2px;
+            }
+            .universal-back-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+    
+    /* ============ PENDING ORDERS NAV BADGE ============ */
+    .nav-count-badge {
+        margin-left: auto;
+        padding: 2px 8px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        border-radius: 100px;
+        letter-spacing: 0.02em;
+        min-width: 20px;
+        text-align: center;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+        animation: navBadgePulse 2.4s ease-in-out infinite;
+    }
+    @keyframes navBadgePulse {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+        50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.04); }
+    }
+</style>
     @stack('styles')
 </head>
 <body>
@@ -445,6 +510,14 @@
                     <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         Dashboard
+                    </a>
+                    <a href="{{ route('finance.dashboard') }}" class="nav-item {{ request()->routeIs('finance.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        Finance
+                    </a>
+                    <a href="{{ route('transactions.index') }}" class="nav-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        Transactions
                     </a>
                 </div>
 
@@ -473,7 +546,14 @@
                         Orders
                         @php $unread = \App\Models\ReorderRequest::where('is_read_by_admin', false)->count(); @endphp
                         @if($unread > 0)<span class="nav-count">{{ $unread }}</span>@endif
-                    </a>
+                    
+
+                            @php
+                                $__pendingOrders = \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count();
+                            @endphp
+                            @if($__pendingOrders > 0)
+                                <span class="nav-count-badge">{{ $__pendingOrders > 99 ? '99+' : $__pendingOrders }}</span>
+                            @endif</a>
                     <a href="{{ route('consignment.reports.index') }}" class="nav-item {{ request()->routeIs('consignment.reports.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
                         Sales Reports
@@ -519,6 +599,11 @@
                     <button class="menu-toggle" onclick="document.body.classList.toggle('nav-open')">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
                     </button>
+                    @unless(request()->routeIs('dashboard'))
+                        <button type="button" class="universal-back-btn" data-fallback="{{ route('dashboard') }}" title="Go back">
+                            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                    @endunless
                     <div>
                         <div class="page-title">@yield('title', 'Dashboard')</div>
                         <div class="page-sub">@yield('subtitle', '')</div>
@@ -707,5 +792,107 @@
     </script>
 
     @stack('scripts')
+
+        <script>
+        // Smart back button ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â with fallback to dashboard
+        (function() {
+            document.addEventListener('click', function(e) {
+                var btn = e.target.closest('.universal-back-btn');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                var hasHistory = window.history.length > 1;
+                var sameHost = document.referrer && document.referrer.indexOf(window.location.host) !== -1;
+
+                if (hasHistory && sameHost) {
+                    window.history.back();
+                } else {
+                    window.location.href = btn.dataset.fallback || '/dashboard';
+                }
+            });
+        })();
+        </script>
 </body>
 </html>
+@push('scripts')
+<script>
+/**
+ * Smart Nav Badge Polling
+ * - Updates badge count ra, dili mag-reload sa page
+ * - Skip kung tab hidden (para save bandwidth)
+ * - 30s interval
+ */
+(function () {
+    const POLL_INTERVAL = 30000;
+    let timer = null;
+    let lastCount = -1;
+
+    function updateBadge(count) {
+        document.querySelectorAll('a[href*="reorder-requests"]').forEach(link => {
+            let badge = link.querySelector('.nav-count-badge');
+            if (count > 0) {
+                const txt = count > 99 ? '99+' : count;
+                if (badge) {
+                    badge.textContent = txt;
+                } else {
+                    badge = document.createElement('span');
+                    badge.className = 'nav-count-badge';
+                    badge.textContent = txt;
+                    link.appendChild(badge);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        });
+    }
+
+    async function poll() {
+        // Skip kung tab hidden
+        if (document.hidden) return;
+
+        try {
+            const r = await fetch('/nav/pending-orders', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            if (!r.ok) return;
+
+            const data = await r.json();
+            const count = data.pending ?? 0;
+
+            if (count !== lastCount) {
+                updateBadge(count);
+                lastCount = count;
+            }
+        } catch (e) {
+            // Silent fail
+        }
+    }
+
+    function start() {
+        if (timer) clearInterval(timer);
+        poll();
+        timer = setInterval(poll, POLL_INTERVAL);
+    }
+
+    function stop() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    // Pause when tab hidden (save resources)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stop();
+        } else {
+            start(); // Immediate poll on return
+        }
+    });
+
+    start();
+})();
+</script>
+@endpush

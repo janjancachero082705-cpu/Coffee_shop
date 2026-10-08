@@ -6,7 +6,7 @@
 @section('content')
 
 @php
-    // Stats
+    // ============ STATS ============
     $activeStores    = \App\Models\Store::where('status','active')->count();
     $totalStores     = \App\Models\Store::count();
     $productCount    = \App\Models\Product::count();
@@ -22,1056 +22,1151 @@
     $lastMonthSales  = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->whereBetween('created_at',[now()->subMonth()->startOfMonth(),now()->subMonth()->endOfMonth()])->sum('total_sales');
     $salesTrend      = $lastMonthSales > 0 ? round((($monthSales - $lastMonthSales) / $lastMonthSales) * 100, 1) : 0;
     $lowStock        = \App\Models\Product::where('is_active',true)->whereColumn('stock','<=','reorder_level')->count();
+
+    // ============ NEW STATS ============
+    $pendingOrders   = \App\Models\ReorderRequest::where('status', 'pending')->count();
+    $outForDelivery  = \App\Models\DeliveryReceipt::whereNotNull('out_for_delivery_at')->where('customer_confirmed', false)->count();
+    $unpaidDR        = \App\Models\DeliveryReceipt::where('balance', '>', 0)->count();
+
+    // ============ ORDER STATUS TOTALS ============
+    $orderStatus = [
+        'pending'   => \App\Models\ReorderRequest::where('status', 'pending')->count(),
+        'approved'  => \App\Models\ReorderRequest::where('status', 'approved')->count(),
+        'rejected'  => \App\Models\ReorderRequest::where('status', 'rejected')->count(),
+        'cancelled' => \App\Models\ReorderRequest::where('status', 'cancelled')->count(),
+    ];
+
+    // ============ ORDER STATUS TREND (last 7 days) ============
+    $orderTrend = collect();
+    for ($i = 6; $i >= 0; $i--) {
+        $date = now()->subDays($i);
+        $orderTrend->push([
+            'label'     => $date->format('D'),
+            'day'       => $date->format('d'),
+            'date'      => $date->format('Y-m-d'),
+            'pending'   => \App\Models\ReorderRequest::whereDate('created_at', $date)->where('status', 'pending')->count(),
+            'approved'  => \App\Models\ReorderRequest::whereDate('created_at', $date)->where('status', 'approved')->count(),
+            'rejected'  => \App\Models\ReorderRequest::whereDate('created_at', $date)->where('status', 'rejected')->count(),
+            'cancelled' => \App\Models\ReorderRequest::whereDate('created_at', $date)->where('status', 'cancelled')->count(),
+        ]);
+    }
+
+    // Max value across all statuses para sa scaling
+    $maxTrendValue = 0;
+    foreach ($orderTrend as $row) {
+        $maxTrendValue = max($maxTrendValue, $row['pending'], $row['approved'], $row['rejected'], $row['cancelled']);
+    }
+    if ($maxTrendValue < 1) $maxTrendValue = 1;
+
+    // Generate SVG points for each status line
+    $trendPoints = ['pending' => [], 'approved' => [], 'rejected' => [], 'cancelled' => []];
+    $totalDays = count($orderTrend);
+    foreach ($orderTrend as $i => $row) {
+        $x = $totalDays > 1 ? ($i / ($totalDays - 1)) * 100 : 50;
+        foreach (['pending', 'approved', 'rejected', 'cancelled'] as $status) {
+            $y = 100 - (($row[$status] / $maxTrendValue) * 85);
+            $trendPoints[$status][] = round($x, 2) . ',' . round($y, 2);
+        }
+    }
+    $trendPaths = [];
+    foreach ($trendPoints as $status => $pts) {
+        $trendPaths[$status] = count($pts) > 1 ? 'M' . implode(' L', $pts) : '';
+    }
+
+    // ============ WEEKLY REVENUE (last 7 days) ============
+    $weeklyRevenue = collect();
+    for ($i = 6; $i >= 0; $i--) {
+        $date = now()->subDays($i);
+        $weeklyRevenue->push([
+            'date'    => $date->format('Y-m-d'),
+            'label'   => $date->format('D'),
+            'day'     => $date->format('d'),
+            'revenue' => (float) \App\Models\SalesReport::whereDate('created_at', $date)->sum('total_sales'),
+            'paid'    => (float) \App\Models\ConsignmentPayment::whereDate('payment_date', $date)->sum('amount'),
+        ]);
+    }
+    $maxWeekly = max($weeklyRevenue->max('revenue'), $weeklyRevenue->max('paid'), 1);
+
+    // ============ RECENT ACTIVITY ============
+    $activities = collect();
+
+    \App\Models\ReorderRequest::with('store')->latest()->take(3)->get()->each(function($r) use (&$activities) {
+        $activities->push([
+            'icon' => '🛒',
+            'color' => '#f59e0b',
+            'title' => 'New Order',
+            'desc' => ($r->store->store_name ?? '-') . ' · ' . $r->request_number,
+            'amount' => (float) $r->total_amount,
+            'time' => $r->created_at,
+            'url' => route('reorder-requests.show', $r->id),
+        ]);
+    });
+
+    \App\Models\ConsignmentPayment::with('store')->latest()->take(3)->get()->each(function($p) use (&$activities) {
+        $activities->push([
+            'icon' => '💰',
+            'color' => '#22c55e',
+            'title' => 'Payment',
+            'desc' => ($p->store->store_name ?? '-') . ' · ' . ucfirst($p->method),
+            'amount' => (float) $p->amount,
+            'time' => $p->created_at,
+            'url' => route('consignment.payments.show', $p->id),
+        ]);
+    });
+
+    \App\Models\DeliveryReceipt::with('store')->latest()->take(3)->get()->each(function($d) use (&$activities) {
+        $activities->push([
+            'icon' => '🚚',
+            'color' => '#3b82f6',
+            'title' => 'Delivery',
+            'desc' => ($d->store->store_name ?? '-') . ' · ' . $d->dr_number,
+            'amount' => (float) $d->total_amount,
+            'time' => $d->created_at,
+            'url' => route('deliveries.show', $d->id),
+        ]);
+    });
+
+    $recentActivities = $activities->sortByDesc('time')->take(6)->values();
+
+    // ============ TOP STORES ============
+    $topStores = \App\Models\Store::withSum('deliveryReceipts as total_delivered', 'total_amount')
+        ->orderByDesc('total_delivered')
+        ->take(5)
+        ->get();
+    $maxStoreRev = $topStores->max('total_delivered') ?: 1;
+
+    // ============ LOW STOCK ============
+    $lowStockProducts = \App\Models\Product::where('is_active', true)
+        ->whereColumn('stock', '<=', 'reorder_level')
+        ->orderBy('stock')
+        ->take(4)
+        ->get();
 @endphp
 
 {{-- ==================== GREETING ==================== --}}
-<div class="greeting">
-    <div>
-        <h2 class="greeting-title">
-            Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }},
-            <span class="greeting-name">{{ explode(' ', auth()->user()->name ?? 'Admin')[0] }}</span>
+<div class="db-greeting">
+    <div class="db-greeting-left">
+        <h2 class="db-greeting-title">
+            @php
+                $hour = now()->hour;
+                $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+            @endphp
+            {{ $greeting }}, <span class="db-greeting-name">{{ explode(' ', auth()->user()->name ?? 'Admin')[0] }}</span>
         </h2>
-        <p class="greeting-sub">Here's what's happening with your business today.</p>
+        <p class="db-greeting-sub">Here's your business overview for today.</p>
     </div>
-    <div class="greeting-badge">
-        <span class="pulse"></span>
+    <div class="db-greeting-badge">
+        <span class="db-pulse"></span>
         Live
     </div>
 </div>
 
-{{-- ==================== HERO KPI ==================== --}}
-<div class="hero-dash">
-    <div class="hero-dash-bg"></div>
-    <div class="hero-dash-bg2"></div>
-
-    <div class="hero-dash-left">
-        <div class="hero-dash-label">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-            </svg>
-            Total Unpaid Balance
-        </div>
-        <div class="hero-dash-value">&#8369;{{ number_format($outstanding, 2) }}</div>
-        <div class="hero-dash-meta">
-            <div class="hero-meta-item">
-                <span class="hero-meta-dot green"></span>
-                &#8369;{{ number_format($totalPaid, 0) }} collected
+{{-- ==================== MAIN METRICS (4 cards) ==================== --}}
+<div class="db-metrics">
+    <div class="db-metric db-metric-amber">
+        <div class="db-metric-head">
+            <div class="db-metric-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
             </div>
-            <div class="hero-meta-divider"></div>
-            <div class="hero-meta-item">
-                <span class="hero-meta-dot"></span>
-                {{ $activeStores }} active stores
-            </div>
+            <div class="db-metric-label">Pending Orders</div>
         </div>
+        <div class="db-metric-value">{{ $pendingOrders }}</div>
+        <div class="db-metric-foot">Awaiting approval</div>
     </div>
 
-    <div class="hero-dash-right">
-        <div class="hero-trend {{ $salesTrend >= 0 ? 'up' : 'down' }}">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                @if($salesTrend >= 0)
-                    <path d="M23 6l-9.5 9.5-5-5L1 18"/>
-                    <path d="M17 6h6v6"/>
-                @else
-                    <path d="M23 18l-9.5-9.5-5 5L1 6"/>
-                    <path d="M17 18h6v-6"/>
-                @endif
-            </svg>
-        </div>
-        <div class="hero-trend-info">
-            <div class="hero-trend-value">&#8369;{{ number_format($monthSales, 0) }}</div>
-            <div class="hero-trend-label">
-                This month
-                <span class="trend-pct {{ $salesTrend >= 0 ? 'up' : 'down' }}">
-                    {{ $salesTrend >= 0 ? '+' : '' }}{{ $salesTrend }}%
-                </span>
+    <div class="db-metric db-metric-blue">
+        <div class="db-metric-head">
+            <div class="db-metric-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
             </div>
+            <div class="db-metric-label">In Transit</div>
         </div>
+        <div class="db-metric-value">{{ $outForDelivery }}</div>
+        <div class="db-metric-foot">{{ $drToday }} deliveries today</div>
+    </div>
+
+    <div class="db-metric db-metric-green">
+        <div class="db-metric-head">
+            <div class="db-metric-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+            <div class="db-metric-label">Today's Collections</div>
+        </div>
+        <div class="db-metric-value">₱{{ number_format($paymentsToday, 0) }}</div>
+        <div class="db-metric-foot">Total: ₱{{ number_format($totalPaid, 0) }}</div>
+    </div>
+
+    <div class="db-metric db-metric-gold">
+        <div class="db-metric-head">
+            <div class="db-metric-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/></svg>
+            </div>
+            <div class="db-metric-label">Active Stores</div>
+        </div>
+        <div class="db-metric-value">{{ $activeStores }}</div>
+        <div class="db-metric-foot">of {{ $totalStores }} registered</div>
     </div>
 </div>
 
-{{-- ==================== KPI CARDS ==================== --}}
-<div class="kpi-row">
+{{-- ==================== CHART ROW ==================== --}}
+<div class="db-2col">
 
-    <div class="kpi-card">
-        <div class="kpi-card-icon gold">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <path d="M9 22V12h6v10"/>
-            </svg>
-        </div>
-        <div class="kpi-card-body">
-            <div class="kpi-card-value">{{ $totalStores }}</div>
-            <div class="kpi-card-label">Stores</div>
-        </div>
-        <div class="kpi-card-tag green">{{ $activeStores }} active</div>
-    </div>
-
-    <div class="kpi-card">
-        <div class="kpi-card-icon blue">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-        </div>
-        <div class="kpi-card-body">
-            <div class="kpi-card-value">{{ $productCount }}</div>
-            <div class="kpi-card-label">Products</div>
-        </div>
-        @if($lowStock > 0)
-            <div class="kpi-card-tag amber">{{ $lowStock }} low</div>
-        @else
-            <div class="kpi-card-tag green">In stock</div>
-        @endif
-    </div>
-
-    <div class="kpi-card">
-        <div class="kpi-card-icon purple">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="1" y="3" width="15" height="13"/>
-                <path d="M16 8h4l3 3v5h-7V8z"/>
-                <circle cx="5.5" cy="18.5" r="2.5"/>
-                <circle cx="18.5" cy="18.5" r="2.5"/>
-            </svg>
-        </div>
-        <div class="kpi-card-body">
-            <div class="kpi-card-value">{{ $drTotal }}</div>
-            <div class="kpi-card-label">Deliveries</div>
-        </div>
-        @if($drToday > 0)
-            <div class="kpi-card-tag blue">{{ $drToday }} today</div>
-        @else
-            <div class="kpi-card-tag">{{ $drToday }} today</div>
-        @endif
-    </div>
-
-    <div class="kpi-card">
-        <div class="kpi-card-icon green">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="5" width="20" height="14" rx="2"/>
-                <path d="M2 10h20"/>
-            </svg>
-        </div>
-        <div class="kpi-card-body">
-            <div class="kpi-card-value">&#8369;{{ number_format($totalPaid/1000, 1) }}k</div>
-            <div class="kpi-card-label">Collected</div>
-        </div>
-        @if($paymentsToday > 0)
-            <div class="kpi-card-tag green">+&#8369;{{ number_format($paymentsToday, 0) }}</div>
-        @else
-            <div class="kpi-card-tag">All-time</div>
-        @endif
-    </div>
-
-</div>
-
-{{-- ==================== CHART ==================== --}}
-<div class="chart-card">
-    <div class="chart-card-head">
-        <div>
-            <div class="chart-card-title">Sales & Payments</div>
-            <div class="chart-card-sub">Last 6 months performance</div>
-        </div>
-        <div class="chart-legend">
-            <div class="legend-item">
-                <span class="legend-dot gold"></span> Sales
+    {{-- WEEKLY REVENUE CHART --}}
+    <section class="db-section">
+        <div class="db-section-head">
+            <div>
+                <div class="db-section-eyebrow">WEEKLY TREND</div>
+                <h3 class="db-section-title">Revenue vs Collections</h3>
             </div>
-            <div class="legend-item">
-                <span class="legend-dot green"></span> Payments
+            <div class="db-section-meta">
+                <strong>₱{{ number_format($weeklyRevenue->sum('revenue'), 0) }}</strong>
             </div>
         </div>
-    </div>
-    <div class="chart-wrap">
-        <canvas id="trendChart"></canvas>
-    </div>
-</div>
 
-{{-- ==================== BOTTOM GRID ==================== --}}
-<div class="bottom-grid">
-
-    {{-- Top Stores --}}
-    <div class="card">
-        <div class="card-head">
-            <div class="card-head-icon">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
+        <div class="db-chart">
+            <div class="db-chart-y">
+                <div class="db-chart-y-label">₱{{ number_format($maxWeekly, 0) }}</div>
+                <div class="db-chart-y-label">₱{{ number_format($maxWeekly / 2, 0) }}</div>
+                <div class="db-chart-y-label">₱0</div>
             </div>
-            <div class="card-head-title">Top Stores</div>
-            <a href="{{ route('stores.index') }}" class="card-head-link" title="View all stores">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
-            </a>
-        </div>
-
-        @php
-            $topStores = \App\Models\Store::withSum('deliveryReceipts as total_delivered', 'total_amount')
-                ->orderByDesc('total_delivered')->take(5)->get();
-            $maxVal = $topStores->max('total_delivered') ?: 1;
-        @endphp
-
-        @if($topStores->isEmpty() || $topStores->first()->total_delivered === null)
-            <div class="empty-box small">
-                <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path d="M3 3v18h18M7 16l4-4 4 4 6-6"/>
-                    </svg>
+            <div class="db-chart-bars-wrap">
+                <div class="db-chart-grid">
+                    <div class="db-grid-line"></div>
+                    <div class="db-grid-line"></div>
+                    <div class="db-grid-line"></div>
                 </div>
-                <div class="empty-text">No data yet</div>
-            </div>
-        @else
-            <div class="stores-list">
-                @foreach($topStores as $i => $store)
-                    @php $pct = $maxVal > 0 ? ($store->total_delivered / $maxVal) * 100 : 0; @endphp
-                    <div class="store-row">
-                        <div class="store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">
-                            {{ $i + 1 }}
-                        </div>
-                        <div class="store-info">
-                            <div class="store-name">{{ $store->store_name }}</div>
-                            <div class="store-bar">
-                                <div class="store-fill" style="width: {{ $pct }}%;"></div>
+                <div class="db-chart-bars">
+                    @foreach($weeklyRevenue as $day)
+                        @php
+                            $revPct = ($day['revenue'] / $maxWeekly) * 100;
+                            $paidPct = ($day['paid'] / $maxWeekly) * 100;
+                        @endphp
+                        <div class="db-bar-group" title="{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }} · Revenue ₱{{ number_format($day['revenue'], 2) }} · Paid ₱{{ number_format($day['paid'], 2) }}">
+                            <div class="db-bar-stack">
+                                <div class="db-bar db-bar-revenue" style="height: {{ $revPct }}%;"></div>
+                                <div class="db-bar db-bar-paid" style="height: {{ $paidPct }}%;"></div>
                             </div>
+                            <div class="db-bar-label">{{ $day['label'] }}</div>
                         </div>
-                        <div class="store-amount">&#8369;{{ number_format($store->total_delivered ?? 0, 0) }}</div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        @endif
-    </div>
-
-    {{-- Activity --}}
-    <div class="card">
-        <div class="card-head">
-            <div class="card-head-icon blue">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-            </div>
-            <div class="card-head-title">Activity</div>
         </div>
 
-        @php
-            $activity = collect();
-            foreach (\App\Models\DeliveryReceipt::with('store')->latest()->take(4)->get() as $dr) {
-                $activity->push([
-                    'type' => 'delivery',
-                    'title' => $dr->dr_number,
-                    'sub' => $dr->store->store_name ?? '-',
-                    'amount' => $dr->total_amount,
-                    'date' => $dr->created_at
-                ]);
-            }
-            foreach (\App\Models\ConsignmentPayment::with('store')->latest()->take(4)->get() as $p) {
-                $activity->push([
-                    'type' => 'payment',
-                    'title' => $p->payment_number,
-                    'sub' => $p->store->store_name ?? '-',
-                    'amount' => $p->amount,
-                    'date' => $p->created_at
-                ]);
-            }
-            $activity = $activity->sortByDesc('date')->take(6);
-        @endphp
-
-        @if($activity->isEmpty())
-            <div class="empty-box small">
-                <div class="empty-icon">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                        <rect x="9" y="3" width="6" height="4" rx="1"/>
-                    </svg>
-                </div>
-                <div class="empty-text">No activity yet</div>
+        <div class="db-legend">
+            <div class="db-legend-item">
+                <span class="db-legend-dot" style="background:linear-gradient(180deg,#c9a961,#b8944d);"></span>
+                Revenue
             </div>
-        @else
-            <div class="txn-list">
-                @foreach($activity as $a)
-                    <div class="txn-row">
-                        <div class="txn-icon {{ $a['type'] === 'delivery' ? 'blue' : 'green' }}">
-                            @if($a['type'] === 'delivery')
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <rect x="1" y="3" width="15" height="13"/>
-                                    <path d="M16 8h4l3 3v5h-7V8z"/>
-                                    <circle cx="5.5" cy="18.5" r="2.5"/>
-                                    <circle cx="18.5" cy="18.5" r="2.5"/>
-                                </svg>
-                            @else
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                                    <path d="M2 10h20"/>
-                                </svg>
-                            @endif
+            <div class="db-legend-item">
+                <span class="db-legend-dot" style="background:linear-gradient(180deg,#22c55e,#16a34a);"></span>
+                Collections
+            </div>
+        </div>
+    </section>
+
+    {{-- ORDERS STATUS LINE CHART --}}
+    <section class="db-section">
+        <div class="db-section-head">
+            <div>
+                <div class="db-section-eyebrow">ORDER STATUS TREND</div>
+                <h3 class="db-section-title">Daily Breakdown (7 days)</h3>
+            </div>
+            <div class="db-section-meta">
+                <strong>{{ array_sum($orderStatus) }}</strong> total
+            </div>
+        </div>
+
+        <div class="db-linechart">
+            {{-- Y-axis labels --}}
+            <div class="db-linechart-y">
+                <div class="db-y-label">{{ $maxTrendValue }}</div>
+                <div class="db-y-label">{{ round($maxTrendValue / 2) }}</div>
+                <div class="db-y-label">0</div>
+            </div>
+
+            {{-- Chart area --}}
+            <div class="db-linechart-area">
+                {{-- Grid lines --}}
+                <div class="db-linechart-grid">
+                    <div class="db-grid-line"></div>
+                    <div class="db-grid-line"></div>
+                    <div class="db-grid-line"></div>
+                </div>
+
+                {{-- SVG lines --}}
+                <svg class="db-linechart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    {{-- Area under each line (subtle fill) --}}
+                    @if($trendPaths['approved'])
+                        <path d="{{ $trendPaths['approved'] }} L100,100 L0,100 Z" fill="rgba(34,197,94,0.08)"/>
+                    @endif
+
+                    {{-- Pending line (amber) --}}
+                    @if($trendPaths['pending'])
+                        <path d="{{ $trendPaths['pending'] }}" fill="none" stroke="#f59e0b" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                    @endif
+
+                    {{-- Approved line (green) --}}
+                    @if($trendPaths['approved'])
+                        <path d="{{ $trendPaths['approved'] }}" fill="none" stroke="#22c55e" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                    @endif
+
+                    {{-- Rejected line (red) --}}
+                    @if($trendPaths['rejected'])
+                        <path d="{{ $trendPaths['rejected'] }}" fill="none" stroke="#ef4444" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                    @endif
+
+                    {{-- Cancelled line (gray) --}}
+                    @if($trendPaths['cancelled'])
+                        <path d="{{ $trendPaths['cancelled'] }}" fill="none" stroke="#71717a" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                    @endif
+                </svg>
+
+                {{-- Data points --}}
+                <div class="db-linechart-points">
+                    @foreach($orderTrend as $i => $row)
+                        @php
+                            $xPct = $totalDays > 1 ? ($i / ($totalDays - 1)) * 100 : 50;
+                        @endphp
+                        <div class="db-point-group" style="left: {{ $xPct }}%;">
+                            @foreach(['pending' => '#f59e0b', 'approved' => '#22c55e', 'rejected' => '#ef4444', 'cancelled' => '#71717a'] as $status => $color)
+                                @php
+                                    $yPct = 100 - (($row[$status] / $maxTrendValue) * 85);
+                                @endphp
+                                <div class="db-point" style="top: {{ $yPct }}%; background: {{ $color }};" title="{{ ucfirst($status) }}: {{ $row[$status] }}"></div>
+                            @endforeach
                         </div>
-                        <div class="txn-info">
-                            <div class="txn-title">{{ $a['title'] }}</div>
-                            <div class="txn-sub">{{ $a['sub'] }} - {{ $a['date']->diffForHumans() }}</div>
+                    @endforeach
+                </div>
+
+                {{-- X labels --}}
+                <div class="db-linechart-x">
+                    @foreach($orderTrend as $day)
+                        <div class="db-x-label">{{ $day['label'] }}</div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- Legend --}}
+        <div class="db-linechart-legend">
+            <div class="db-legend-item">
+                <span class="db-legend-line" style="background:#f59e0b;"></span>
+                Pending
+                <span class="db-legend-count">{{ $orderStatus['pending'] }}</span>
+            </div>
+            <div class="db-legend-item">
+                <span class="db-legend-line" style="background:#22c55e;"></span>
+                Approved
+                <span class="db-legend-count">{{ $orderStatus['approved'] }}</span>
+            </div>
+            <div class="db-legend-item">
+                <span class="db-legend-line" style="background:#ef4444;"></span>
+                Rejected
+                <span class="db-legend-count">{{ $orderStatus['rejected'] }}</span>
+            </div>
+            <div class="db-legend-item">
+                <span class="db-legend-line" style="background:#71717a;"></span>
+                Cancelled
+                <span class="db-legend-count">{{ $orderStatus['cancelled'] }}</span>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+{{-- ==================== BOTTOM ROW ==================== --}}
+<div class="db-2col">
+
+    {{-- TOP STORES --}}
+    <section class="db-section">
+        <div class="db-section-head">
+            <div>
+                <div class="db-section-eyebrow">PERFORMANCE</div>
+                <h3 class="db-section-title">Top Stores</h3>
+            </div>
+        </div>
+
+        @if($topStores->count() > 0)
+            <div class="db-stores-list">
+                @foreach($topStores as $i => $s)
+                    @php
+                        $pct = (($s->total_delivered ?? 0) / $maxStoreRev) * 100;
+                    @endphp
+                    <div class="db-store-row">
+                        <div class="db-store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">{{ $i + 1 }}</div>
+                        <div class="db-store-info">
+                            <div class="db-store-name">{{ $s->store_name }}</div>
+                            <div class="db-store-code">{{ $s->code ?? '' }}</div>
                         </div>
-                        <div class="txn-amount {{ $a['type'] === 'payment' ? 'green' : '' }}">
-                            {{ $a['type'] === 'payment' ? '+' : '' }}&#8369;{{ number_format($a['amount'], 0) }}
+                        <div class="db-store-chart">
+                            <div class="db-store-bar" style="width:{{ $pct }}%;"></div>
                         </div>
+                        <div class="db-store-amount">₱{{ number_format($s->total_delivered ?? 0, 0) }}</div>
                     </div>
                 @endforeach
             </div>
+        @else
+            <div class="db-empty-small">Walay stores data.</div>
         @endif
-    </div>
+    </section>
+
+    {{-- RECENT ACTIVITY --}}
+    <section class="db-section">
+        <div class="db-section-head">
+            <div>
+                <div class="db-section-eyebrow">LIVE FEED</div>
+                <h3 class="db-section-title">Recent Activity</h3>
+            </div>
+            <a href="{{ route('transactions.index') }}" class="db-section-link">View all →</a>
+        </div>
+
+        @if($recentActivities->count() > 0)
+            <div class="db-activity-list">
+                @foreach($recentActivities as $act)
+                    <a href="{{ $act['url'] }}" class="db-activity-item" style="--accent: {{ $act['color'] }};">
+                        <div class="db-activity-marker">{{ $act['icon'] }}</div>
+                        <div class="db-activity-content">
+                            <div class="db-activity-title">{{ $act['title'] }}</div>
+                            <div class="db-activity-desc">{{ $act['desc'] }}</div>
+                        </div>
+                        <div class="db-activity-meta">
+                            <div class="db-activity-amount">₱{{ number_format($act['amount'], 0) }}</div>
+                            <div class="db-activity-time">{{ $act['time']->diffForHumans(null, true) }}</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @else
+            <div class="db-empty-small">Walay recent activity.</div>
+        @endif
+    </section>
 
 </div>
+
+{{-- ==================== ALERTS ROW ==================== --}}
+@if($lowStock > 0 || $unpaidDR > 0 || $pendingOrders > 0)
+<div class="db-alerts">
+    @if($pendingOrders > 0)
+        <a href="{{ route('reorder-requests.index', ['status' => 'pending']) }}" class="db-alert db-alert-amber">
+            <div class="db-alert-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="db-alert-content">
+                <div class="db-alert-title">{{ $pendingOrders }} Pending Order{{ $pendingOrders > 1 ? 's' : '' }}</div>
+                <div class="db-alert-desc">Awaiting your approval</div>
+            </div>
+        </a>
+    @endif
+
+    @if($unpaidDR > 0)
+        <a href="{{ route('deliveries.index') }}" class="db-alert db-alert-blue">
+            <div class="db-alert-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/></svg>
+            </div>
+            <div class="db-alert-content">
+                <div class="db-alert-title">{{ $unpaidDR }} Unpaid Deliver{{ $unpaidDR > 1 ? 'ies' : 'y' }}</div>
+                <div class="db-alert-desc">₱{{ number_format($outstanding, 0) }} outstanding</div>
+            </div>
+        </a>
+    @endif
+
+    @if($lowStock > 0)
+        <a href="{{ route('products.index') }}" class="db-alert db-alert-red">
+            <div class="db-alert-icon">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            </div>
+            <div class="db-alert-content">
+                <div class="db-alert-title">{{ $lowStock }} Low Stock Alert{{ $lowStock > 1 ? 's' : '' }}</div>
+                <div class="db-alert-desc">Products below reorder level</div>
+            </div>
+        </a>
+    @endif
+</div>
+@endif
 
 @endsection
 
 @push('styles')
 <style>
-    /* ================================================================
-       GREETING
-       ================================================================ */
-    .greeting {
+    /* ============================================================
+       DASHBOARD — MODERN DEVELOPER DESIGN
+       ============================================================ */
+
+    /* ========== GREETING ========== */
+    .db-greeting {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 22px;
         gap: 16px;
+        margin-bottom: 18px;
         flex-wrap: wrap;
     }
-    .greeting-title {
-        font-size: 26px;
-        font-weight: 700;
-        color: var(--text-primary);
+    .db-greeting-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #fafafa;
         letter-spacing: -0.02em;
-        line-height: 1.25;
+        line-height: 1.2;
     }
-    .greeting-name {
-        background: linear-gradient(135deg, #c9a961, #a9784a);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .greeting-sub {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-top: 6px;
-    }
-    .greeting-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 14px;
-        background: rgba(34, 197, 94, 0.08);
-        border: 1px solid rgba(34, 197, 94, 0.2);
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #22c55e;
-        white-space: nowrap;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        backdrop-filter: blur(10px);
-    }
-    .pulse {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #22c55e;
-        animation: pulseGreen 2s infinite;
-    }
-    @keyframes pulseGreen {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-        50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-    }
-
-    /* ================================================================
-       HERO DASHBOARD
-       ================================================================ */
-    .hero-dash {
-        position: relative;
-        background: linear-gradient(135deg, rgba(169, 120, 74, 0.12) 0%, rgba(34, 34, 44, 0.35) 100%);
-        backdrop-filter: blur(28px) saturate(1.6);
-        -webkit-backdrop-filter: blur(28px) saturate(1.6);
-        border: 1px solid rgba(169, 120, 74, 0.22);
-        border-radius: 22px;
-        padding: 34px 38px;
-        margin-bottom: 18px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 24px;
-        overflow: hidden;
-        flex-wrap: wrap;
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .hero-dash:hover {
-        border-color: rgba(169, 120, 74, 0.4);
-        background: linear-gradient(135deg, rgba(169, 120, 74, 0.16) 0%, rgba(34, 34, 44, 0.4) 100%);
-        box-shadow: 0 30px 60px -25px rgba(169, 120, 74, 0.4);
-        transform: translateY(-2px);
-    }
-    .hero-dash-bg {
-        position: absolute;
-        top: -60%;
-        right: -15%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, rgba(201, 169, 97, 0.18) 0%, transparent 65%);
-        pointer-events: none;
-        animation: floatGlow 8s ease-in-out infinite;
-    }
-    .hero-dash-bg2 {
-        position: absolute;
-        bottom: -50%;
-        left: -10%;
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
-        pointer-events: none;
-        animation: floatGlow 10s ease-in-out infinite reverse;
-    }
-    @keyframes floatGlow {
-        0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-        50% { transform: translate(-15px, 15px) scale(1.05); opacity: 1; }
-    }
-
-    .hero-dash-left {
-        position: relative;
-        z-index: 1;
-        flex: 1;
-        min-width: 0;
-    }
-    .hero-dash-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        font-weight: 800;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        margin-bottom: 14px;
-    }
-    .hero-dash-label svg { color: #c9a961; }
-    .hero-dash-value {
-        font-size: 46px;
-        font-weight: 800;
-        color: var(--text-primary);
-        letter-spacing: -0.045em;
-        line-height: 1;
-        margin-bottom: 18px;
-        font-variant-numeric: tabular-nums;
-        text-shadow: 0 2px 24px rgba(201, 169, 97, 0.2);
-    }
-    .hero-dash-meta {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .hero-meta-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    .db-greeting-name { color: #c9a961; }
+    .db-greeting-sub {
         font-size: 12.5px;
-        font-weight: 600;
-        color: var(--text-secondary);
+        color: #71717a;
+        margin-top: 4px;
     }
-    .hero-meta-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.25);
-    }
-    .hero-meta-dot.green {
-        background: #22c55e;
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
-    }
-    .hero-meta-divider {
-        width: 1px;
-        height: 12px;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .hero-dash-right {
-        display: flex;
+    .db-greeting-badge {
+        display: inline-flex;
         align-items: center;
-        gap: 18px;
-        position: relative;
-        z-index: 1;
-        padding-left: 30px;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .hero-trend {
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        transition: all 0.25s;
-    }
-    .hero-trend.up {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        box-shadow: 0 8px 20px -8px rgba(34, 197, 94, 0.5);
-    }
-    .hero-trend.down {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        box-shadow: 0 8px 20px -8px rgba(239, 68, 68, 0.5);
-    }
-    .hero-trend-info { min-width: 120px; }
-    .hero-trend-value {
-        font-size: 22px;
-        font-weight: 800;
-        color: var(--text-primary);
-        letter-spacing: -0.02em;
-        line-height: 1;
-        margin-bottom: 6px;
-        font-variant-numeric: tabular-nums;
-    }
-    .hero-trend-label {
+        gap: 6px;
+        padding: 5px 11px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        border-radius: 100px;
         font-size: 10.5px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .trend-pct {
-        padding: 2px 7px;
-        border-radius: 5px;
-        font-size: 10px;
         font-weight: 800;
-        letter-spacing: 0;
+        color: #22c55e;
+        letter-spacing: 0.05em;
     }
-    .trend-pct.up { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-    .trend-pct.down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .db-pulse {
+        width: 6px; height: 6px;
+        background: #22c55e;
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        animation: dbPulse 2s ease-in-out infinite;
+    }
+    @keyframes dbPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
 
-    /* ================================================================
-       KPI ROW
-       ================================================================ */
-    .kpi-row {
+    /* ========== METRICS ========== */
+    .db-metrics {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin-bottom: 18px;
+        gap: 12px;
+        margin-bottom: 16px;
     }
-    .kpi-card {
-        background: rgba(34, 34, 44, 0.28);
-        backdrop-filter: blur(24px) saturate(1.5);
-        -webkit-backdrop-filter: blur(24px) saturate(1.5);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 18px;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .db-metric {
         position: relative;
+        padding: 16px 18px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
     }
-    .kpi-card::before {
+    .db-metric::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: 0; left: 0; right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.5), transparent);
-        opacity: 0;
-        transition: opacity 0.3s;
     }
-    .kpi-card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 100% 0%, rgba(201, 169, 97, 0.06), transparent 60%);
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
-    }
-    .kpi-card:hover {
-        transform: translateY(-5px);
-        background: rgba(34, 34, 44, 0.4);
-        border-color: rgba(169, 120, 74, 0.35);
-        box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.7);
-    }
-    .kpi-card:hover::before { opacity: 1; }
-    .kpi-card:hover::after { opacity: 1; }
+    .db-metric-amber::before { background: linear-gradient(90deg, #f59e0b, transparent); }
+    .db-metric-blue::before { background: linear-gradient(90deg, #3b82f6, transparent); }
+    .db-metric-green::before { background: linear-gradient(90deg, #22c55e, transparent); }
+    .db-metric-gold::before { background: linear-gradient(90deg, #c9a961, transparent); }
 
-    .kpi-card-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
+    .db-metric:hover {
+        transform: translateY(-2px);
+        border-color: rgba(201, 169, 97, 0.25);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    .db-metric-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .db-metric-icon {
+        width: 32px; height: 32px;
+        border-radius: 9px;
         display: grid;
         place-items: center;
         flex-shrink: 0;
-        border: 1px solid;
-        transition: transform 0.3s;
     }
-    .kpi-card:hover .kpi-card-icon { transform: scale(1.05) rotate(-3deg); }
+    .db-metric-amber .db-metric-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .db-metric-blue .db-metric-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .db-metric-green .db-metric-icon { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .db-metric-gold .db-metric-icon { background: rgba(201, 169, 97, 0.15); color: #c9a961; }
 
-    .kpi-card-icon.gold   { background: rgba(169, 120, 74, 0.14); border-color: rgba(169, 120, 74, 0.3); color: #c9a961; box-shadow: 0 6px 16px -6px rgba(169, 120, 74, 0.4); }
-    .kpi-card-icon.blue   { background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.3); color: #3b82f6; box-shadow: 0 6px 16px -6px rgba(59, 130, 246, 0.4); }
-    .kpi-card-icon.purple { background: rgba(139, 92, 246, 0.14); border-color: rgba(139, 92, 246, 0.3); color: #8b5cf6; box-shadow: 0 6px 16px -6px rgba(139, 92, 246, 0.4); }
-    .kpi-card-icon.green  { background: rgba(34, 197, 94, 0.14);  border-color: rgba(34, 197, 94, 0.3);  color: #22c55e; box-shadow: 0 6px 16px -6px rgba(34, 197, 94, 0.4); }
+    .db-metric-label {
+        font-size: 10.5px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        flex: 1;
+    }
 
-    .kpi-card-body { flex: 1; min-width: 0; }
-    .kpi-card-value {
+    .db-metric-value {
         font-size: 24px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: #fafafa;
         letter-spacing: -0.03em;
         line-height: 1;
-        margin-bottom: 5px;
         font-variant-numeric: tabular-nums;
+        margin-bottom: 6px;
     }
-    .kpi-card-label {
-        font-size: 10.5px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-weight: 700;
-    }
-    .kpi-card-tag {
-        padding: 4px 10px;
-        border-radius: 7px;
-        font-size: 10px;
-        font-weight: 800;
-        white-space: nowrap;
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text-muted);
-        flex-shrink: 0;
-        border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .kpi-card-tag.green { background: rgba(34, 197, 94, 0.12); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
-    .kpi-card-tag.amber { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border-color: rgba(245, 158, 11, 0.2); }
-    .kpi-card-tag.blue  { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
-
-    /* ================================================================
-       CHART CARD
-       ================================================================ */
-    .chart-card {
-        background: rgba(34, 34, 44, 0.3);
-        backdrop-filter: blur(26px) saturate(1.5);
-        -webkit-backdrop-filter: blur(26px) saturate(1.5);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 20px;
-        padding: 26px;
-        margin-bottom: 18px;
-        transition: all 0.3s;
-    }
-    .chart-card:hover {
-        background: rgba(34, 34, 44, 0.38);
-        border-color: rgba(169, 120, 74, 0.2);
-    }
-    .chart-card-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 22px;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-    .chart-card-title {
-        font-size: 17px;
-        font-weight: 800;
-        color: var(--text-primary);
-        letter-spacing: -0.01em;
-        margin-bottom: 4px;
-    }
-    .chart-card-sub {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-    .chart-legend {
-        display: flex;
-        gap: 20px;
-        font-size: 11.5px;
-        color: var(--text-secondary);
-        font-weight: 600;
-    }
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
-    .legend-dot.gold  { background: #c9a961; box-shadow: 0 0 10px rgba(201, 169, 97, 0.7); }
-    .legend-dot.green { background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.7); }
-    .chart-wrap {
-        height: 280px;
-        position: relative;
+    .db-metric-foot {
+        font-size: 11px;
+        color: #71717a;
     }
 
-    /* ================================================================
-       CARD HEAD (SHARED)
-       ================================================================ */
-    .card-head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-    .card-head-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: rgba(169, 120, 74, 0.12);
-        border: 1px solid rgba(169, 120, 74, 0.25);
-        display: grid;
-        place-items: center;
-        color: #c9a961;
-        flex-shrink: 0;
-    }
-    .card-head-icon.blue {
-        background: rgba(59, 130, 246, 0.12);
-        border-color: rgba(59, 130, 246, 0.25);
-        color: #3b82f6;
-    }
-    .card-head-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text-primary);
-        letter-spacing: -0.01em;
-        flex: 1;
-        min-width: 0;
-    }
-    .card-head-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        background: rgba(169, 120, 74, 0.1);
-        border: 1px solid rgba(169, 120, 74, 0.2);
-        color: #c9a961;
-        text-decoration: none;
-        transition: all 0.15s;
-        flex-shrink: 0;
-    }
-    .card-head-link:hover {
-        background: rgba(169, 120, 74, 0.2);
-        border-color: rgba(169, 120, 74, 0.4);
-        transform: translateX(2px);
-    }
-
-    /* ================================================================
-       BOTTOM GRID
-       ================================================================ */
-    .bottom-grid {
+    /* ========== SECTION ========== */
+    .db-2col {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
+        margin-bottom: 16px;
     }
-    .bottom-grid .card {
-        background: rgba(34, 34, 44, 0.28);
-        backdrop-filter: blur(24px) saturate(1.5);
-        -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    .db-section {
+        padding: 16px 18px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.85), rgba(21, 18, 15, 0.85));
+        backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 18px;
-        transition: all 0.3s;
+        border-radius: 14px;
     }
-    .bottom-grid .card:hover {
-        background: rgba(34, 34, 44, 0.38);
-        border-color: rgba(169, 120, 74, 0.2);
+    .db-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .db-section-eyebrow {
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #c9a961;
+        letter-spacing: 0.15em;
+        margin-bottom: 4px;
+    }
+    .db-section-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #fafafa;
+        letter-spacing: -0.02em;
+    }
+    .db-section-meta {
+        font-size: 11px;
+        color: #71717a;
+    }
+    .db-section-meta strong { color: #c9a961; }
+    .db-section-link {
+        font-size: 11.5px;
+        color: #c9a961;
+        text-decoration: none;
+        font-weight: 700;
+        transition: color 0.15s;
+    }
+    .db-section-link:hover { color: #d4b673; }
+
+    /* ========== CHART ========== */
+    .db-chart {
+        display: flex;
+        gap: 10px;
+        height: 180px;
+        padding: 8px 0;
+    }
+    .db-chart-y {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 2px 0;
+        flex-shrink: 0;
+    }
+    .db-chart-y-label {
+        font-size: 9.5px;
+        color: #71717a;
+        font-family: ui-monospace, monospace;
+        font-weight: 600;
+        text-align: right;
+        min-width: 48px;
+    }
+    .db-chart-bars-wrap {
+        flex: 1;
+        position: relative;
+    }
+    .db-chart-grid {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+    .db-grid-line {
+        height: 1px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent);
+    }
+    .db-chart-bars {
+        position: relative;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        padding: 0 2px;
+    }
+    .db-bar-group {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        position: relative;
+    }
+    .db-bar-stack {
+        width: 100%;
+        max-width: 36px;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+    }
+    .db-bar {
+        flex: 1;
+        border-radius: 3px 3px 0 0;
+        transition: all 0.3s ease;
+        min-height: 2px;
+        cursor: pointer;
+    }
+    .db-bar-revenue { background: linear-gradient(180deg, #c9a961, #b8944d); }
+    .db-bar-paid { background: linear-gradient(180deg, #22c55e, #16a34a); }
+    .db-bar:hover { filter: brightness(1.15); }
+    .db-bar-label {
+        position: absolute;
+        bottom: -18px;
+        font-size: 9px;
+        color: #71717a;
+        font-weight: 700;
+        font-family: ui-monospace, monospace;
     }
 
-    /* Stores List */
-    .stores-list {
+    .db-legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 10.5px;
+        color: #a1a1aa;
+        padding-top: 22px;
+    }
+    .db-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+    }
+    .db-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    /* ========== STATUS LIST ========== */
+    .db-status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .db-status-row {
+        display: grid;
+        grid-template-columns: 100px 1fr 40px;
+        align-items: center;
+        gap: 12px;
+    }
+    .db-status-info {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .db-status-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .db-status-name {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #d4d4d8;
+    }
+    .db-status-bar-wrap {
+        height: 22px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .db-status-bar {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.5s ease;
+        min-width: 3px;
+    }
+    .db-status-count {
+        font-size: 13px;
+        font-weight: 800;
+        color: #fafafa;
+        text-align: right;
+        font-family: ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+    }
+    .db-status-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .db-status-total-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .db-status-total-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #c9a961;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ========== TOP STORES ========== */
+    .db-stores-list {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
-    .store-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px;
-        border-radius: 12px;
-        transition: all 0.2s;
-    }
-    .store-row:hover {
-        background: rgba(169, 120, 74, 0.06);
-        transform: translateX(3px);
-    }
-    .store-rank {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+    .db-store-row {
         display: grid;
-        place-items: center;
+        grid-template-columns: 26px 1fr 100px 70px;
+        gap: 10px;
+        align-items: center;
+    }
+    .db-store-rank {
+        width: 24px; height: 24px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.04);
+        color: #a1a1aa;
         font-size: 11px;
         font-weight: 800;
-        color: var(--text-muted);
-        flex-shrink: 0;
+        font-family: ui-monospace, monospace;
+        display: grid;
+        place-items: center;
     }
-    .store-rank.gold {
-        background: linear-gradient(135deg, #fbbf24, #d97706);
-        color: #fff;
-        border-color: rgba(251, 191, 36, 0.4);
-        box-shadow: 0 6px 14px -4px rgba(251, 191, 36, 0.6);
-    }
-    .store-rank.silver {
-        background: linear-gradient(135deg, #cbd5e1, #64748b);
-        color: #fff;
-        border-color: rgba(203, 213, 225, 0.4);
-        box-shadow: 0 6px 14px -4px rgba(203, 213, 225, 0.4);
-    }
-    .store-rank.bronze {
-        background: linear-gradient(135deg, #d97706, #92400e);
-        color: #fff;
-        border-color: rgba(217, 119, 6, 0.4);
-        box-shadow: 0 6px 14px -4px rgba(217, 119, 6, 0.5);
-    }
-    .store-info { flex: 1; min-width: 0; }
-    .store-name {
-        font-size: 12.5px;
+    .db-store-rank.gold { background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; }
+    .db-store-rank.silver { background: linear-gradient(135deg, #d4d4d8, #a1a1aa); color: #0f0f14; }
+    .db-store-rank.bronze { background: linear-gradient(135deg, #d97706, #92400e); color: #fff; }
+    .db-store-info { min-width: 0; }
+    .db-store-name {
+        font-size: 12px;
         font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 6px;
+        color: #fafafa;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .store-bar {
-        height: 5px;
-        background: rgba(255, 255, 255, 0.04);
+    .db-store-code {
+        font-size: 9.5px;
+        color: #71717a;
+        font-family: ui-monospace, monospace;
+        margin-top: 1px;
+    }
+    .db-store-chart {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.03);
         border-radius: 3px;
         overflow: hidden;
     }
-    .store-fill {
+    .db-store-bar {
         height: 100%;
-        background: linear-gradient(90deg, #a9784a, #c9a961);
+        background: linear-gradient(90deg, #c9a961, #b8944d);
         border-radius: 3px;
-        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 12px rgba(201, 169, 97, 0.4);
+        transition: width 0.5s ease;
+        min-width: 3px;
     }
-    .store-amount {
-        font-size: 12.5px;
+    .db-store-amount {
+        font-size: 12px;
         font-weight: 800;
         color: #c9a961;
-        flex-shrink: 0;
+        text-align: right;
+        font-family: ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
     }
 
-    /* Transaction List */
-    .txn-list { display: flex; flex-direction: column; gap: 4px; }
-    .txn-row {
+    /* ========== ACTIVITY ========== */
+    .db-activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .db-activity-item {
+        display: grid;
+        grid-template-columns: 32px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 9px;
+        text-decoration: none;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+    }
+    .db-activity-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.06);
+        transform: translateX(2px);
+    }
+    .db-activity-marker {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--accent) 15%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    .db-activity-content { min-width: 0; }
+    .db-activity-title {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: var(--accent);
+        letter-spacing: -0.01em;
+    }
+    .db-activity-desc {
+        font-size: 10.5px;
+        color: #71717a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+    }
+    .db-activity-meta { text-align: right; flex-shrink: 0; }
+    .db-activity-amount {
+        font-size: 12px;
+        font-weight: 800;
+        color: #c9a961;
+        font-family: ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+    }
+    .db-activity-time {
+        font-size: 9.5px;
+        color: #71717a;
+        margin-top: 1px;
+    }
+
+    /* ========== ALERTS ========== */
+    .db-alerts {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .db-alert {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px;
+        padding: 14px 16px;
         border-radius: 12px;
-        transition: all 0.2s;
+        text-decoration: none;
+        transition: all 0.15s;
+        border: 1px solid;
     }
-    .txn-row:hover {
-        background: rgba(169, 120, 74, 0.08);
-        transform: translateX(3px);
+    .db-alert:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5);
     }
-    .txn-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 11px;
+    .db-alert-amber {
+        background: rgba(245, 158, 11, 0.08);
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+    .db-alert-amber .db-alert-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .db-alert-blue {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: rgba(59, 130, 246, 0.25);
+    }
+    .db-alert-blue .db-alert-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .db-alert-red {
+        background: rgba(239, 68, 68, 0.08);
+        border-color: rgba(239, 68, 68, 0.25);
+    }
+    .db-alert-red .db-alert-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    .db-alert-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
         display: grid;
         place-items: center;
         flex-shrink: 0;
-        border: 1px solid;
     }
-    .txn-icon.blue  { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.25); color: #3b82f6; }
-    .txn-icon.green { background: rgba(34, 197, 94, 0.12);  border-color: rgba(34, 197, 94, 0.25);  color: #22c55e; }
-    .txn-info { flex: 1; min-width: 0; }
-    .txn-title {
+    .db-alert-content { min-width: 0; }
+    .db-alert-title {
         font-size: 12.5px;
-        font-weight: 700;
-        color: var(--text-primary);
-        font-family: ui-monospace, monospace;
-        margin-bottom: 3px;
-    }
-    .txn-sub {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-    .txn-amount {
-        font-size: 13px;
         font-weight: 800;
-        color: #c9a961;
-        flex-shrink: 0;
+        color: #fafafa;
+        letter-spacing: -0.01em;
     }
-    .txn-amount.green { color: #22c55e; }
+    .db-alert-desc {
+        font-size: 10.5px;
+        color: #a1a1aa;
+        margin-top: 2px;
+    }
 
-    /* Empty */
-    .empty-box { padding: 30px 20px; text-align: center; }
-    .empty-icon {
-        color: var(--text-muted);
-        opacity: 0.35;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-    .empty-text {
+    /* ========== EMPTY ========== */
+    .db-empty-small {
+        text-align: center;
+        padding: 30px 20px;
+        color: #71717a;
         font-size: 12px;
-        color: var(--text-muted);
     }
 
-    /* ================================================================
-       RESPONSIVE
-       ================================================================ */
-    @media (max-width: 1200px) {
-        .kpi-row { grid-template-columns: repeat(2, 1fr); }
-    }
+    /* ========== RESPONSIVE ========== */
     @media (max-width: 1100px) {
-        .bottom-grid { grid-template-columns: 1fr; }
-        .hero-dash { flex-direction: column; align-items: flex-start; padding: 26px; }
-        .hero-dash-value { font-size: 36px; }
-        .hero-dash-right {
-            padding-left: 0;
-            padding-top: 20px;
-            border-left: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            width: 100%;
-        }
+        .db-metrics { grid-template-columns: repeat(2, 1fr); }
+        .db-2col { grid-template-columns: 1fr; }
+        .db-alerts { grid-template-columns: 1fr; }
     }
     @media (max-width: 700px) {
-        .kpi-row { grid-template-columns: 1fr; }
-        .greeting-title { font-size: 20px; }
-        .hero-dash-value { font-size: 30px; }
-        .chart-wrap { height: 220px; }
+        .db-greeting-title { font-size: 17px; }
+        .db-metrics { grid-template-columns: 1fr; }
+        .db-metric-value { font-size: 20px; }
+        .db-section { padding: 14px; }
+        .db-chart { height: 140px; }
+        .db-chart-y-label { font-size: 8.5px; min-width: 40px; }
+        .db-status-row { grid-template-columns: 85px 1fr 34px; }
+        .db-store-row { grid-template-columns: 24px 1fr 60px 60px; gap: 8px; }
+        .db-store-amount { font-size: 11px; }
     }
-</style>
-@endpush
+    @media (max-width: 480px) {
+        .db-metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .db-metric { padding: 12px 14px; }
+        .db-metric-value { font-size: 18px; }
+        .db-metric-label { font-size: 9.5px; }
+        .db-metric-foot { font-size: 10px; }
+        .db-status-row { grid-template-columns: 78px 1fr 30px; gap: 8px; }
+        .db-store-row { grid-template-columns: 22px 1fr 55px; }
+        .db-store-chart { display: none; }
+    }
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-(function() {
-    const labels = {!! json_encode(
-        collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('M Y'))->values()
-    ) !!};
+    /* ========== LINE CHART (Order Status) ========== */
+    .db-linechart {
+        display: flex;
+        gap: 10px;
+        height: 180px;
+        padding: 4px 0 20px;
+    }
+    .db-linechart-y {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 2px 0;
+        flex-shrink: 0;
+    }
+    .db-y-label {
+        font-size: 9.5px;
+        color: #71717a;
+        font-family: ui-monospace, monospace;
+        font-weight: 600;
+        text-align: right;
+        min-width: 24px;
+    }
+    .db-linechart-area {
+        flex: 1;
+        position: relative;
+        height: 100%;
+        padding-bottom: 20px;
+    }
+    .db-linechart-grid {
+        position: absolute;
+        inset: 0 0 20px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+    .db-linechart-svg {
+        position: absolute;
+        inset: 0 0 20px 0;
+        width: 100%;
+        height: calc(100% - 20px);
+        overflow: visible;
+    }
+    .db-linechart-points {
+        position: absolute;
+        inset: 0 0 20px 0;
+        pointer-events: none;
+    }
+    .db-point-group {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+    }
+    .db-point {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 0 2px rgba(15, 15, 20, 0.9);
+        transition: transform 0.15s;
+    }
+    .db-point:hover {
+        transform: translate(-50%, -50%) scale(1.5);
+    }
+    .db-linechart-x {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+    }
+    .db-x-label {
+        font-size: 9px;
+        color: #71717a;
+        font-weight: 700;
+        font-family: ui-monospace, monospace;
+        text-align: center;
+        flex: 1;
+    }
+    .db-linechart-legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding-top: 8px;
+        margin-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .db-legend-line {
+        width: 14px;
+        height: 3px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    .db-legend-count {
+        margin-left: 4px;
+        padding: 1px 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #d4d4d8;
+        font-family: ui-monospace, monospace;
+    }
 
-    const salesArr = {!! json_encode(
-        collect(range(5, 0))->map(function($i) {
-            $m = now()->subMonths($i);
-            return (float) \App\Models\SalesReport::where('amount_paid', '>', 0)
-                ->whereYear('created_at', $m->year)
-                ->whereMonth('created_at', $m->month)
-                ->sum('total_sales');
-        })->values()
-    ) !!};
-
-    const payArr = {!! json_encode(
-        collect(range(5, 0))->map(function($i) {
-            $m = now()->subMonths($i);
-            return (float) \App\Models\ConsignmentPayment::whereYear('payment_date', $m->year)
-                ->whereMonth('payment_date', $m->month)
-                ->sum('amount');
-        })->values()
-    ) !!};
-
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
-
-    const g1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
-    g1.addColorStop(0, 'rgba(201, 169, 97, 0.35)');
-    g1.addColorStop(1, 'rgba(201, 169, 97, 0)');
-
-    const g2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
-    g2.addColorStop(0, 'rgba(34, 197, 94, 0.28)');
-    g2.addColorStop(1, 'rgba(34, 197, 94, 0)');
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Sales',
-                    data: salesArr,
-                    borderColor: '#c9a961',
-                    backgroundColor: g1,
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#c9a961',
-                    pointBorderColor: '#1a1a22',
-                    pointBorderWidth: 3,
-                },
-                {
-                    label: 'Payments',
-                    data: payArr,
-                    borderColor: '#22c55e',
-                    backgroundColor: g2,
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#22c55e',
-                    pointBorderColor: '#1a1a22',
-                    pointBorderWidth: 3,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(20, 20, 26, 0.98)',
-                    borderColor: 'rgba(169, 120, 74, 0.35)',
-                    borderWidth: 1,
-                    padding: 14,
-                    cornerRadius: 10,
-                    titleColor: '#f5f3f0',
-                    titleFont: { size: 13, weight: '700' },
-                    bodyColor: '#a8a5a0',
-                    bodyFont: { size: 12, weight: '600' },
-                    displayColors: true,
-                    boxPadding: 6,
-                    callbacks: {
-                        label: function(c) {
-                            return '  ' + c.dataset.label + ':  \u20B1' + Number(c.parsed.y).toLocaleString();
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false, drawBorder: false },
-                    ticks: {
-                        color: '#6b6862',
-                        font: { size: 11, weight: '600' },
-                        padding: 10,
-                    }
-                },
-                y: {
-                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-                    ticks: {
-                        color: '#6b6862',
-                        font: { size: 11, weight: '600' },
-                        padding: 10,
-                        callback: function(v) {
-                            if (v >= 1000000) return '\u20B1' + (v/1000000) + 'M';
-                            if (v >= 1000) return '\u20B1' + (v/1000) + 'k';
-                            return '\u20B1' + v;
-                        }
-                    }
-                }
-            }
-        }
-    });
-})();
-</script>
+    @media (max-width: 700px) {
+        .db-linechart { height: 150px; }
+        .db-point { width: 6px; height: 6px; }
+        .db-linechart-legend { gap: 10px; }
+        .db-legend-line { width: 12px; }
+    }
+    </style>
 @endpush

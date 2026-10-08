@@ -232,26 +232,43 @@ class DeliveryReceiptController extends Controller
     /**
      * Mark delivery as "out for delivery"
      */
-    public function markOutForDelivery($id)
+    public function markOutForDelivery($id, \Illuminate\Http\Request $request)
     {
         $delivery = \App\Models\DeliveryReceipt::findOrFail($id);
 
         if ($delivery->customer_confirmed) {
-            return back()->with('error', 'Cannot mark out for delivery — already confirmed.');
+            return back()->with('error', 'Cannot mark out for delivery - already confirmed.');
+        }
+
+        // Save optional ship note to delivery notes
+        $shipNote = trim((string) $request->input('ship_note', ''));
+        if ($shipNote !== '') {
+            $existingNotes = trim((string) ($delivery->notes ?? ''));
+            $delivery->notes = $existingNotes === ''
+                ? "Ship note: {$shipNote}"
+                : $existingNotes . "\n\nShip note: {$shipNote}";
+            $delivery->save();
         }
 
         $delivery->markOutForDelivery();
+
+        // Notification message — apil ang ship note kung naa
+        $message = "Ang imong delivery {$delivery->dr_number} gi-ship na. Click para i-confirm kung nadawat na.";
+        if ($shipNote !== '') {
+            $message .= " Note: {$shipNote}";
+        }
 
         // Notify customer via portal bell + popup
         $this->notifyStore(
             $delivery->store_id,
             'delivery_out',
-            '🚚 Out for Delivery',
-            "Ang imong delivery {$delivery->dr_number} gi-ship na. Click para i-confirm kung nadawat na.",
+            'Out for Delivery',
+            $message,
             [
                 'delivery_id' => $delivery->id,
                 'dr_number' => $delivery->dr_number,
                 'store_id' => $delivery->store_id,
+                'ship_note' => $shipNote,
             ]
         );
 

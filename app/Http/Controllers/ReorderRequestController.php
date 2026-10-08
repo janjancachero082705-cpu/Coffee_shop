@@ -21,12 +21,22 @@ class ReorderRequestController extends Controller
 
     public function index(Request $request)
     {
-        $tab = $request->get('tab', 'pending');
+        $tab = $request->get('status', 'all');
+
         $query = ReorderRequest::with('store', 'items');
 
-        if ($tab !== 'all') {
-            $query->where('status', $tab);
+        // Filter logic:
+        // - 'all' or 'approved'  show EVERYTHING
+        // - 'pending'  only pending (case-insensitive)
+        // - 'rejected'  only rejected (case-insensitive)
+        if ($tab === 'pending') {
+            $query->whereRaw('LOWER(status) = ?', ['pending']);
+        } elseif ($tab === 'approved') {
+            $query->whereRaw('LOWER(status) = ?', ['approved']);
+        } elseif ($tab === 'rejected') {
+            $query->whereRaw('LOWER(status) = ?', ['rejected']);
         }
+        // 'all'  no filter (show everything)
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -40,16 +50,16 @@ class ReorderRequestController extends Controller
 
         $stats = [
             'total'    => ReorderRequest::count(),
-            'pending'  => ReorderRequest::where('status', 'pending')->count(),
-            'approved' => ReorderRequest::where('status', 'approved')->count(),
-            'rejected' => ReorderRequest::where('status', 'rejected')->count(),
+            'pending'  => ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count(),
+            'approved' => ReorderRequest::whereRaw('LOWER(status) = ?', ['approved'])->count(),
+            'rejected' => ReorderRequest::whereRaw('LOWER(status) = ?', ['rejected'])->count(),
         ];
 
         $tabCounts = [
+            'all'      => $stats['total'],
             'pending'  => $stats['pending'],
             'approved' => $stats['approved'],
             'rejected' => $stats['rejected'],
-            'all'      => $stats['total'],
         ];
 
         return view('reorder-requests.index', compact('requests', 'stats', 'tab', 'tabCounts'));
@@ -164,7 +174,7 @@ class ReorderRequestController extends Controller
             $this->notifyStore(
             $reorderRequest->store_id,
             'reorder_approved',
-            'Order Approved! ✅',
+            'Order Approved!',
             "Ang imong order {$reorderRequest->request_number} gi-approve na sa admin. Click para sa details.",
             [
                 'reorder_id' => $reorderRequest->id,
@@ -198,7 +208,7 @@ class ReorderRequestController extends Controller
         $this->notifyStore(
             $reorderRequest->store_id,
             'reorder_rejected',
-            'Order Rejected ❌',
+            'Order Rejected',
             "Ang imong order {$reorderRequest->request_number} gi-reject sa admin. Click para sa details.",
             [
                 'reorder_id' => $reorderRequest->id,
