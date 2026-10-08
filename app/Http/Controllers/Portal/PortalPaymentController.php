@@ -30,17 +30,40 @@ class PortalPaymentController extends Controller
         return view('portal.payments.show', compact('store', 'payment'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $store = Auth::guard('store')->user();
 
-        // Compute total unpaid balance across all DRs
-        $totalBalance = (float) $store->deliveryReceipts()
-            ->where('customer_confirmed', true)
-            ->get()
-            ->sum(fn($dr) => max(0, $dr->balance));
+        // Handle linked DR (from Sales report "Pay" button)
+        $linkedDR = null;
+        if ($request->filled('delivery_receipt_id')) {
+            // Remove `customer_confirmed` filter — find by ID regardless
+            $linkedDR = $store->deliveryReceipts()
+                ->find($request->input('delivery_receipt_id'));
+        }
 
-        return view('portal.payments.create', compact('store', 'totalBalance'));
+        // === COMPUTE BALANCE ===
+        if ($linkedDR) {
+            // Specific DR balance (para sa "Bayad Full ₱145" gikan reports)
+            $displayBalance = (float) max(0, $linkedDR->balance);
+        } else {
+            // Total unpaid across ALL DRs
+            $displayBalance = (float) $store->deliveryReceipts()
+                ->where('customer_confirmed', true)
+                ->get()
+                ->sum(fn($dr) => max(0, $dr->balance));
+        }
+
+        // Pre-fill amount — PRIORITY: URL amount > displayBalance
+        $presetAmount = $request->input('amount');
+        if ($presetAmount === null || $presetAmount === '') {
+            $presetAmount = number_format($displayBalance, 2, '.', '');
+        }
+
+        // Legacy support
+        $totalBalance = $displayBalance;
+
+        return view('portal.payments.create', compact('store', 'totalBalance', 'displayBalance', 'linkedDR', 'presetAmount'));
     }
 
     public function store(Request $request)
@@ -48,12 +71,34 @@ class PortalPaymentController extends Controller
         $store = Auth::guard('store')->user();
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:0.01',
             'method' => 'required|in:cash,gcash,maya,bank_transfer,check,online',
             'reference_number' => 'nullable|string|max:100',
             'payment_date' => 'required|date',
+            'delivery_receipt_id' => 'nullable|integer|exists:delivery_receipts,id',
             'notes' => 'nullable|string|max:500',
         ]);
+
+        // === OVERPAY CHECK ===
+        $linkedDR = null;
+        if (!empty($validated['delivery_receipt_id'])) {
+            $linkedDR = $store->deliveryReceipts()->find($validated['delivery_receipt_id']);
+        }
+
+        if ($linkedDR) {
+            $allowedMax = (float) max(0, $linkedDR->balance);
+        } else {
+            $allowedMax = (float) $store->deliveryReceipts()
+                ->where('customer_confirmed', true)
+                ->get()
+                ->sum(fn($dr) => max(0, $dr->balance));
+        }
+
+        if ($validated['amount'] > $allowedMax + 0.01) {
+            return back()
+                ->withErrors(['amount' => 'Sobra ang gibayad. Maximum: ₱' . number_format($allowedMax, 2)])
+                ->withInput();
+        }
 
         if (in_array($validated['method'], ['gcash', 'maya', 'bank_transfer', 'online'])
             && empty($validated['reference_number'])) {
@@ -63,11 +108,22 @@ class PortalPaymentController extends Controller
         }
 
         // === AUTO-LINK TO OLDEST UNPAID DR ===
-        $targetDR = $store->deliveryReceipts()
-            ->where('customer_confirmed', true)
-            ->whereRaw('total_amount > (SELECT COALESCE(SUM(amount),0) FROM consignment_payments WHERE delivery_receipt_id = delivery_receipts.id)')
-            ->orderBy('delivery_date', 'asc')
-            ->first();
+        // Priority 1: Use linked DR (from Sales "Pay" button)
+        $targetDR = null;
+        if (!empty($validated['delivery_receipt_id'])) {
+            $targetDR = $store->deliveryReceipts()
+                ->where('customer_confirmed', true)
+                ->find($validated['delivery_receipt_id']);
+        }
+
+        // Priority 2: Auto-pick oldest unpaid DR
+        if (!$targetDR) {
+            $targetDR = $store->deliveryReceipts()
+                ->where('customer_confirmed', true)
+                ->whereRaw('total_amount > (SELECT COALESCE(SUM(amount),0) FROM consignment_payments WHERE delivery_receipt_id = delivery_receipts.id)')
+                ->orderBy('delivery_date', 'asc')
+                ->first();
+        }
 
         $payment = ConsignmentPayment::create([
             'payment_number' => ConsignmentPayment::generateNumber(),

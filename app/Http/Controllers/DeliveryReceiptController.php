@@ -247,11 +247,11 @@ class DeliveryReceiptController extends Controller
             $delivery->store_id,
             'delivery_out',
             '🚚 Out for Delivery',
-            "Ang imong delivery {$delivery->dr_number} gi-ship na. I-confirm kung nadawat na nimo.",
+            "Ang imong delivery {$delivery->dr_number} gi-ship na. Click para i-confirm kung nadawat na.",
             [
-                'url' => route('portal.deliveries.show', $delivery->id),
-                'dr_number' => $delivery->dr_number,
                 'delivery_id' => $delivery->id,
+                'dr_number' => $delivery->dr_number,
+                'store_id' => $delivery->store_id,
             ]
         );
 

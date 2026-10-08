@@ -755,6 +755,76 @@
         .cal-day-num { font-size: 10px; }
         .cal-event { font-size: 8px; padding: 2px 3px; }
     }
+
+    /* ===== CALENDAR: Dots + Count Row ===== */
+    .cal-events-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+    }
+
+    .cal-dots-group {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .cal-dots-group .cal-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+        flex-shrink: 0;
+    }
+
+    /* Status colors */
+    .cal-dot.status-pending   { background: #f59e0b; }
+    .cal-dot.status-partial   { background: #3b82f6; }
+    .cal-dot.status-paid      { background: #22c55e; }
+    .cal-dot.status-out       { background: #60a5fa; }
+    .cal-dot.status-delivered { background: #10b981; }
+
+    /* Count badge inline */
+    .cal-count-inline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 7px;
+        background: rgba(201, 169, 97, 0.15);
+        border: 1px solid rgba(201, 169, 97, 0.4);
+        color: #c9a961;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        font-family: ui-monospace, monospace;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        transition: all 0.15s ease;
+    }
+
+    .cal-day:hover .cal-count-inline {
+        background: rgba(201, 169, 97, 0.3);
+        border-color: #c9a961;
+        transform: scale(1.05);
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 700px) {
+        .cal-events-row { gap: 4px; margin-top: 4px; }
+        .cal-dots-group .cal-dot { width: 5px; height: 5px; }
+        .cal-count-inline { padding: 1px 5px; font-size: 9px; border-radius: 5px; }
+    }
+
+    /* Optional: pill count style (dili box) */
+    .cal-count-inline.pill {
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        border: none;
+        box-shadow: 0 3px 8px -2px rgba(201, 169, 97, 0.6);
+    }
 </style>
 @endpush
 
@@ -845,13 +915,28 @@ function renderCalendar() {
         const dayDeliveries = deliveries.filter(d => d.delivery_date === dateStr);
         const isToday = dateStr === todayStr;
 
-        let eventsHtml = '';
-        const maxShow = 3;
-        dayDeliveries.slice(0, maxShow).forEach(d => {
-            eventsHtml += `<div class="cal-event ${d.status}" title="${d.dr_number} - ${d.store_name}">${d.dr_number.replace('DR-', '')} - ${escapeHtml(d.store_name)}</div>`;
+        // Count per status
+        const statusCounts = { pending: 0, partial: 0, paid: 0, out_for_delivery: 0, delivered: 0 };
+        dayDeliveries.forEach(d => {
+            const s = d.status || 'pending';
+            if (statusCounts[s] !== undefined) statusCounts[s]++;
         });
-        if (dayDeliveries.length > maxShow) {
-            eventsHtml += `<div class="cal-more">+${dayDeliveries.length - maxShow} more</div>`;
+
+        let eventsHtml = '';
+        if (dayDeliveries.length > 0) {
+            // Build dots HTML (each unique status = 1 dot)
+            let dotsHtml = '';
+            if (statusCounts.pending > 0)            dotsHtml += `<span class="cal-dot status-pending" title="${statusCounts.pending} Pending"></span>`;
+            if (statusCounts.out_for_delivery > 0)   dotsHtml += `<span class="cal-dot status-out" title="${statusCounts.out_for_delivery} Out for Delivery"></span>`;
+            if (statusCounts.partial > 0)            dotsHtml += `<span class="cal-dot status-partial" title="${statusCounts.partial} Partial"></span>`;
+            if (statusCounts.delivered > 0)          dotsHtml += `<span class="cal-dot status-delivered" title="${statusCounts.delivered} Delivered"></span>`;
+            if (statusCounts.paid > 0)               dotsHtml += `<span class="cal-dot status-paid" title="${statusCounts.paid} Paid"></span>`;
+
+            eventsHtml = `
+                <div class="cal-events-row">
+                    <div class="cal-dots-group">${dotsHtml}</div>
+                    <div class="cal-count-inline" title="${dayDeliveries.length} deliveries">${dayDeliveries.length}</div>
+                </div>`;
         }
 
         html += `<div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}"

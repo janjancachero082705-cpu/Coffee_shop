@@ -18,7 +18,7 @@
 </div>
 
 {{-- STATS --}}
-<div class="pp-stats">
+<div class="pp-stats stats-3col">
     <div class="pp-stat">
         <div class="pp-stat-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
         <div class="pp-stat-value">{{ $stats['total'] }}</div>

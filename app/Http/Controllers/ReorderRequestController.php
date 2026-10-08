@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\NotifiesStore;
+
 use App\Models\ReorderRequest;
 use App\Models\DeliveryReceipt;
 use App\Models\DeliveryReceiptItem;
@@ -15,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class ReorderRequestController extends Controller
 {
+    use NotifiesStore;
+
     public function index(Request $request)
     {
         $tab = $request->get('tab', 'pending');
@@ -157,7 +161,18 @@ class ReorderRequestController extends Controller
             ]);
 
             // === NOTIFY CUSTOMER (bell + popup) ===
-            $this->notifyStore($reorderRequest, $dr, 'reorder_approved');
+            $this->notifyStore(
+            $reorderRequest->store_id,
+            'reorder_approved',
+            'Order Approved! ✅',
+            "Ang imong order {$reorderRequest->request_number} gi-approve na sa admin. Click para sa details.",
+            [
+                'reorder_id' => $reorderRequest->id,
+                'request_number' => $reorderRequest->request_number,
+                'dr_number' => $dr->dr_number ?? null,
+                'delivery_id' => $dr->id ?? null,
+            ]
+        );
         });
 
         return redirect()->route('reorder-requests.show', $reorderRequest)->with('success', 'Approved!');
@@ -180,42 +195,17 @@ class ReorderRequestController extends Controller
         ]);
 
         // Notify customer
-        $this->notifyStore($reorderRequest, null, 'reorder_rejected');
+        $this->notifyStore(
+            $reorderRequest->store_id,
+            'reorder_rejected',
+            'Order Rejected ❌',
+            "Ang imong order {$reorderRequest->request_number} gi-reject sa admin. Click para sa details.",
+            [
+                'reorder_id' => $reorderRequest->id,
+                'request_number' => $reorderRequest->request_number,
+            ]
+        );
 
         return redirect()->route('reorder-requests.show', $reorderRequest)->with('success', 'Rejected.');
-    }
-
-    protected function notifyStore($reorderRequest, $dr = null, $type = 'reorder_approved'): void
-    {
-        try {
-            $titles = [
-                'reorder_approved' => 'Order Approved!',
-                'reorder_rejected' => 'Order Rejected',
-                'delivery_out' => 'Out for Delivery',
-                'delivery_delivered' => 'Delivered',
-            ];
-
-            $messages = [
-                'reorder_approved' => "Ang imong order {$reorderRequest->request_number} gi-approve na! Bag-ong Delivery Receipt gi-create: " . ($dr->dr_number ?? ''),
-                'reorder_rejected' => "Ang imong order {$reorderRequest->request_number} gi-reject. Reason: " . ($reorderRequest->rejection_reason ?? 'N/A'),
-                'delivery_out' => "Ang imong delivery {$dr->dr_number} kay na-out for delivery na. I-confirm kung nadawat na.",
-                'delivery_delivered' => "Ang imong delivery {$dr->dr_number} kay delivered na. Salamat!",
-            ];
-
-            \App\Models\StoreNotification::create([
-                'store_id' => $reorderRequest->store_id,
-                'type' => $type,
-                'title' => $titles[$type] ?? 'Notification',
-                'message' => $messages[$type] ?? '',
-                'data' => [
-                    'url' => $dr ? route('portal.deliveries.show', $dr->id) : null,
-                    'reorder_id' => $reorderRequest->id,
-                    'request_number' => $reorderRequest->request_number,
-                    'dr_number' => $dr->dr_number ?? null,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            \Log::warning('Notify store failed: ' . $e->getMessage());
-        }
     }
 }

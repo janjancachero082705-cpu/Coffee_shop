@@ -43,7 +43,7 @@
             padding: 0;
             width: 100%;
             min-height: 100vh;
-            overflow-x: hidden;
+            
         }
 
         body {
@@ -110,12 +110,13 @@
         .p-topbar {
             position: sticky;
             top: 0;
-            z-index: 50;
-            background: rgba(15, 15, 20, 0.85);
+            z-index: 100;
+            background: rgba(15, 15, 20, 0.92);
             backdrop-filter: blur(24px) saturate(1.4);
             -webkit-backdrop-filter: blur(24px) saturate(1.4);
             border-bottom: 1px solid var(--border);
             padding: 14px 16px;
+            will-change: transform;
         }
 
         .p-topbar-inner {
@@ -240,11 +241,12 @@
             -ms-overflow-style: none;
             position: sticky;
             top: 68px;
-            z-index: 40;
-            background: rgba(15, 15, 20, 0.75);
+            z-index: 99;
+            background: rgba(15, 15, 20, 0.88);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
+            will-change: transform;
         }
         .p-nav::-webkit-scrollbar { display: none; }
 
@@ -594,8 +596,33 @@
         @media (max-width: 480px) {
             .p-main { padding: 16px 14px 32px; }
             .p-page-title { font-size: 20px; }
-            .p-topbar { padding: 12px 14px; }
-            .p-nav { padding: 10px 14px; }
+            .p-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 15, 20, 0.92);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px;
+            will-change: transform;
+        }
+            .p-nav {
+            display: flex;
+            gap: 6px;
+            padding: 12px 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: sticky;
+            top: 68px;
+            z-index: 99;
+            background: rgba(15, 15, 20, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            will-change: transform;
+        }
             .p-nav-item { padding: 8px 13px; font-size: 12px; }
         }
             /* ===== PAGE TRANSITION — SLIDE FROM LEFT ===== */
@@ -615,11 +642,31 @@
 
         /* Fade in sa topbar + nav */
         .p-topbar {
-            animation: fadeInDown 0.4s ease both;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 15, 20, 0.92);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px;
+            will-change: transform;
         }
         .p-nav {
-            animation: fadeInDown 0.45s ease both;
-            animation-delay: 0.05s;
+            display: flex;
+            gap: 6px;
+            padding: 12px 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: sticky;
+            top: 68px;
+            z-index: 99;
+            background: rgba(15, 15, 20, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            will-change: transform;
         }
         @keyframes fadeInDown {
             0% {
@@ -3073,12 +3120,55 @@
     }
 
     function handleClick(n) {
-        markRead(n.id).then(() => {
-            if (n.url) {
-                window.location.href = n.url;
-            } else {
-                fetchNotifications();
-            }
+        // Always point to LIST page (relative)
+        let path = '';
+
+        // Force to list page base sa type (ignore stored URL para consistent)
+        switch (n.type) {
+            case 'reorder_approved':
+            case 'reorder_rejected':
+                path = '/portal/orders';
+                break;
+            case 'delivery_out':
+            case 'delivery_delivered':
+            case 'delivery_confirmed':
+                path = '/portal/deliveries';
+                break;
+            case 'payment_recorded':
+            case 'payment_verified':
+                path = '/portal/payments';
+                break;
+            case 'report_ready':
+            case 'report_updated':
+                path = '/portal/reports';
+                break;
+            default:
+                // Fallback: gamita ang stored URL pero strip host
+                if (n.url) {
+                    if (/^https?:\/\//i.test(n.url)) {
+                        try {
+                            const parsed = new URL(n.url);
+                            path = parsed.pathname + parsed.search;
+                        } catch (e) {
+                            path = '/portal';
+                        }
+                    } else {
+                        path = n.url;
+                    }
+                } else {
+                    path = '/portal';
+                }
+        }
+
+        // Ensure leading slash
+        if (!path.startsWith('/')) path = '/' + path;
+
+        // Use CURRENT host (mobile or desktop)
+        const targetUrl = window.location.origin + path;
+
+        // Mark read then redirect
+        markRead(n.id).finally(() => {
+            window.location.href = targetUrl;
         });
     }
 
@@ -3212,7 +3302,215 @@
     .pp-modal-back-btn svg {
         display: block;
     }
-</style>
+
+        /* ============================================
+           PORTAL STATS — FORCE 3 COLUMNS (Mobile + Desktop)
+           Para tanan .pp-stats grids sa portal
+           ============================================ */
+        .pp-stats {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 10px !important;
+        }
+
+        /* Ensure each stat card mo-fit sa 1 column */
+        .pp-stat {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .pp-stat-value {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mobile adjustments — keep 3 columns pero compact */
+        @media (max-width: 480px) {
+            .pp-stats {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+            }
+            .pp-stat {
+                padding: 10px 8px !important;
+                border-radius: 10px !important;
+            }
+            .pp-stat-icon {
+                width: 28px !important;
+                height: 28px !important;
+                margin-bottom: 8px !important;
+                border-radius: 8px !important;
+            }
+            .pp-stat-icon svg {
+                width: 14px !important;
+                height: 14px !important;
+            }
+            .pp-stat-value {
+                font-size: 15px !important;
+                line-height: 1.1 !important;
+            }
+            .pp-stat-label {
+                font-size: 8px !important;
+                letter-spacing: 0.04em !important;
+                margin-top: 2px !important;
+            }
+        }
+
+        /* Extra small */
+        @media (max-width: 360px) {
+            .pp-stat-value {
+                font-size: 13px !important;
+            }
+            .pp-stat-label {
+                font-size: 7px !important;
+            }
+        }
+    
+        /* ============================================
+           PORTAL STATS — OPTIONAL 3-COLUMN VARIANT
+           Gamit `.pp-stats-3col` class para 3-column layout
+           Default = 2x2 (walay class = 2x2 automatically)
+           ============================================ */
+        .pp-stats.stats-3col {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 10px !important;
+        }
+
+        .pp-stats.stats-3col .pp-stat {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .pp-stats.stats-3col .pp-stat-value {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mobile — keep 3 columns, compact size */
+        @media (max-width: 480px) {
+            .pp-stats.stats-3col {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+            }
+            .pp-stats.stats-3col .pp-stat {
+                padding: 10px 8px !important;
+                border-radius: 10px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-icon {
+                width: 28px !important;
+                height: 28px !important;
+                margin-bottom: 8px !important;
+                border-radius: 8px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-icon svg {
+                width: 14px !important;
+                height: 14px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-value {
+                font-size: 15px !important;
+                line-height: 1.1 !important;
+            }
+            .pp-stats.stats-3col .pp-stat-label {
+                font-size: 8px !important;
+                letter-spacing: 0.04em !important;
+                margin-top: 2px !important;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .pp-stats.stats-3col .pp-stat-value {
+                font-size: 13px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-label {
+                font-size: 7px !important;
+            }
+        }
+    
+        /* ============================================
+           PORTAL STATS — DEFAULT 2x2 LAYOUT
+           ============================================ */
+        .pp-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        /* ============================================
+           OPTIONAL: 3-COLUMN (Reports + Payments only)
+           Add class `.stats-3col` sa .pp-stats
+           ============================================ */
+        .pp-stats.stats-3col {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .pp-stats .pp-stat {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .pp-stats .pp-stat-value {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mobile — 2x2 default */
+        @media (max-width: 480px) {
+            .pp-stats {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+            .pp-stat {
+                padding: 12px 10px !important;
+                border-radius: 12px !important;
+            }
+            .pp-stat-value {
+                font-size: 18px !important;
+            }
+            .pp-stat-label {
+                font-size: 9px !important;
+            }
+            .pp-stat-icon {
+                width: 32px !important;
+                height: 32px !important;
+            }
+            .pp-stat-icon svg {
+                width: 16px !important;
+                height: 16px !important;
+            }
+        }
+
+        /* Mobile — 3-column override para sa Reports/Payments */
+        @media (max-width: 480px) {
+            .pp-stats.stats-3col {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+            }
+            .pp-stats.stats-3col .pp-stat {
+                padding: 10px 6px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-value {
+                font-size: 14px !important;
+                line-height: 1.1 !important;
+            }
+            .pp-stats.stats-3col .pp-stat-label {
+                font-size: 7.5px !important;
+                letter-spacing: 0.03em !important;
+            }
+            .pp-stats.stats-3col .pp-stat-icon {
+                width: 26px !important;
+                height: 26px !important;
+                margin-bottom: 6px !important;
+            }
+            .pp-stats.stats-3col .pp-stat-icon svg {
+                width: 13px !important;
+                height: 13px !important;
+            }
+        }
+    </style>
 
 <script>
 (function() {
@@ -3288,6 +3586,488 @@
 
     // Also poll every 2s para sigurado
     setInterval(injectBackButtons, 2000);
+})();
+</script>
+
+{{-- ===== PORTAL SWIPE NAVIGATION (OPTIMIZED) ===== --}}
+<script>
+(function() {
+    'use strict';
+
+    // === TUNING PARAMETERS ===
+    const MIN_SWIPE_DISTANCE = 40;      // Reduced from 70 → 40 (mas dali)
+    const MAX_SWIPE_TIME = 500;         // Reduced from 800 → 500 (mas quick)
+    const EDGE_MARGIN = 30;             // Reduced from 40 → 30
+    const HORIZONTAL_DOMINANCE = 1.3;   // Reduced from 1.5 → 1.3
+    const TRIGGER_ON_MOVE = true;       // Trigger swipe on touchmove (walay wait sa touchend)
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isEnabled = true;
+    let swiping = false;
+    let triggered = false;
+    let lastSwipeTime = 0;
+    const COOLDOWN = 500;               // Prevent double-trigger
+
+    function getNavTabs() {
+        return Array.from(document.querySelectorAll('.p-nav-item'));
+    }
+
+    function getActiveIndex() {
+        const tabs = getNavTabs();
+        return tabs.findIndex(t => t.classList.contains('active'));
+    }
+
+    function navigate(direction) {
+        const now = Date.now();
+        if (now - lastSwipeTime < COOLDOWN) return;  // Cooldown
+        lastSwipeTime = now;
+
+        const tabs = getNavTabs();
+        if (tabs.length < 2) return;
+
+        const currentIdx = getActiveIndex();
+        if (currentIdx < 0) return;
+
+        const nextIdx = currentIdx + direction;
+        if (nextIdx < 0 || nextIdx >= tabs.length) {
+            shakeFeedback(direction);
+            return;
+        }
+
+        const href = tabs[nextIdx].getAttribute('href');
+        if (!href) return;
+
+        // INSTANT redirect (walay delay)
+        instantNavigate(href, direction);
+    }
+
+    // Instant navigation — visual feedback tapos redirect dayon
+    function instantNavigate(href, direction) {
+        const wrap = document.querySelector('.portal-wrap');
+
+        if (wrap) {
+            // Show instant slide effect (walay wait)
+            wrap.style.transition = 'transform 0.12s ease-out, opacity 0.12s ease-out';
+            wrap.style.transform = direction > 0 ? 'translateX(-30px)' : 'translateX(30px)';
+            wrap.style.opacity = '0.4';
+        }
+
+        // Redirect ASAP — walay delay
+        window.location.href = href;
+    }
+
+    function shakeFeedback(direction) {
+        const wrap = document.querySelector('.portal-wrap');
+        if (!wrap) return;
+        const shift = direction > 0 ? 8 : -8;
+        wrap.style.transition = 'transform 0.15s ease';
+        wrap.style.transform = `translateX(${shift}px)`;
+        setTimeout(() => { wrap.style.transform = 'translateX(0)'; }, 150);
+    }
+
+    function shouldIgnore(target) {
+        if (!target) return true;
+        const tag = target.tagName;
+        if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'LABEL'].includes(tag)) return true;
+        if (target.closest('[class*="modal"], [class*="overlay"], [class*="dropdown"], .pm-overlay, #pnPanel, #pnPopups, [data-no-swipe]')) return true;
+        if (target.closest('.p-nav')) return true;  // Ignore nav bar mismo
+        return false;
+    }
+
+    document.addEventListener('touchstart', function(e) {
+        if (!isEnabled) return;
+        if (e.touches.length !== 1) return;
+        if (shouldIgnore(e.target)) return;
+
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+
+        if (x < EDGE_MARGIN || x > window.innerWidth - EDGE_MARGIN) return;
+
+        touchStartX = x;
+        touchStartY = y;
+        touchStartTime = Date.now();
+        swiping = true;
+        triggered = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (!swiping) return;
+        if (e.touches.length !== 1) return;
+
+        const deltaX = e.touches[0].clientX - touchStartX;
+        const absX = Math.abs(deltaX);
+        const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+
+        // Vertical scroll → cancel swipe
+        if (deltaY > absX * 1.2 && deltaY > 10) {
+            swiping = false;
+            return;
+        }
+
+        // Trigger on move (walay wait sa touchend)
+        if (TRIGGER_ON_MOVE && !triggered && absX >= MIN_SWIPE_DISTANCE) {
+            if (absX > deltaY * HORIZONTAL_DOMINANCE) {
+                triggered = true;
+                swiping = false;
+                navigate(deltaX < 0 ? 1 : -1);
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        if (!swiping || triggered) {
+            swiping = false;
+            triggered = false;
+            return;
+        }
+        swiping = false;
+
+        if (e.changedTouches.length !== 1) return;
+
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        const deltaTime = Date.now() - touchStartTime;
+
+        if (deltaTime > MAX_SWIPE_TIME) return;
+        if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE) return;
+        if (Math.abs(deltaX) < Math.abs(deltaY) * HORIZONTAL_DOMINANCE) return;
+
+        navigate(deltaX < 0 ? 1 : -1);
+    }, { passive: true });
+
+    // Modal detection
+    const observer = new MutationObserver(() => {
+        const modalOpen = document.querySelector('.pm-overlay.show, [class*="modal-overlay"][style*="flex"], [class*="overlay"].open');
+        isEnabled = !modalOpen;
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+})();
+</script>
+
+{{-- ===== AUTO-SCROLL NAV BAR TO ACTIVE TAB ===== --}}
+<script>
+(function() {
+    'use strict';
+
+    function autoScrollNavToActive() {
+        const nav = document.querySelector('.p-nav');
+        const activeTab = document.querySelector('.p-nav-item.active');
+
+        if (!nav || !activeTab) return;
+
+        // Get positions
+        const navRect = nav.getBoundingClientRect();
+        const tabRect = activeTab.getBoundingClientRect();
+
+        // Calculate if active tab is out of view
+        const tabLeft = tabRect.left - navRect.left + nav.scrollLeft;
+        const tabRight = tabLeft + tabRect.width;
+        const navScrollLeft = nav.scrollLeft;
+        const navVisibleWidth = nav.clientWidth;
+
+        // Kung naa sa left side (off-screen)
+        if (tabLeft < navScrollLeft) {
+            nav.scrollTo({
+                left: Math.max(0, tabLeft - 20),
+                behavior: 'auto'
+            });
+            return;
+        }
+
+        // Kung naa sa right side (off-screen)
+        if (tabRight > navScrollLeft + navVisibleWidth) {
+            nav.scrollTo({
+                left: tabRight - navVisibleWidth + 20,
+                behavior: 'auto'
+            });
+            return;
+        }
+
+        // Naa na sa view — pero i-center gihapon para chada
+        const targetScroll = tabLeft - (navVisibleWidth / 2) + (tabRect.width / 2);
+        nav.scrollTo({
+            left: Math.max(0, targetScroll),
+            behavior: 'auto'
+        });
+    }
+
+    // Run on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            autoScrollNavToActive();
+        });
+    } else {
+        autoScrollNavToActive();
+    }
+
+    // Also run pagkahuman sa swipe navigation (page load)
+    window.addEventListener('pageshow', () => {
+        autoScrollNavToActive();
+    });
+
+})();
+</script>
+
+{{-- ===== PREFETCH NAV PAGES (INSTANT NAVIGATION) ===== --}}
+<script>
+(function() {
+    // Prefetch tanan nav pages kung idle ang browser
+    function prefetchNavPages() {
+        const tabs = document.querySelectorAll('.p-nav-item');
+        let delay = 0;
+
+        tabs.forEach((tab) => {
+            const href = tab.getAttribute('href');
+            if (!href || tab.classList.contains('active')) return;
+
+            // Delay kada prefetch para dili mo-block sa main thread
+            setTimeout(() => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = href;
+                link.as = 'document';
+                document.head.appendChild(link);
+            }, delay);
+
+            delay += 150;
+        });
+    }
+
+    // Prefetch after 2s sa page load (dili maapektuhan ang initial load)
+    if (document.readyState === 'complete') {
+        setTimeout(prefetchNavPages, 2000);
+    } else {
+        window.addEventListener('load', () => {
+            setTimeout(prefetchNavPages, 2000);
+        });
+    }
+})();
+</script>
+
+{{-- ===== PORTAL INSTANT NAV (SESSION CACHE) ===== --}}
+<script>
+(function() {
+    'use strict';
+
+    const CACHE_PREFIX = 'ppage_v1_';
+    const MAX_AGE = 5 * 60 * 1000;   // 5 minutes — refresh if older
+    const TRANSITION_MS = 80;
+
+    // === HELPERS ===
+    function pathKey(url) {
+        try {
+            const u = new URL(url, location.origin);
+            return CACHE_PREFIX + u.pathname + u.search;
+        } catch (e) { return null; }
+    }
+
+    // === PAGES NGA DILI I-CACHE (forms, create/edit) ===
+    const NO_CACHE_PATTERNS = [
+        /\/create$/,
+        /\/edit$/,
+        /\/payments\/create/,
+        /\/orders\/create/,
+        /\/profile/,
+        /\/login/,
+        /\/register/,
+    ];
+
+    function shouldSkipCache(url) {
+        try {
+            const path = new URL(url, location.origin).pathname;
+            return NO_CACHE_PATTERNS.some(p => p.test(path));
+        } catch (e) { return false; }
+    }
+
+    function savePage() {
+        if (shouldSkipCache(location.href)) return;   // Don't cache form pages
+        const key = pathKey(location.href);
+        if (!key) return;
+
+        const wrap = document.querySelector('.portal-wrap');
+        if (!wrap) return;
+
+        try {
+            sessionStorage.setItem(key, JSON.stringify({
+                url: location.href,
+                title: document.title,
+                html: wrap.outerHTML,
+                scrollY: window.scrollY,
+                ts: Date.now()
+            }));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') clearCache();
+        }
+    }
+
+    function getPage(url) {
+        const key = pathKey(url);
+        if (!key) return null;
+        try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) return null;
+            const c = JSON.parse(raw);
+            if (Date.now() - c.ts > MAX_AGE) {
+                sessionStorage.removeItem(key);
+                return null;
+            }
+            return c;
+        } catch (e) { return null; }
+    }
+
+    function clearCache() {
+        Object.keys(sessionStorage)
+            .filter(k => k.startsWith(CACHE_PREFIX))
+            .forEach(k => sessionStorage.removeItem(k));
+    }
+
+    // === RE-INIT SCRIPTS ===
+    function reinitScripts(container) {
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
+        // Dispatch event for other scripts to hook into
+        document.dispatchEvent(new CustomEvent('portal:contentloaded'));
+    }
+
+    // === SWAP CONTENT ===
+    function swapContent(cached) {
+        const current = document.querySelector('.portal-wrap');
+        if (!current) return false;
+
+        const tmp = document.createElement('div');
+        tmp.innerHTML = cached.html;
+        const newContent = tmp.firstElementChild;
+        if (!newContent) return false;
+
+        // Fade out → swap → fade in
+        current.style.transition = `opacity ${TRANSITION_MS}ms ease`;
+        current.style.opacity = '0';
+
+        setTimeout(() => {
+            current.replaceWith(newContent);
+
+            newContent.style.opacity = '0';
+            newContent.style.transition = 'opacity 0.15s ease';
+
+            requestAnimationFrame(() => {
+                newContent.style.opacity = '1';
+            });
+
+            // Update meta
+            document.title = cached.title;
+
+            // Re-run scripts
+            reinitScripts(newContent);
+
+            // Restore scroll
+            setTimeout(() => window.scrollTo(0, cached.scrollY || 0), 20);
+
+            // Prefetch fresh version in background para next visit updated
+            fetch(cached.url, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.text()).then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const fresh = doc.querySelector('.portal-wrap');
+                if (!fresh) return;
+                const key = pathKey(cached.url);
+                if (key) {
+                    sessionStorage.setItem(key, JSON.stringify({
+                        url: cached.url,
+                        title: doc.title,
+                        html: fresh.outerHTML,
+                        scrollY: 0,
+                        ts: Date.now()
+                    }));
+                }
+            }).catch(() => {});
+        }, TRANSITION_MS);
+
+        return true;
+    }
+
+    // === INTERCEPT NAV CLICKS ===
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.p-nav-item');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href) return;
+        if (href === location.pathname) return;
+        if (link.classList.contains('active')) return;
+
+        // Skip cache kung form page ang target
+        if (shouldSkipCache(href)) return;
+
+        // Try cached
+        const cached = getPage(href);
+        if (!cached) return;   // Not cached → let normal navigation
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Save current page before swapping
+        savePage();
+
+        // Instant restore
+        swapContent(cached);
+
+        // Update URL
+        history.pushState({ cached: true }, cached.title, href);
+    }, true);
+
+    // === HANDLE BACK/FORWARD ===
+    window.addEventListener('popstate', function() {
+        const cached = getPage(location.href);
+        if (!cached) {
+            location.reload();
+            return;
+        }
+        swapContent(cached);
+    });
+
+    // === SAVE ON PAGE LOAD ===
+    function init() {
+        savePage();
+    }
+
+    if (document.readyState === 'complete') {
+        init();
+    } else {
+        window.addEventListener('load', init);
+    }
+
+    // Save scroll periodically
+    let scrollTimer;
+    window.addEventListener('scroll', function() {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(savePage, 250);
+    }, { passive: true });
+
+    // Save on visibility change (para sigurado)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') savePage();
+    });
+
 })();
 </script>
 </body>

@@ -185,12 +185,54 @@
 
 {{-- PAY NOW CTA --}}
 @if($report->balance > 0)
-    <a href="{{ route('portal.payments.create') }}" class="sr-pay-cta">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path d="M12 5v14M5 12h14"/>
-        </svg>
-        Bayad &#8369;{{ number_format($report->balance, 2) }}
-    </a>
+    <div class="sr-pay-section">
+        <div class="sr-pay-header">
+            <div class="sr-pay-label">Bayad sa balance</div>
+            <div class="sr-pay-amount">&#8369;{{ number_format($report->balance, 2) }}</div>
+        </div>
+
+        <div class="sr-pay-buttons">
+            <a href="{{ route('portal.payments.create', [
+                    'delivery_receipt_id' => $report->delivery_receipt_id,
+                    'amount' => number_format($report->balance, 2, '.', ''),
+                    'report_id' => $report->id,
+                ]) }}" class="sr-pay-btn-full">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+                Bayad Full — &#8369;{{ number_format($report->balance, 2) }}
+            </a>
+
+            <a href="{{ route('portal.payments.create', [
+                    'delivery_receipt_id' => $report->delivery_receipt_id,
+                    'amount' => number_format($report->balance / 2, 2, '.', ''),
+                    'report_id' => $report->id,
+                ]) }}" class="sr-pay-btn-half">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2v20"/>
+                </svg>
+                Kalahati — &#8369;{{ number_format($report->balance / 2, 2) }}
+            </a>
+
+            <a href="{{ route('portal.payments.create', [
+                    'delivery_receipt_id' => $report->delivery_receipt_id,
+                    'report_id' => $report->id,
+                ]) }}" class="sr-pay-btn-custom">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Custom Amount
+            </a>
+        </div>
+
+        <div class="sr-pay-note">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Pwede ka mag-bayad ug <strong>partial</strong> o <strong>full</strong>. Ang sobra o kulang dili problema.
+        </div>
+    </div>
 @endif
 
 @endsection
@@ -321,5 +363,126 @@
     }
     .sr-pay-cta:hover { background:linear-gradient(135deg, #d4b673, #9a6b3f); }
     .sr-pay-cta:active { transform:scale(0.98); }
-</style>
+
+        /* ========== PAY SECTION ========== */
+        .sr-pay-section {
+            background: linear-gradient(165deg, rgba(201,169,97,0.08), rgba(138,95,54,0.04));
+            border: 1px solid rgba(201,169,97,0.25);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .sr-pay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(201,169,97,0.15);
+        }
+        .sr-pay-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #8a8378;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .sr-pay-amount {
+            font-size: 20px;
+            font-weight: 800;
+            color: #c9a961;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .sr-pay-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .sr-pay-btn-full,
+        .sr-pay-btn-half,
+        .sr-pay-btn-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: 800;
+            font-family: inherit;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            border: 1px solid;
+            cursor: pointer;
+        }
+        .sr-pay-btn-full svg,
+        .sr-pay-btn-half svg,
+        .sr-pay-btn-custom svg { flex-shrink: 0; }
+
+        /* FULL — green */
+        .sr-pay-btn-full {
+            background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15));
+            border-color: rgba(34,197,94,0.4);
+            color: #22c55e;
+            grid-column: 1 / -1;
+        }
+        .sr-pay-btn-full:hover {
+            background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(22,163,74,0.2));
+            border-color: #22c55e;
+            transform: translateY(-1px);
+        }
+
+        /* HALF — blue */
+        .sr-pay-btn-half {
+            background: rgba(59,130,246,0.15);
+            border-color: rgba(59,130,246,0.4);
+            color: #60a5fa;
+        }
+        .sr-pay-btn-half:hover {
+            background: rgba(59,130,246,0.25);
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
+        /* CUSTOM — gold */
+        .sr-pay-btn-custom {
+            background: linear-gradient(135deg, rgba(201,169,97,0.2), rgba(138,95,54,0.15));
+            border-color: rgba(201,169,97,0.4);
+            color: #c9a961;
+        }
+        .sr-pay-btn-custom:hover {
+            background: linear-gradient(135deg, rgba(201,169,97,0.3), rgba(138,95,54,0.25));
+            border-color: #c9a961;
+            transform: translateY(-1px);
+        }
+
+        .sr-pay-btn-full:active,
+        .sr-pay-btn-half:active,
+        .sr-pay-btn-custom:active { transform: scale(0.97); }
+
+        /* NOTE */
+        .sr-pay-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 9px 11px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 9px;
+            font-size: 10.5px;
+            color: #93bff5;
+            line-height: 1.5;
+        }
+        .sr-pay-note svg { flex-shrink: 0; margin-top: 2px; color: #3b82f6; }
+        .sr-pay-note strong { color: #c9d9f5; font-weight: 800; }
+
+        @media (max-width: 400px) {
+            .sr-pay-buttons { grid-template-columns: 1fr; }
+            .sr-pay-btn-full { grid-column: 1; }
+        }
+    </style>
 @endpush

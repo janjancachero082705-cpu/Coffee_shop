@@ -16,7 +16,7 @@
     $totalBalance = $reports->sum('balance');
 @endphp
 
-<div class="pp-stats" style="margin-bottom:16px;">
+<div class="pp-stats stats-3col" style="margin-bottom:16px;">
     <div class="pp-stat">
         <div class="pp-stat-icon">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
     .pp-head-left .pp-title { font-size:22px; font-weight:800; color:#f5f3f0; }
     .pp-head-left .pp-sub { font-size:12.5px; color:#8a8378; margin-top:2px; }
 
-    .pp-stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+    /* .pp-stats → managed by layout */
     .pp-stat {
         background:linear-gradient(165deg, #1e1a16, #15120f);
         border:1px solid rgba(255,255,255,0.06);
@@ -168,7 +168,7 @@
     .pp-empty-text { font-size:12.5px; color:#8a8378; }
 
     @media (max-width: 480px) {
-        .pp-stats { grid-template-columns:1fr 1fr; }
+        /* .pp-stats → managed by layout */
     }
 </style>
 @endpush
