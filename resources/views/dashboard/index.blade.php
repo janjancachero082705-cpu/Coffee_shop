@@ -418,7 +418,7 @@
                 <div class="db-section-eyebrow">LIVE FEED</div>
                 <h3 class="db-section-title">Recent Activity</h3>
             </div>
-            <a href="{{ route('transactions.index') }}" class="db-section-link">View all →’</a>
+            <a href="{{ route('transactions.index') }}" class="db-section-link">View all →</a>
         </div>
 
         @if($recentActivities->count() > 0)
