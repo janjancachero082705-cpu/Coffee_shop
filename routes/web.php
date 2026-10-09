@@ -146,8 +146,20 @@ Route::middleware('auth')->get('/nav/pending-orders', function () {
     ]);
 })->name('nav.pending-orders');
 
-// ═══════════ PAYMENT VERIFICATION ═══════════
+// â•â•â•â•â•â•â•â•â•â•â• PAYMENT VERIFICATION â•â•â•â•â•â•â•â•â•â•â•
 Route::middleware('auth')->prefix('consignment/payments')->name('consignment.payments.')->group(function () {
     Route::post('{id}/verify', [\App\Http\Controllers\ConsignmentPaymentController::class, 'verify'])->name('verify');
     Route::post('{id}/reject', [\App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('reject');
 });
+
+// ===== Sales Report Modal (AJAX partial) =====
+Route::middleware(['auth'])->get('sales-reports/{report}/modal', [SalesReportController::class, 'modal'])
+    ->name('sales-reports.modal');
+
+// ===== Store-level Sales Report Modal =====
+Route::middleware(['auth'])->get('sales-reports/store/{store}/modal', [SalesReportController::class, 'storeModal'])
+    ->name('sales-reports.store-modal');
+
+// ===== Store-specific Sales Reports page =====
+Route::middleware(['auth'])->get('reports/store/{store}', [SalesReportController::class, 'storeReports'])
+    ->name('reports.store-reports');

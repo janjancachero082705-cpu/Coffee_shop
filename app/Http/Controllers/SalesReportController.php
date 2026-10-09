@@ -164,4 +164,39 @@ class SalesReportController extends Controller
 
         return view('reports.consignment.show', compact('report', 'storePayments'));
     }
+
+    /**
+     * AJAX partial for the Sales Report modal.
+     */
+    public function modal(SalesReport $report)
+    {
+        $report->load(['store', 'user', 'items.product', 'payments']);
+        return view('consignment.sales-reports._modal', compact('report'));
+    }
+
+    /**
+     * AJAX partial — store report list inside modal.
+     */
+    public function storeModal(Store $store)
+    {
+        $reports = $store->salesReports()->latest()->get();
+        return view('consignment.sales-reports._store-modal', compact('store', 'reports'));
+    }
+
+    /**
+     * Show all reports for a specific store — dedicated page.
+     */
+    public function storeReports(Store $store)
+    {
+        $reports = $store->salesReports()->latest()->get();
+
+        $totalSales = (float) $reports->sum('total_sales');
+        $totalPaid  = (float) $reports->sum('amount_paid');
+        $totalBal   = (float) $reports->sum('balance');
+        $paidPct    = $totalSales > 0 ? min(100, ($totalPaid / $totalSales) * 100) : 0;
+
+        return view('reports.consignment.store', compact(
+            'store', 'reports', 'totalSales', 'totalPaid', 'totalBal', 'paidPct'
+        ));
+    }
 }
