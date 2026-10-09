@@ -93,4 +93,37 @@ class Product extends Model
             }
         });
     }
+
+    // ============ PROFIT HELPERS ============
+
+    public function getProfitPerUnitAttribute(): float
+    {
+        $cost = (float) ($this->cost_price ?? 0);
+        $selling = (float) ($this->price ?? 0);
+        return $selling - $cost;
+    }
+
+    public function getMarkupPercentAttribute(): float
+    {
+        $cost = (float) ($this->cost_price ?? 0);
+        if ($cost <= 0) return 0;
+        $profit = (float) ($this->price ?? 0) - $cost;
+        return ($profit / $cost) * 100;
+    }
+
+    public function getTotalProfitPotentialAttribute(): float
+    {
+        $profit = (float) ($this->price ?? 0) - (float) ($this->cost_price ?? 0);
+        return $profit * (int) ($this->stock ?? 0);
+    }
+
+    public function getStockValueAtCostAttribute(): float
+    {
+        return ((float) ($this->cost_price ?? 0)) * (int) ($this->stock ?? 0);
+    }
+
+    public function getStockValueAtSellingAttribute(): float
+    {
+        return ((float) ($this->price ?? 0)) * (int) ($this->stock ?? 0);
+    }
 }

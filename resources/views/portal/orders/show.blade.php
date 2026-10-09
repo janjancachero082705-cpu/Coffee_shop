@@ -36,7 +36,7 @@
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-            {{ $order->created_at->format('M d, Y Â· g:i A') }}
+            {{ $order->created_at->format('M d, Y · g:i A') }}
         </div>
     </div>
 </div>
@@ -57,7 +57,7 @@
                     Approved {{ $order->approved_at->diffForHumans() }}
                 @endif
                 @if($order->deliveryReceipt)
-                    Â· DR: {{ $order->deliveryReceipt->dr_number }}
+                    · DR: {{ $order->deliveryReceipt->dr_number }}
                 @endif
             </div>
         </div>
@@ -281,7 +281,7 @@
 
 @push('styles')
 <style>
-    /* ============ PORTAL ORDER SHOW â€” PRO MOBILE ============ */
+    /* ============ PORTAL ORDER SHOW "” PRO MOBILE ============ */
 
     /* BACK */
     .po-back {

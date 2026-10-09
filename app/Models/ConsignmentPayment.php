@@ -12,15 +12,16 @@ class ConsignmentPayment extends Model
     protected $fillable = [
         'payment_number', 'store_id', 'delivery_receipt_id', 'sales_report_id',
         'user_id', 'amount', 'method', 'reference_number', 'payment_date', 'notes',
-        'is_read_by_admin',
+        'is_read_by_admin', 'verification_status', 'verified_by', 'verified_at', 'rejection_reason',
         'is_read_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'date',
-        'is_read_by_admin' => 'boolean',
+        'is_read_by_admin', 'verification_status', 'verified_by', 'verified_at', 'rejection_reason' => 'boolean',
         'is_read_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public function store()
@@ -101,4 +102,53 @@ class ConsignmentPayment extends Model
     {
         return in_array($this->method, ['gcash', 'maya', 'bank_transfer', 'online']);
     }
+
+
+    // ═══════════ VERIFICATION HELPERS ═══════════
+
+    public function isPending(): bool
+    {
+        return $this->verification_status === 'pending';
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->verification_status === 'verified';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->verification_status === 'rejected';
+    }
+
+    public function verify(int $userId = null): void
+    {
+        $this->update([
+            'verification_status' => 'verified',
+            'verified_by' => $userId ?? auth()->id(),
+            'verified_at' => now(),
+            'rejection_reason' => null,
+        ]);
+    }
+
+    public function reject(string $reason, int $userId = null): void
+    {
+        $this->update([
+            'verification_status' => 'rejected',
+            'verified_by' => $userId ?? auth()->id(),
+            'verified_at' => now(),
+            'rejection_reason' => $reason,
+        ]);
+    }
+
+    // Relationships
+    public function verifier()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'verified_by');
+    }
+
+    // Scopes
+    public function scopePending($q) { return $q->where('verification_status', 'pending'); }
+    public function scopeVerified($q) { return $q->where('verification_status', 'verified'); }
+    public function scopeRejected($q) { return $q->where('verification_status', 'rejected'); }
 }

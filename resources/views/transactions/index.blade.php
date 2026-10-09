@@ -5,262 +5,342 @@
 
 @section('content')
 
-{{-- ========== HERO HEADER ========== --}}
+@php
+    use App\Models\Store;
+    use App\Models\ConsignmentPayment;
+    use App\Models\DeliveryReceipt;
+    use App\Models\SalesReport;
+    use App\Models\ReorderRequest;
+
+    // Filter
+    $search = request('search');
+    $storeId = request('store');
+    $dateFrom = request('from');
+    $dateTo = request('to');
+
+    // Stats
+    $todayPayments = ConsignmentPayment::verified()->whereDate('created_at', today())->count();
+    $weekPayments = ConsignmentPayment::verified()->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
+    $todayPaid = (float) ConsignmentPayment::verified()->whereDate('created_at', today())->sum('amount');
+
+    // ═══ GROUP ACTIVITY BY STORE ═══
+    $storesQuery = Store::query();
+
+    if ($storeId) {
+        $storesQuery->where('id', $storeId);
+    }
+
+    if ($search) {
+        $storesQuery->where(function ($q) use ($search) {
+            $q->where('store_name', 'like', "%{$search}%")
+              ->orWhere('code', 'like', "%{$search}%");
+        });
+    }
+
+    $stores = $storesQuery->orderBy('store_name')->get();
+
+    // Build activity per store
+    $storeActivities = collect();
+
+    foreach ($stores as $store) {
+        $activities = collect();
+
+        // 1. Orders
+        $orderQuery = ReorderRequest::where('store_id', $store->id);
+        if ($dateFrom) $orderQuery->whereDate('created_at', '>=', $dateFrom);
+        if ($dateTo) $orderQuery->whereDate('created_at', '<=', $dateTo);
+        foreach ($orderQuery->latest()->take(20)->get() as $o) {
+            $activities->push([
+                'type' => 'order',
+                'icon' => 'shopping-cart',
+                'color' => '#f59e0b',
+                'label' => 'Order ' . ucfirst($o->status),
+                'ref' => $o->request_number,
+                'url' => route('reorder-requests.show', $o->id),
+                'amount' => (float) ($o->total_amount ?? 0),
+                'time' => $o->created_at,
+                'desc' => match($o->status) {
+                    'pending' => 'Gi-submit sa store',
+                    'approved' => 'Gi-approve sa admin',
+                    'rejected' => 'Gi-reject sa admin',
+                    default => ucfirst($o->status),
+                },
+            ]);
+        }
+
+        // 2. Deliveries
+        $delQuery = DeliveryReceipt::where('store_id', $store->id);
+        if ($dateFrom) $delQuery->whereDate('created_at', '>=', $dateFrom);
+        if ($dateTo) $delQuery->whereDate('created_at', '<=', $dateTo);
+        foreach ($delQuery->latest()->take(20)->get() as $d) {
+            $activities->push([
+                'type' => 'delivery',
+                'icon' => 'truck',
+                'color' => '#3b82f6',
+                'label' => 'Delivery',
+                'ref' => $d->dr_number,
+                'url' => route('deliveries.show', $d->id),
+                'amount' => (float) ($d->total_amount ?? 0),
+                'time' => $d->created_at,
+                'desc' => $d->customer_confirmed ? 'Gi-confirm na sa customer' : ($d->out_for_delivery_at ? 'Gi-ship na' : 'Gi-create'),
+            ]);
+        }
+
+        // 3. Payments — VERIFIED ONLY
+        $payQuery = ConsignmentPayment::verified()->where('store_id', $store->id);
+        if ($dateFrom) $payQuery->whereDate('created_at', '>=', $dateFrom);
+        if ($dateTo) $payQuery->whereDate('created_at', '<=', $dateTo);
+        foreach ($payQuery->latest()->take(20)->get() as $p) {
+            $activities->push([
+                'type' => 'payment',
+                'icon' => 'cash',
+                'color' => '#22c55e',
+                'label' => 'Payment Recorded',
+                'ref' => $p->payment_number,
+                'url' => route('consignment.payments.show', $p->id),
+                'amount' => (float) ($p->amount ?? 0),
+                'time' => $p->created_at,
+                'desc' => ucfirst($p->method) . ' · Verified',
+            ]);
+        }
+
+        // 4. Sales Reports
+        $srQuery = SalesReport::where('store_id', $store->id);
+        if ($dateFrom) $srQuery->whereDate('created_at', '>=', $dateFrom);
+        if ($dateTo) $srQuery->whereDate('created_at', '<=', $dateTo);
+        foreach ($srQuery->latest()->take(20)->get() as $sr) {
+            $activities->push([
+                'type' => 'report',
+                'icon' => 'file-text',
+                'color' => '#8b5cf6',
+                'label' => 'Sales Report',
+                'ref' => $sr->report_number,
+                'url' => route('consignment.reports.show', $sr),
+                'amount' => (float) ($sr->total_sales ?? 0),
+                'time' => $sr->created_at,
+                'desc' => 'Sales report created',
+            ]);
+        }
+
+        // Sort by time desc + take top 10
+        $activities = $activities->sortByDesc('time')->take(10)->values();
+
+        if ($activities->count() > 0) {
+            $storeActivities->push([
+                'store' => $store,
+                'activities' => $activities,
+                'total_amount' => $activities->sum('amount'),
+                'count' => $activities->count(),
+            ]);
+        }
+    }
+
+    // Sort stores by latest activity
+    $storeActivities = $storeActivities->sortByDesc(function ($item) {
+        return $item['activities']->first()['time'];
+    })->values();
+
+    $allStores = Store::orderBy('store_name')->get();
+@endphp
+
+{{-- ═══════ HERO ═══════ --}}
 <div class="tx-hero">
     <div class="tx-hero-left">
         <div class="tx-hero-eyebrow">
-            <span class="tx-live-dot"></span>
+            <span class="tx-pulse"></span>
             LIVE ACTIVITY FEED
         </div>
         <h1 class="tx-hero-title">Transactions</h1>
-        <p class="tx-hero-sub">Tanan nga events — orders, deliveries, payments, reports</p>
+        <p class="tx-hero-desc">Tanang events — orders, deliveries, payments, reports — group by store</p>
     </div>
     <div class="tx-hero-stats">
         <div class="tx-hero-stat">
             <div class="tx-hero-stat-label">Today</div>
-            <div class="tx-hero-stat-value">{{ $stats['total_today'] }}</div>
+            <div class="tx-hero-stat-value">{{ $todayPayments }}</div>
         </div>
-        <div class="tx-hero-divider"></div>
+        <div class="tx-hero-stat-divider"></div>
         <div class="tx-hero-stat">
             <div class="tx-hero-stat-label">This Week</div>
-            <div class="tx-hero-stat-value">{{ $stats['total_week'] }}</div>
+            <div class="tx-hero-stat-value">{{ $weekPayments }}</div>
         </div>
-        <div class="tx-hero-divider"></div>
+        <div class="tx-hero-stat-divider"></div>
         <div class="tx-hero-stat">
             <div class="tx-hero-stat-label">Paid Today</div>
-            <div class="tx-hero-stat-value gold">₱{{ number_format($stats['amount_today'], 0) }}</div>
+            <div class="tx-hero-stat-value gold">₱{{ number_format($todayPaid, 0) }}</div>
         </div>
     </div>
 </div>
 
-{{-- ========== FILTER BAR ========== --}}
-<div class="tx-filter-bar">
-    <div class="tx-type-tabs">
-        @php
-            $tabList = [
-                'all' => 'All',
-                'order' => 'Orders',
-                'delivery' => 'Deliveries',
-                'payment' => 'Payments',
-                'report' => 'Reports',
-                'store' => 'Stores',
-            ];
-        @endphp
-        @foreach($tabList as $key => $label)
-            <a href="{{ route('transactions.index', array_merge(request()->except(['type', 'page']), ['type' => $key])) }}"
-               class="tx-type-tab {{ $type === $key ? 'active' : '' }}">
-                {{ $label }}
-            </a>
+{{-- ═══════ FILTERS ═══════ --}}
+<form method="GET" class="tx-filters">
+    <div class="tx-search-wrap">
+        <svg class="tx-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" name="search" class="tx-search" placeholder="Search store name or code..." value="{{ $search }}" autocomplete="off">
+    </div>
+
+    <select name="store" class="tx-select">
+        <option value="">All Stores</option>
+        @foreach($allStores as $s)
+            <option value="{{ $s->id }}" {{ $storeId == $s->id ? 'selected' : '' }}>{{ $s->store_name }}</option>
         @endforeach
-    </div>
+    </select>
 
-    <form method="GET" class="tx-filters">
-        <input type="hidden" name="type" value="{{ $type }}">
+    <input type="date" name="from" class="tx-select" value="{{ $dateFrom }}" placeholder="From">
+    <input type="date" name="to" class="tx-select" value="{{ $dateTo }}" placeholder="To">
 
-        <div class="tx-search-wrap">
-            <svg class="tx-search-icon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" name="search" value="{{ $search }}" placeholder="Search..." class="tx-search-input" id="txSearchInput">
-        </div>
+    <button type="submit" class="tx-filter-btn">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+        Filter
+    </button>
 
-        <select name="store" class="tx-filter-select" onchange="this.form.submit()">
-            <option value="">All Stores</option>
-            @foreach($stores as $s)
-                <option value="{{ $s->id }}" {{ $storeId == $s->id ? 'selected' : '' }}>{{ $s->store_name }}</option>
-            @endforeach
-        </select>
+    @if($search || $storeId || $dateFrom || $dateTo)
+        <a href="{{ route('transactions.index') }}" class="tx-clear-btn">Clear</a>
+    @endif
+</form>
 
-        <input type="date" name="from" value="{{ $dateFrom }}" class="tx-filter-select tx-date-input" onchange="this.form.submit()" title="From date">
-        <input type="date" name="to" value="{{ $dateTo }}" class="tx-filter-select tx-date-input" onchange="this.form.submit()" title="To date">
-
-        @if($search || $storeId || $dateFrom || $dateTo)
-            <a href="{{ route('transactions.index', ['type' => $type]) }}" class="tx-clear-btn" title="Clear filters">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </a>
-        @endif
-    </form>
-</div>
-
-{{-- ========== TIMELINE ========== --}}
-@if($paginator->isEmpty())
+{{-- ═══════ STORE CARDS ═══════ --}}
+@if($storeActivities->isEmpty())
     <div class="tx-empty">
         <div class="tx-empty-icon">
-            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/>
+            </svg>
         </div>
-        <div class="tx-empty-title">Walay transactions</div>
-        <div class="tx-empty-sub">
-            @if($search || $storeId || $dateFrom || $dateTo || $type !== 'all')
-                Try adjusting your filters
+        <div class="tx-empty-title">Walay Transactions</div>
+        <div class="tx-empty-desc">
+            @if($search || $storeId)
+                Walay activity nga match sa imong filter
             @else
-                Activity mo-appear dinhi inig naay new event
+                Wala pay activity sa mga store
             @endif
         </div>
     </div>
 @else
-    <div class="tx-content-area">
-    <div class="tx-timeline">
-        @php $lastDate = null; @endphp
-        @foreach($paginator as $activity)
+    <div class="tx-stores">
+        @foreach($storeActivities as $item)
             @php
-                $dateKey = $activity['created_at']->format('Y-m-d');
-                $showDateHeader = $lastDate !== $dateKey;
-                $lastDate = $dateKey;
-
-                // Map emoji to SVG icon
-                $iconSvg = match($activity['icon']) {
-                    '🛒' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>',
-                    '✓'  => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',
-                    '✕'  => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-                    '📦' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>',
-                    '🚚' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
-                    '💰' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
-                    '💵' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>',
-                    '📱' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
-                    '💜' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
-                    '🏦' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v10M19 10v10M9 10v10M15 10v10M2 20h20"/></svg>',
-                    '📝' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
-                    '📊' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>',
-                    '🏪' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/></svg>',
-                    default => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
-                };
+                $store = $item['store'];
+                $activities = $item['activities'];
+                $latestTime = $activities->first()['time'];
+                $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
             @endphp
 
-            @if($showDateHeader)
-                <div class="tx-date-header">
-                    <div class="tx-date-line"></div>
-                    <div class="tx-date-label">
-                        @if($activity['created_at']->isToday())
-                            Today
-                        @elseif($activity['created_at']->isYesterday())
-                            Yesterday
+            <div class="tx-store-card" data-store="{{ $store->id }}">
+                {{-- STORE HEADER --}}
+                <div class="tx-store-head">
+                    <div class="tx-store-avatar">
+                        @if($store->logo_url)
+                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
                         @else
-                            {{ $activity['created_at']->format('M j, Y') }}
+                            {{ $initials }}
                         @endif
                     </div>
-                    <div class="tx-date-line"></div>
-                </div>
-            @endif
 
-            <a href="{{ $activity['url'] }}" class="tx-item" style="--accent: {{ $activity['color'] }};">
-                <div class="tx-item-marker">
-                    <div class="tx-item-icon">{!! $iconSvg !!}</div>
-                </div>
-
-                <div class="tx-item-content">
-                    <div class="tx-item-top">
-                        <span class="tx-item-title">{{ $activity['title'] }}</span>
-                        <span class="tx-item-ref">{{ $activity['reference'] }}</span>
-                        <span class="tx-item-time">{{ $activity['created_at']->format('g:i A') }}</span>
+                    <div class="tx-store-info">
+                        <div class="tx-store-name">{{ $store->store_name }}</div>
+                        <div class="tx-store-meta">
+                            <span class="tx-store-code">{{ $store->code ?? '' }}</span>
+                            <span class="tx-store-dot">·</span>
+                            <span class="tx-store-count">{{ $item['count'] }} event{{ $item['count'] !== 1 ? 's' : '' }}</span>
+                            <span class="tx-store-dot">·</span>
+                            <span class="tx-store-time">{{ $latestTime->diffForHumans() }}</span>
+                        </div>
                     </div>
-                    <div class="tx-item-middle">
-                        <span class="tx-item-store">{{ $activity['store_name'] }}</span>
-                        @if($activity['store_code'])
-                            <span class="tx-item-store-code">{{ $activity['store_code'] }}</span>
-                        @endif
+
+                    <div class="tx-store-summary">
+                        <div class="tx-store-summary-label">Recent Total</div>
+                        <div class="tx-store-summary-value">₱{{ number_format($item['total_amount'], 2) }}</div>
                     </div>
-                    <div class="tx-item-desc">{{ $activity['description'] }}</div>
+
+                    <button type="button" class="tx-store-toggle" onclick="txToggleStore({{ $store->id }}, this)">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
                 </div>
 
-                @if($activity['amount'] !== null)
-                    <div class="tx-item-amount">
-                        <span class="tx-item-amount-symbol">₱</span>{{ number_format($activity['amount'], 2) }}
-                    </div>
-                @endif
+                {{-- ACTIVITY LIST (COLLAPSED BY DEFAULT) --}}
+                <div class="tx-store-body" id="tx-store-body-{{ $store->id }}">
+                    <div class="tx-timeline">
+                        @foreach($activities as $act)
+                            <a href="{{ $act['url'] }}" class="tx-item" style="--accent: {{ $act['color'] }};">
+                                <div class="tx-item-marker">
+                                    @if($act['icon'] === 'shopping-cart')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                                    @elseif($act['icon'] === 'truck')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                    @elseif($act['icon'] === 'cash')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                                    @else
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                                    @endif
+                                </div>
 
-                <div class="tx-item-arrow">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                                <div class="tx-item-body">
+                                    <div class="tx-item-label" style="color: {{ $act['color'] }};">{{ $act['label'] }}</div>
+                                    <div class="tx-item-desc">{{ $act['desc'] }}</div>
+                                </div>
+
+                                <div class="tx-item-meta">
+                                    <div class="tx-item-ref">{{ $act['ref'] }}</div>
+                                    <div class="tx-item-time">{{ $act['time']->format('g:i A') }}</div>
+                                </div>
+
+                                @if($act['amount'] > 0)
+                                    <div class="tx-item-amount">₱{{ number_format($act['amount'], 2) }}</div>
+                                @endif
+
+                                <svg class="tx-item-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
-            </a>
+            </div>
         @endforeach
     </div>
-
-    @if($paginator->hasPages())
-        <div class="tx-pagination-bar">
-            <div class="tx-pagination-info">
-                <strong>{{ $paginator->firstItem() }}</strong>–<strong>{{ $paginator->lastItem() }}</strong>
-                of <strong>{{ $paginator->total() }}</strong>
-            </div>
-
-            <div class="tx-pagination-controls">
-                @if($paginator->onFirstPage())
-                    <span class="tx-page-btn disabled">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-                    </span>
-                @else
-                    <a href="{{ $paginator->previousPageUrl() }}" class="tx-page-btn">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-                    </a>
-                @endif
-
-                @foreach($paginator->onEachSide(1)->getUrlRange(max(1, $paginator->currentPage() - 1), min($paginator->lastPage(), $paginator->currentPage() + 1)) as $page => $url)
-                    @if($page == $paginator->currentPage())
-                        <span class="tx-page-num active">{{ $page }}</span>
-                    @else
-                        <a href="{{ $url }}" class="tx-page-num">{{ $page }}</a>
-                    @endif
-                @endforeach
-
-                @if($paginator->hasMorePages())
-                    <a href="{{ $paginator->nextPageUrl() }}" class="tx-page-btn">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                    </a>
-                @else
-                    <span class="tx-page-btn disabled">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                    </span>
-                @endif
-            </div>
-
-            <div class="tx-pagination-page">
-                Page <strong>{{ $paginator->currentPage() }}</strong> / <strong>{{ $paginator->lastPage() }}</strong>
-            </div>
-        </div>
-    @endif
-    </div>{{-- /tx-content-area --}}
 @endif
 
 @endsection
 
 @push('styles')
 <style>
-    /* ========== HERO ========== */
+    /* ═══════════════════════════════════════════════ */
+    /* TRANSACTIONS — GROUP BY STORE */
+    /* ═══════════════════════════════════════════════ */
+
+    /* HERO */
     .tx-hero {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 20px;
-        padding: 16px 22px;
-        margin-bottom: 14px;
-        background: linear-gradient(135deg, rgba(201, 169, 97, 0.08) 0%, rgba(30, 26, 22, 0.4) 100%);
-        border: 1px solid rgba(201, 169, 97, 0.15);
-        border-radius: 16px;
-        position: relative;
-        overflow: hidden;
+        padding: 22px 26px;
+        margin-bottom: 18px;
+        background: linear-gradient(135deg, rgba(30, 26, 22, 0.85), rgba(21, 18, 15, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        flex-wrap: wrap;
     }
-    .tx-hero::before {
-        content: '';
-        position: absolute;
-        top: -100px; right: -100px;
-        width: 240px; height: 240px;
-        background: radial-gradient(circle, rgba(201, 169, 97, 0.12), transparent 70%);
-        pointer-events: none;
-    }
-    .tx-hero-left { position: relative; z-index: 1; }
     .tx-hero-eyebrow {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 3px 9px;
-        background: rgba(201, 169, 97, 0.12);
-        border: 1px solid rgba(201, 169, 97, 0.25);
-        border-radius: 100px;
-        font-size: 9px;
+        gap: 7px;
+        font-size: 10px;
         font-weight: 800;
-        color: #c9a961;
+        color: #22c55e;
         letter-spacing: 0.15em;
-        margin-bottom: 10px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
     }
-    .tx-live-dot {
-        width: 5px; height: 5px;
+    .tx-pulse {
+        width: 7px; height: 7px;
         background: #22c55e;
         border-radius: 50%;
         box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
@@ -271,581 +351,477 @@
         50% { opacity: 0.4; }
     }
     .tx-hero-title {
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 800;
         color: #fafafa;
         letter-spacing: -0.03em;
         line-height: 1.1;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
-    .tx-hero-sub {
-        font-size: 11.5px;
-        color: #a1a1aa;
+    .tx-hero-desc {
+        font-size: 12.5px;
+        color: #71717a;
     }
     .tx-hero-stats {
         display: flex;
         align-items: center;
-        gap: 16px;
-        position: relative;
-        z-index: 1;
-        padding-left: 20px;
+        gap: 20px;
+        padding: 12px 20px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .tx-hero-stat { text-align: right; }
     .tx-hero-stat-label {
-        font-size: 9px;
+        font-size: 9.5px;
         font-weight: 800;
         color: #71717a;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
     }
     .tx-hero-stat-value {
-        font-size: 17px;
+        font-size: 20px;
         font-weight: 800;
         color: #fafafa;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
     }
     .tx-hero-stat-value.gold { color: #c9a961; }
-    .tx-hero-divider {
+    .tx-hero-stat-divider {
         width: 1px;
-        height: 28px;
+        height: 32px;
         background: rgba(255, 255, 255, 0.06);
     }
 
-    /* ========== FILTER BAR ========== */
-    .tx-filter-bar {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-    .tx-type-tabs {
-        display: flex;
-        gap: 3px;
-        padding: 3px;
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 10px;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .tx-type-tabs::-webkit-scrollbar { display: none; }
-    .tx-type-tab {
-        padding: 6px 12px;
-        border-radius: 7px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #a1a1aa;
-        text-decoration: none;
-        transition: all 0.15s;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .tx-type-tab:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fafafa;
-    }
-    .tx-type-tab.active {
-        background: linear-gradient(135deg, #c9a961, #b8944d);
-        color: #0f0f14;
-        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
-    }
-
+    /* FILTERS */
     .tx-filters {
         display: flex;
-        align-items: center;
-        gap: 6px;
+        gap: 10px;
+        margin-bottom: 20px;
         flex-wrap: nowrap;
-        width: 100%;
+        align-items: center;
+        padding: 12px 14px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.6), rgba(21, 18, 15, 0.6));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        overflow-x: auto;
     }
     .tx-search-wrap {
-        flex: 1;
-        min-width: 0;
         position: relative;
-        display: flex;
-        align-items: center;
+        flex: 1 1 200px;
+        min-width: 180px;
+        max-width: 400px;
     }
     .tx-search-icon {
         position: absolute;
-        left: 11px;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
         color: #71717a;
         pointer-events: none;
     }
-    .tx-search-input {
+    .tx-search {
         width: 100%;
-        padding: 8px 12px 8px 32px;
-        background: rgba(20, 20, 26, 0.6);
+        padding: 11px 14px 11px 40px;
+        background: rgba(0, 0, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 9px;
+        border-radius: 11px;
         color: #fafafa;
-        font-size: 11.5px;
+        font-size: 13px;
         font-family: inherit;
-        outline: none;
-        transition: all 0.15s;
+        transition: all 0.18s;
     }
-    .tx-search-input::placeholder { color: #71717a; }
-    .tx-search-input:focus {
+    .tx-search:focus {
+        outline: none;
         border-color: #c9a961;
-        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
+        background: rgba(201, 169, 97, 0.03);
     }
-    .tx-filter-select {
-        padding: 8px 10px;
-        background: rgba(20, 20, 26, 0.6);
+    .tx-search::placeholder { color: #52525b; }
+
+    .tx-select {
+        flex: 0 0 auto;
+        padding: 11px 14px;
+        background: rgba(0, 0, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 9px;
+        border-radius: 11px;
         color: #fafafa;
-        font-size: 11px;
+        font-size: 12.5px;
+        font-weight: 600;
         font-family: inherit;
         cursor: pointer;
+        transition: all 0.18s;
+        min-width: 140px;
+    }
+    .tx-select:focus {
         outline: none;
-        transition: all 0.15s;
-        min-width: 100px;
-        max-width: 140px;
-        flex-shrink: 0;
+        border-color: #c9a961;
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
     }
-    .tx-filter-select:focus { border-color: #c9a961; }
-    .tx-date-input {
-        min-width: 108px;
-        max-width: 118px;
-        font-family: ui-monospace, monospace;
-        font-size: 10.5px;
-    }
-    .tx-date-input::-webkit-calendar-picker-indicator {
-        filter: invert(0.5);
+
+    .tx-filter-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 18px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        border: none;
+        border-radius: 11px;
+        color: #0f0f14;
+        font-size: 12.5px;
+        font-weight: 800;
         cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
+    .tx-filter-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px -6px rgba(201, 169, 97, 0.6);
+    }
+
     .tx-clear-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        color: #ef4444;
-        display: grid;
-        place-items: center;
+        padding: 11px 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 11px;
+        color: #d4d4d8;
+        font-size: 12.5px;
+        font-weight: 700;
         text-decoration: none;
         transition: all 0.15s;
         flex-shrink: 0;
     }
     .tx-clear-btn:hover {
-        background: rgba(239, 68, 68, 0.2);
-        border-color: rgba(239, 68, 68, 0.4);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fafafa;
     }
 
-    /* ========== TIMELINE CONTAINER ========== */
-    .tx-timeline {
-        position: relative;
-        flex: 1;
-        min-height: 0;
+    /* STORE CARDS */
+    .tx-stores {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
-    
-    
-    
-    
 
-    /* ========== DATE HEADER ========== */
-    .tx-date-header {
+    .tx-store-card {
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.22s;
+    }
+    .tx-store-card:hover {
+        border-color: rgba(201, 169, 97, 0.25);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    .tx-store-head {
+        display: grid;
+        grid-template-columns: 52px 1fr auto 40px;
+        gap: 16px;
+        padding: 18px 20px;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .tx-store-avatar {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: 0 6px 18px -6px rgba(201, 169, 97, 0.5);
+    }
+    .tx-store-avatar img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+
+    .tx-store-info { min-width: 0; }
+    .tx-store-name {
+        font-size: 15px;
+        font-weight: 800;
+        color: #fafafa;
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tx-store-meta {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin: 10px 0 5px;
+        gap: 6px;
+        font-size: 11.5px;
+        color: #71717a;
+        flex-wrap: wrap;
     }
-    .tx-date-header:first-child { margin-top: 0; }
-    .tx-date-line {
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.18), transparent);
-    }
-    .tx-date-label {
-        padding: 2px 9px;
-        background: rgba(34, 34, 44, 0.75);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 100px;
-        font-size: 9px;
+    .tx-store-code { font-family: ui-monospace, monospace; }
+    .tx-store-dot { color: #52525b; }
+    .tx-store-count {
+        color: #c9a961;
         font-weight: 800;
-        color: #a1a1aa;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        white-space: nowrap;
     }
 
-    /* ========== COMPACT ACTIVITY ITEM ========== */
-    .tx-item {
+    .tx-store-summary {
+        text-align: right;
+        padding-left: 20px;
+        border-left: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .tx-store-summary-label {
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 4px;
+    }
+    .tx-store-summary-value {
+        font-size: 17px;
+        font-weight: 800;
+        color: #c9a961;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+    }
+
+    .tx-store-toggle {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #a1a1aa;
         display: grid;
-        grid-template-columns: 34px 1fr auto auto;
-        gap: 10px;
-        align-items: center;
-        padding: 9px 12px;
-        margin-bottom: 3px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.65), rgba(21, 18, 15, 0.65));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        border-left: 3px solid var(--accent);
-        border-radius: 9px;
-        text-decoration: none;
-        color: inherit;
-        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        place-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    .tx-store-toggle:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fafafa;
+        border-color: rgba(201, 169, 97, 0.3);
+    }
+    .tx-store-toggle.open {
+        background: rgba(201, 169, 97, 0.15);
+        color: #c9a961;
+        border-color: rgba(201, 169, 97, 0.4);
+    }
+    .tx-store-toggle.open svg {
+        transform: rotate(180deg);
+    }
+    .tx-store-toggle svg {
+        transition: transform 0.25s;
+    }
+
+    .tx-store-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(0, 0, 0, 0.15);
+    }
+    .tx-store-body.open {
+        max-height: 2000px;
+    }
+
+    /* TIMELINE */
+    .tx-timeline {
+        padding: 12px 20px 20px;
         position: relative;
     }
+    .tx-timeline::before {
+        content: '';
+        position: absolute;
+        left: 37px;
+        top: 20px;
+        bottom: 20px;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent);
+    }
+
+    .tx-item {
+        display: grid;
+        grid-template-columns: 40px 1fr auto auto auto;
+        gap: 14px;
+        align-items: center;
+        padding: 12px 14px;
+        margin-left: -6px;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.18s;
+        position: relative;
+        z-index: 1;
+    }
+    .tx-item + .tx-item {
+        margin-top: 2px;
+    }
     .tx-item:hover {
-        border-color: rgba(201, 169, 97, 0.25);
-        border-left-color: var(--accent);
-        background: linear-gradient(165deg, rgba(35, 30, 25, 0.85), rgba(25, 22, 18, 0.85));
-        transform: translateX(2px);
-        box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.5);
+        background: rgba(255, 255, 255, 0.03);
+        transform: translateX(4px);
+    }
+
+    .tx-item-marker {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--accent) 15%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+
+    .tx-item-body { min-width: 0; }
+    .tx-item-label {
+        font-size: 12.5px;
+        font-weight: 800;
+        margin-bottom: 2px;
+        letter-spacing: -0.01em;
+    }
+    .tx-item-desc {
+        font-size: 11px;
+        color: #71717a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tx-item-meta {
+        text-align: right;
+        font-size: 10.5px;
+        min-width: 110px;
+    }
+    .tx-item-ref {
+        color: #a1a1aa;
+        font-family: ui-monospace, monospace;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .tx-item-time {
+        color: #52525b;
+        font-weight: 600;
+    }
+
+    .tx-item-amount {
+        font-size: 13px;
+        font-weight: 800;
+        color: #c9a961;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        min-width: 90px;
+        text-align: right;
+    }
+
+    .tx-item-arrow {
+        color: #52525b;
+        flex-shrink: 0;
     }
     .tx-item:hover .tx-item-arrow {
         color: #c9a961;
         transform: translateX(2px);
     }
 
-    .tx-item-marker {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        background: color-mix(in srgb, var(--accent) 15%, transparent);
-        border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-        color: var(--accent);
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        transition: all 0.15s;
-    }
-    .tx-item:hover .tx-item-marker {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--accent) 50%, transparent);
-    }
-    .tx-item-icon {
-        display: grid;
-        place-items: center;
-    }
-
-    .tx-item-content {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .tx-item-top {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: nowrap;
-        min-width: 0;
-    }
-    .tx-item-title {
-        font-size: 11.5px;
-        font-weight: 800;
-        color: var(--accent);
-        letter-spacing: -0.01em;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .tx-item-ref {
-        display: inline-flex;
-        align-items: center;
-        padding: 1px 6px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 4px;
-        font-size: 9px;
-        font-weight: 700;
-        color: #71717a;
-        font-family: ui-monospace, monospace;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .tx-item-time {
-        margin-left: auto;
-        font-size: 9.5px;
-        font-weight: 600;
-        color: #71717a;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .tx-item-middle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-    }
-    .tx-item-store {
-        font-size: 12px;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.005em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .tx-item-store-code {
-        font-family: ui-monospace, monospace;
-        font-size: 9px;
-        font-weight: 600;
-        color: #71717a;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .tx-item-desc {
-        font-size: 10px;
-        color: #71717a;
-        line-height: 1.3;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .tx-item-amount {
-        font-size: 12.5px;
-        font-weight: 800;
-        color: #c9a961;
-        font-variant-numeric: tabular-nums;
-        font-family: ui-monospace, monospace;
-        white-space: nowrap;
-        flex-shrink: 0;
-        padding: 4px 9px;
-        background: rgba(201, 169, 97, 0.08);
-        border: 1px solid rgba(201, 169, 97, 0.15);
-        border-radius: 6px;
-    }
-    .tx-item-amount-symbol {
-        font-size: 10px;
-        opacity: 0.7;
-        margin-right: 1px;
-    }
-
-    .tx-item-arrow {
-        color: #52525b;
-        transition: all 0.15s;
-        flex-shrink: 0;
-        display: grid;
-        place-items: center;
-    }
-
-    /* ========== EMPTY ========== */
+    /* EMPTY */
     .tx-empty {
         text-align: center;
-        padding: 60px 20px;
+        padding: 80px 24px;
         background: linear-gradient(165deg, rgba(30, 26, 22, 0.6), rgba(21, 18, 15, 0.6));
-        border: 1px dashed rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
     }
     .tx-empty-icon {
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 14px;
-        border-radius: 18px;
-        background: rgba(201, 169, 97, 0.1);
-        border: 1px solid rgba(201, 169, 97, 0.2);
-        color: #c9a961;
+        width: 88px; height: 88px;
+        margin: 0 auto 20px;
+        border-radius: 24px;
+        background: rgba(201, 169, 97, 0.08);
+        border: 1px solid rgba(201, 169, 97, 0.15);
         display: grid;
         place-items: center;
+        color: rgba(201, 169, 97, 0.5);
     }
     .tx-empty-title {
-        font-size: 14px;
+        font-size: 18px;
         font-weight: 800;
         color: #fafafa;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
+        letter-spacing: -0.02em;
     }
-    .tx-empty-sub {
-        font-size: 12px;
+    .tx-empty-desc {
+        font-size: 13px;
         color: #71717a;
     }
 
-    /* ========== PAGINATION BAR ========== */
-    .tx-pagination-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
-        margin-top: 8px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 11px;
-        flex-wrap: wrap;
-        flex-shrink: 0;
-    }
-    .tx-pagination-info {
-        font-size: 11px;
-        color: #a1a1aa;
-        font-weight: 500;
-    }
-    .tx-pagination-info strong {
-        color: #c9a961;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-    }
-    .tx-pagination-controls {
-        display: flex;
-        align-items: center;
-        gap: 3px;
-    }
-    .tx-page-btn,
-    .tx-page-num {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 30px;
-        height: 30px;
-        padding: 0 8px;
-        border-radius: 7px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        color: #a1a1aa;
-        font-size: 11.5px;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.15s;
-        font-family: ui-monospace, monospace;
-        cursor: pointer;
-    }
-    .tx-page-btn:hover,
-    .tx-page-num:hover {
-        background: rgba(201, 169, 97, 0.12);
-        border-color: rgba(201, 169, 97, 0.3);
-        color: #c9a961;
-        transform: translateY(-1px);
-    }
-    .tx-page-btn.disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-    .tx-page-num.active {
-        background: linear-gradient(135deg, #c9a961, #b8944d);
-        border-color: transparent;
-        color: #0f0f14;
-        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
-    }
-    .tx-pagination-page {
-        font-size: 11px;
-        color: #71717a;
-        font-weight: 500;
-    }
-    .tx-pagination-page strong {
-        color: #c9a961;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-    }
-
-    /* ========== RESPONSIVE ========== */
+    /* RESPONSIVE */
     @media (max-width: 900px) {
-        .tx-hero {
-            flex-direction: column;
-            align-items: flex-start;
+        .tx-filters {
+            flex-wrap: wrap;
         }
-        .tx-hero-stats {
-            padding-left: 0;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            width: 100%;
+        .tx-search-wrap {
+            flex: 1 1 100%;
+            max-width: 100%;
         }
-    }
-    @media (max-width: 700px) {
-        .tx-hero { padding: 14px 18px; }
-        .tx-hero-title { font-size: 19px; }
-
+        .tx-store-head {
+            grid-template-columns: 44px 1fr 40px;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+        .tx-store-summary {
+            display: none;
+        }
+        .tx-store-avatar {
+            width: 44px; height: 44px;
+            font-size: 14px;
+        }
+        .tx-store-name { font-size: 13.5px; }
         .tx-item {
-            grid-template-columns: 32px 1fr auto;
-            gap: 8px;
-            padding: 8px 10px;
+            grid-template-columns: 36px 1fr auto;
+            gap: 10px;
+            padding: 10px;
         }
-        .tx-item-marker { width: 32px; height: 32px; }
-
-        .tx-item-amount {
-            grid-column: 2 / 3;
-            justify-self: start;
-            font-size: 11.5px;
-            margin-top: 3px;
-        }
-        .tx-item-arrow { grid-row: 1; grid-column: 3; }
-
-        .tx-filter-select { flex: 1 1 calc(50% - 3px); min-width: 0; max-width: none; }
-        .tx-date-input { flex: 1 1 calc(50% - 3px); min-width: 0; max-width: none; }
-        .tx-clear-btn { flex: 0 0 34px; }
-
-        .tx-pagination-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
-        margin-top: 8px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 11px;
-        flex-wrap: wrap;
-        flex-shrink: 0;
+        .tx-item-meta { display: none; }
+        .tx-item-amount { min-width: 70px; font-size: 12px; }
+        .tx-timeline::before { display: none; }
     }
-    @media (max-width: 480px) {
-        .tx-hero-stats { flex-wrap: wrap; gap: 10px; }
-        .tx-hero-divider { display: none; }
-        .tx-pagination-info { display: none; }
-        .tx-item-ref { display: none; }
-        .tx-timeline {
-        position: relative;
-        flex: 1;
-        min-height: 0;
-    }
-
-    /* ========== FLEX LAYOUT WRAPPER ========== */
-    .tx-content-area {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 340px);
-        min-height: 500px;
-    }
-    @media (max-width: 900px) {
-        .tx-content-area {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 340px);
-        min-height: 500px;
-    }
-    @media (max-width: 700px) {
-        .tx-content-area {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 340px);
-        min-height: 500px;
-    }
-    </style>
+</style>
 @endpush
 
 @push('scripts')
 <script>
-(function() {
-    'use strict';
-
-    var searchInput = document.getElementById('txSearchInput');
-    var form = searchInput ? searchInput.closest('form') : null;
-
-    if (searchInput && form) {
-        var timer;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timer);
-            timer = setTimeout(function() {
-                form.submit();
-            }, 700);
-        });
-
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                clearTimeout(timer);
-                form.submit();
-            }
-        });
+    function txToggleStore(id, btn) {
+        var body = document.getElementById('tx-store-body-' + id);
+        if (!body) return;
+        body.classList.toggle('open');
+        btn.classList.toggle('open');
     }
-})();
+
+    // Auto-expand kung 1 ra ka store
+    document.addEventListener('DOMContentLoaded', function() {
+        var cards = document.querySelectorAll('.tx-store-card');
+        if (cards.length === 1) {
+            var body = cards[0].querySelector('.tx-store-body');
+            var btn = cards[0].querySelector('.tx-store-toggle');
+            if (body) body.classList.add('open');
+            if (btn) btn.classList.add('open');
+        }
+    });
+
+    // Click header to toggle
+    document.addEventListener('click', function(e) {
+        var head = e.target.closest('.tx-store-head');
+        if (head && !e.target.closest('.tx-store-toggle')) {
+            var card = head.closest('.tx-store-card');
+            var id = card.dataset.store;
+            var btn = card.querySelector('.tx-store-toggle');
+            txToggleStore(id, btn);
+        }
+    });
 </script>
 @endpush

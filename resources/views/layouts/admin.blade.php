@@ -576,7 +576,7 @@
             <div class="sidebar-bottom">
                 <div class="today-card">
                     <div class="today-label">Today's Collected</div>
-                    <div class="today-value">&#8369;{{ number_format(\App\Models\ConsignmentPayment::whereDate('created_at', today())->sum('amount') ?? 0, 2) }}</div>
+                    <div class="today-value">&#8369;{{ number_format(\App\Models\ConsignmentPayment::verified()->whereDate('payment_date', today())->sum('amount') ?? 0, 2) }}</div>
                     <div class="today-meta">
                         <span>{{ \App\Models\DeliveryReceipt::whereDate('created_at', today())->count() }} deliveries</span>
                     </div>
@@ -794,7 +794,7 @@
     @stack('scripts')
 
         <script>
-        // Smart back button ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â with fallback to dashboard
+        // Smart back button ÃƒÂ¢¬ with fallback to dashboard
         (function() {
             document.addEventListener('click', function(e) {
                 var btn = e.target.closest('.universal-back-btn');

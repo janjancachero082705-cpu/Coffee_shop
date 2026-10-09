@@ -6,6 +6,26 @@
 @section('content')
 
 @php
+    $vStatus = $payment->verification_status ?? 'pending';
+    $isPending = $vStatus === 'pending';
+    $isVerified = $vStatus === 'verified';
+    $isRejected = $vStatus === 'rejected';
+
+    // Hero color based on verification status
+    if ($isPending) {
+        $heroColor = '#f59e0b';
+        $heroBg = 'rgba(245,158,11,0.12)';
+        $heroLabel = 'Waiting for Approval';
+    } elseif ($isRejected) {
+        $heroColor = '#ef4444';
+        $heroBg = 'rgba(239,68,68,0.12)';
+        $heroLabel = 'Payment Rejected';
+    } else {
+        $heroColor = '#22c55e';
+        $heroBg = 'rgba(34,197,94,0.12)';
+        $heroLabel = 'Payment Verified';
+    }
+
     $method = $payment->method ?? 'cash';
     $methodConfig = match($method) {
         'cash' => [
@@ -54,7 +74,7 @@
     </div>
 
     <div class="pay-hero-content">
-        <div class="pay-hero-label">Payment Recorded</div>
+        <div class="pay-hero-label" style="color: {{ $heroColor }};">{{ $heroLabel }}</div>
         <div class="pay-hero-title">{{ $payment->payment_number }}</div>
         <div class="pay-hero-meta">
             <span class="pay-hero-method" style="background: {{ $methodConfig['bg'] }}; color: {{ $methodConfig['color'] }}; border-color: {{ $methodConfig['color'] }}33;">
@@ -71,7 +91,42 @@
 
     <div class="pay-hero-amount">
         <div class="pay-hero-amount-label">Amount Paid</div>
-        <div class="pay-hero-amount-value">&#8369;{{ number_format($payment->amount, 2) }}</div>
+        <div class="pay-hero-amount-value" style="color: {{ $heroColor }};">&#8369;{{ number_format($payment->amount, 2) }}</div>
+    </div>
+</div>
+
+{{-- ═══════════ VERIFICATION STATUS ═══════════ --}}
+<div class="vfy-status-banner" style="--vfy-color: {{ $heroColor }};">
+    <div class="vfy-status-icon">
+        @if($isPending)
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+        @elseif($isVerified)
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M5 12l5 5L20 7"/>
+            </svg>
+        @else
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        @endif
+    </div>
+    <div class="vfy-status-body">
+        <div class="vfy-status-title">{{ $heroLabel }}</div>
+        <div class="vfy-status-desc">
+            @if($isPending)
+                Gi-submit na ni nga bayad pero <strong>wala pa ma-approve sa admin</strong>. Dili pa ma-count sa store balance ug sales report hangtud ma-verify.
+            @elseif($isVerified)
+                Gi-approve na sa admin. Na-count na sa sales report ug store balance.
+                @if($payment->verified_at)
+                    · {{ \Carbon\Carbon::parse($payment->verified_at)->format('M d, Y g:i A') }}
+                @endif
+            @else
+                <strong>Reason:</strong> {{ $payment->rejection_reason ?? 'Walay reason' }}
+            @endif
+        </div>
     </div>
 </div>
 
@@ -157,7 +212,7 @@
     <div>
         <div class="pay-amount-card" style="--accent: {{ $methodConfig['color'] }};">
             <div class="pay-amount-label">Amount</div>
-            <div class="pay-amount-value">
+            <div class="pay-amount-value" style="color: {{ $heroColor }};">
                 <span class="pay-amount-symbol">&#8369;</span>{{ number_format($payment->amount, 2) }}
             </div>
             <div class="pay-amount-meta">
@@ -553,6 +608,53 @@
         .pay-hero-amount-value { font-size: 26px; }
         .pay-amount-value { font-size: 28px; }
         .pay-amount-symbol { font-size: 20px; }
+    }
+
+    /* ═══════════ VERIFICATION STATUS BANNER ═══════════ */
+    .vfy-status-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 20px;
+        margin: 16px 0;
+        border-radius: 16px;
+        background: linear-gradient(135deg, color-mix(in srgb, var(--vfy-color) 12%, transparent), color-mix(in srgb, var(--vfy-color) 3%, transparent));
+        border: 1px solid color-mix(in srgb, var(--vfy-color) 30%, transparent);
+        border-left: 3px solid var(--vfy-color);
+        animation: vfyBannerIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes vfyBannerIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .vfy-status-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--vfy-color) 15%, transparent);
+        color: var(--vfy-color);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        border: 1px solid color-mix(in srgb, var(--vfy-color) 35%, transparent);
+        box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--vfy-color) 50%, transparent);
+    }
+    .vfy-status-body { flex: 1; min-width: 0; }
+    .vfy-status-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--vfy-color);
+        margin-bottom: 4px;
+        letter-spacing: -0.01em;
+    }
+    .vfy-status-desc {
+        font-size: 12px;
+        color: #a1a1aa;
+        line-height: 1.55;
+    }
+    .vfy-status-desc strong {
+        color: var(--vfy-color);
+        font-weight: 800;
     }
 </style>
 @endpush

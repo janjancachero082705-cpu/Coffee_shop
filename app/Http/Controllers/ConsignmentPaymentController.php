@@ -38,6 +38,18 @@ class ConsignmentPaymentController extends Controller
             $query->where('method', $request->method);
         }
 
+        // Verification status filter
+        if ($request->filled('vfy')) {
+            $vfy = $request->vfy;
+            if ($vfy === 'pending') {
+                $query->pending();
+            } elseif ($vfy === 'verified') {
+                $query->verified();
+            } elseif ($vfy === 'rejected') {
+                $query->rejected();
+            }
+        }
+
         // Status filter (paid / partial / unlinked)
         if ($request->filled('status')) {
             $status = $request->status;
@@ -62,9 +74,12 @@ class ConsignmentPaymentController extends Controller
         // Stats
         $stats = [
             'total'      => ConsignmentPayment::count(),
-            'all_amount' => (float) ConsignmentPayment::sum('amount'),
-            'this_month' => (float) ConsignmentPayment::where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
-            'today'      => (float) ConsignmentPayment::whereDate('payment_date', today())->sum('amount'),
+            'all_amount' => (float) ConsignmentPayment::verified()->sum('amount'),
+            'pending_count' => ConsignmentPayment::pending()->count(),
+            'verified_count' => ConsignmentPayment::verified()->count(),
+            'rejected_count' => ConsignmentPayment::rejected()->count(),
+            'this_month' => (float) ConsignmentPayment::verified()->where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
+            'today'      => (float) ConsignmentPayment::verified()->whereDate('payment_date', today())->sum('amount'),
         ];
 
         // Tab counts
@@ -185,5 +200,135 @@ class ConsignmentPaymentController extends Controller
     {
         $payment->load('store', 'user');
         return view('payments.consignment.show', compact('payment'));
+    }
+
+
+    // ═══════════ VERIFICATION ACTIONS ═══════════
+
+    public function verify(Request $request, $id)
+    {
+        $payment = \App\Models\ConsignmentPayment::findOrFail($id);
+
+        if (!$payment->isPending()) {
+            return back()->with('error', 'Payment is already ' . $payment->verification_status . '.');
+        }
+
+        $payment->verify();
+        $payment->refresh();
+
+        // Recompute DR + SalesReport from verified payments only
+        $this->recalculateFromVerified($payment);
+
+        // Notify store
+        try {
+            $this->notifyStore(
+                $payment->store_id,
+                'payment_verified',
+                'Payment Verified',
+                "Ang imong bayad {$payment->payment_number} (₱" . number_format($payment->amount, 2) . ") gi-approve na sa admin.",
+                ['payment_id' => $payment->id]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Notification failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment verified successfully. Amount is now counted sa sales report.');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $payment = \App\Models\ConsignmentPayment::findOrFail($id);
+
+        if (!$payment->isPending()) {
+            return back()->with('error', 'Payment is already ' . $payment->verification_status . '.');
+        }
+
+        // Explicit reject — set status + reason
+        $payment->update([
+            'verification_status' => 'rejected',
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+        $payment->refresh();
+
+        // Recompute DR + SalesReport (rejected = dili counted)
+        $this->recalculateFromVerified($payment);
+
+        // Notify store
+        try {
+            $this->notifyStore(
+                $payment->store_id,
+                'payment_rejected',
+                'Payment Rejected',
+                "Ang imong bayad {$payment->payment_number} gi-reject. Reason: {$request->rejection_reason}",
+                ['payment_id' => $payment->id]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Notification failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment rejected. Store notified.');
+    }
+
+
+    // ═══════════ RECALCULATE FROM VERIFIED PAYMENTS ONLY ═══════════
+    protected function recalculateFromVerified($payment): void
+    {
+        // ═══════════════════════════════════════════════
+        // Recompute money values FROM VERIFIED PAYMENTS ONLY
+        // Pending + Rejected = NEVER counted
+        // ═══════════════════════════════════════════════
+
+        // 1. Delivery Receipt
+        if ($payment->delivery_receipt_id) {
+            $dr = \App\Models\DeliveryReceipt::find($payment->delivery_receipt_id);
+            if ($dr) {
+                $verifiedPaid = (float) \App\Models\ConsignmentPayment::where('delivery_receipt_id', $dr->id)
+                    ->verified()
+                    ->sum('amount');
+
+                $dr->update([
+                    'amount_paid' => $verifiedPaid,
+                    'balance' => max(0, (float) $dr->total_amount - $verifiedPaid),
+                ]);
+
+                // Sync to Sales Report
+                $sr = \App\Models\SalesReport::where('delivery_receipt_id', $dr->id)->first();
+                if ($sr) {
+                    $sr->amount_paid = $verifiedPaid;
+                    if (method_exists($sr, 'recalculate')) {
+                        $sr->recalculate();
+                    } else {
+                        $sr->balance = max(0, (float) $sr->total_sales - $verifiedPaid);
+                        $sr->status = $verifiedPaid <= 0 ? 'pending' : ($sr->balance <= 0.01 ? 'paid' : 'partial');
+                        $sr->save();
+                    }
+                }
+            }
+        }
+
+        // 2. Direct Sales Report link
+        if ($payment->sales_report_id) {
+            $sr = \App\Models\SalesReport::find($payment->sales_report_id);
+            if ($sr) {
+                $verifiedPaid = (float) \App\Models\ConsignmentPayment::where('sales_report_id', $sr->id)
+                    ->verified()
+                    ->sum('amount');
+
+                $sr->amount_paid = $verifiedPaid;
+                if (method_exists($sr, 'recalculate')) {
+                    $sr->recalculate();
+                } else {
+                    $sr->balance = max(0, (float) $sr->total_sales - $verifiedPaid);
+                    $sr->status = $verifiedPaid <= 0 ? 'pending' : ($sr->balance <= 0.01 ? 'paid' : 'partial');
+                    $sr->save();
+                }
+            }
+        }
     }
 }

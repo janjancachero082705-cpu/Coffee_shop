@@ -47,6 +47,61 @@
 </div>
 
 {{-- DETAILS --}}
+
+{{-- ═══════════ VERIFICATION STATUS ═══════════ --}}
+@php
+    $vStatus = $payment->verification_status ?? 'pending';
+@endphp
+
+@if($vStatus === 'pending')
+    <div class="pvfy pvfy-pending">
+        <div class="pvfy-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+        </div>
+        <div class="pvfy-body">
+            <div class="pvfy-title">Waiting for Admin Approval</div>
+            <div class="pvfy-desc">Gi-review pa sa admin imong bayad. Dili pa ma-count sa imong balance hangtud ma-approve.</div>
+        </div>
+    </div>
+@elseif($vStatus === 'verified')
+    <div class="pvfy pvfy-verified">
+        <div class="pvfy-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M5 12l5 5L20 7"/>
+            </svg>
+        </div>
+        <div class="pvfy-body">
+            <div class="pvfy-title">Paid na ✅</div>
+            <div class="pvfy-desc">
+                Gi-approve na sa admin.
+                @if($payment->verified_at)
+                    · {{ \Carbon\Carbon::parse($payment->verified_at)->diffForHumans() }}
+                @endif
+            </div>
+        </div>
+    </div>
+@elseif($vStatus === 'rejected')
+    <div class="pvfy pvfy-rejected">
+        <div class="pvfy-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </div>
+        <div class="pvfy-body">
+            <div class="pvfy-title">Payment Rejected ❌</div>
+            <div class="pvfy-desc">
+                @if($payment->rejection_reason)
+                    Reason: {{ $payment->rejection_reason }}
+                @else
+                    Wala gi-approve sa admin. Contact admin for details.
+                @endif
+            </div>
+        </div>
+    </div>
+@endif
 <div class="pay-card">
     <div class="pay-card-head">
         <div class="pay-card-icon">
@@ -217,5 +272,81 @@
     }
     .pay-tl-label { font-size:12.5px; font-weight:700; color:#f5f3f0; }
     .pay-tl-time { font-size:11px; color:#8a8378; margin-top:2px; }
+
+    /* ═══════════ PORTAL VERIFICATION STATUS ═══════════ */
+    .pvfy {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        margin: 14px 0;
+        border-radius: 14px;
+        border: 1px solid;
+        animation: pvfyIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes pvfyIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .pvfy-pending {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
+        border-color: rgba(245, 158, 11, 0.35);
+        border-left: 3px solid #f59e0b;
+    }
+    .pvfy-verified {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.03));
+        border-color: rgba(34, 197, 94, 0.35);
+        border-left: 3px solid #22c55e;
+    }
+    .pvfy-rejected {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.03));
+        border-color: rgba(239, 68, 68, 0.35);
+        border-left: 3px solid #ef4444;
+    }
+    .pvfy-icon {
+        width: 40px; height: 40px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+    .pvfy-pending .pvfy-icon {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        animation: pvfyPulse 2s ease-in-out infinite;
+    }
+    .pvfy-verified .pvfy-icon {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+    .pvfy-rejected .pvfy-icon {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    @keyframes pvfyPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .pvfy-body { flex: 1; min-width: 0; }
+    .pvfy-title {
+        font-size: 14px;
+        font-weight: 800;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+    .pvfy-pending .pvfy-title { color: #f59e0b; }
+    .pvfy-verified .pvfy-title { color: #22c55e; }
+    .pvfy-rejected .pvfy-title { color: #ef4444; }
+    .pvfy-desc {
+        font-size: 12px;
+        line-height: 1.5;
+        opacity: 0.85;
+    }
+    .pvfy-pending .pvfy-desc { color: #d4a35a; }
+    .pvfy-verified .pvfy-desc { color: #86efac; }
+    .pvfy-rejected .pvfy-desc { color: #fca5a5; }
 </style>
 @endpush

@@ -20,7 +20,7 @@
 
 @php
     $totalDelivered = (float) $store->deliveryReceipts()->sum('total_amount');
-    $totalPaid = (float) \App\Models\ConsignmentPayment::where('store_id', $store->id)->sum('amount');
+    $totalPaid = (float) \App\Models\ConsignmentPayment::verified()->where('store_id', $store->id)->sum('amount');
     $balance = max(0, $totalDelivered - $totalPaid);
     $drCount = $store->deliveryReceipts()->count();
     $recentDrs = $store->deliveryReceipts()->latest()->take(5)->get();

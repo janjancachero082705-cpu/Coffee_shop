@@ -126,6 +126,7 @@ class PortalPaymentController extends Controller
         }
 
         $payment = ConsignmentPayment::create([
+            'verification_status' => 'pending',
             'payment_number' => ConsignmentPayment::generateNumber(),
             'store_id' => $store->id,
             'delivery_receipt_id' => $targetDR?->id,
@@ -145,13 +146,13 @@ class PortalPaymentController extends Controller
 
         return redirect()
             ->route('portal.payments.show', $payment->id)
-            ->with('success', 'Payment recorded successfully!');
+            ->with('success', 'Payment submitted! Waiting for admin approval. Ma-count ra sa imong balance kung ma-approve na.');
     }
 
     protected function recalculateDR($dr): void
     {
-        $totalPaid = $dr->payments()->sum('amount');
-        $balance = max(0, $dr->total_amount - $totalPaid);
+        $totalPaid = (float) $dr->payments()->verified()->sum('amount');
+        $balance = max(0, (float) $dr->total_amount - $totalPaid);
 
         $newStatus = $dr->status;
         if (!in_array($dr->status, ['out_for_delivery', 'delivered'])) {
@@ -180,11 +181,20 @@ class PortalPaymentController extends Controller
                 return;
             }
 
-            // Sync sa DR state (total paid na across all payments)
-            $sr->amount_paid = $dr->amount_paid;
-            $sr->recalculate();
+            // ⚠️ Use VERIFIED payments only — pending/rejected dili counted
+            $verifiedPaid = (float) \App\Models\ConsignmentPayment::where('delivery_receipt_id', $dr->id)
+                ->verified()
+                ->sum('amount');
 
-            \Log::info('syncSalesReport OK: SR ' . $sr->report_number . ' | Paid: ' . $sr->amount_paid . ' | Status: ' . $sr->status);
+            $sr->amount_paid = $verifiedPaid;
+            if (method_exists($sr, 'recalculate')) {
+                $sr->recalculate();
+            } else {
+                $sr->balance = max(0, (float) $sr->total_sales - $verifiedPaid);
+                $sr->save();
+            }
+
+            \Log::info('syncSalesReport OK (verified only): SR ' . $sr->report_number . ' | Paid: ' . $sr->amount_paid);
         } catch (\Exception $e) {
             \Log::warning('syncSalesReport failed: ' . $e->getMessage());
         }

@@ -27,11 +27,13 @@ class DashboardController extends Controller
             'overdue'           => (float) DeliveryReceipt::where('status', 'overdue')->sum('balance'),
             'pending_reports'   => SalesReport::where('status', 'pending')->count(),
             'month_sales'       => (float) SalesReport::where('created_at', '>=', now()->startOfMonth())->sum('total_sales'),
-            'month_payments'    => (float) ConsignmentPayment::where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
+            'month_payments'    => (float) ConsignmentPayment::verified()->where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
 
             // NEW - DR-based totals
             'total_delivered'   => (float) DeliveryReceipt::sum('total_amount'),
-            'total_paid'        => (float) ConsignmentPayment::sum('amount'),
+            'total_paid'        => (float) ConsignmentPayment::verified()->sum('amount'),
+            'pending_payments'  => ConsignmentPayment::pending()->count(),
+            'rejected_payments' => ConsignmentPayment::rejected()->count(),
             'total_outstanding' => (float) DeliveryReceipt::sum('balance'),
         ];
 

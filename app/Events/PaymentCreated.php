@@ -39,7 +39,7 @@ class PaymentCreated implements ShouldBroadcast
     {
         // Compute updated totals para sa store
         $totalDelivered = (float) \App\Models\DeliveryReceipt::where('store_id', $this->storeId)->sum('total_amount');
-        $totalPaid = (float) \App\Models\ConsignmentPayment::where('store_id', $this->storeId)->sum('amount');
+        $totalPaid = (float) \App\Models\ConsignmentPayment::verified()->where('store_id', $this->storeId)->sum('amount');
         $newBalance = max(0, $totalDelivered - $totalPaid);
 
         return [
@@ -53,7 +53,7 @@ class PaymentCreated implements ShouldBroadcast
             'reference' => $this->payment->reference_number ?? null,
             'payment_date' => $this->payment->payment_date ?? now()->toDateString(),
 
-            // Updated totals — para ma-refresh dayon sa mobile
+            // Updated totals "” para ma-refresh dayon sa mobile
             'new_balance' => number_format($newBalance, 2),
             'new_balance_raw' => $newBalance,
             'total_paid' => number_format($totalPaid, 2),

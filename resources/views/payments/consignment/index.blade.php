@@ -15,17 +15,28 @@
 @section('content')
 
 @php
+    $currentFilter = request('vfy', 'all');
     use App\Models\ConsignmentPayment;
     use App\Models\Store;
     use Illuminate\Support\Facades\DB;
 
     // Stats
-    $totalPayments = ConsignmentPayment::count();
-    $totalCollected = (float) ConsignmentPayment::sum('amount');
-    $thisMonth = (float) ConsignmentPayment::whereYear('payment_date', now()->year)
+    // ⚠️ STATS — VERIFIED ONLY (pending + rejected NOT counted)
+    $totalPayments   = ConsignmentPayment::verified()->count();
+    $totalCollected  = (float) ConsignmentPayment::verified()->sum('amount');
+    $thisMonth       = (float) ConsignmentPayment::verified()
+        ->whereYear('payment_date', now()->year)
         ->whereMonth('payment_date', now()->month)
         ->sum('amount');
-    $todayCollected = (float) ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
+    $todayCollected  = (float) ConsignmentPayment::verified()
+        ->whereDate('payment_date', today())
+        ->sum('amount');
+
+    // Pending / Rejected counts (para sa badges)
+    $pendingCount   = ConsignmentPayment::pending()->count();
+    $verifiedCount  = ConsignmentPayment::verified()->count();
+    $rejectedCount  = ConsignmentPayment::rejected()->count();
+    $pendingAmount  = (float) ConsignmentPayment::pending()->sum('amount');
 
     // Recent vs unlinked
     $linkedCount = ConsignmentPayment::whereNotNull('sales_report_id')->count() ?? 0;
@@ -34,7 +45,135 @@
     $totalStores = Store::whereHas('consignmentPayments')->count();
 @endphp
 
+@if($pendingCount > 0 && $currentFilter === 'all')
+    <div class="vfy-alert">
+        <div class="vfy-alert-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+        </div>
+        <div class="vfy-alert-body">
+            <div class="vfy-alert-title">{{ $pendingCount }} Payment{{ $pendingCount > 1 ? 's' : '' }} Awaiting Verification</div>
+            <div class="vfy-alert-desc">Customer nag-claim nakabayad. I-verify para ma-count sa sales report.</div>
+        </div>
+        <div class="vfy-alert-tag">₱{{ number_format($pendingAmount, 2) }}</div>
+    </div>
+@endif
+
+{{-- VERIFICATION FILTER TABS --}}
+<div class="vfy-tabs">
+    <a href="{{ route('consignment.payments.index') }}" class="vfy-tab {{ $currentFilter === 'all' ? 'active' : '' }}">
+        All <span class="vfy-tab-count">{{ $totalPayments }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', ['vfy' => 'pending']) }}" class="vfy-tab {{ $currentFilter === 'pending' ? 'active' : '' }}">
+        Pending <span class="vfy-tab-count">{{ $pendingCount }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', ['vfy' => 'verified']) }}" class="vfy-tab {{ $currentFilter === 'verified' ? 'active' : '' }}">
+        Verified <span class="vfy-tab-count">{{ $verifiedCount }}</span>
+    </a>
+    <a href="{{ route('consignment.payments.index', ['vfy' => 'rejected']) }}" class="vfy-tab {{ $currentFilter === 'rejected' ? 'active' : '' }}">
+        Rejected <span class="vfy-tab-count">{{ $rejectedCount }}</span>
+    </a>
+</div>
+
 {{-- ===== STATS GRID ===== --}}
+
+{{-- ═══════ REJECT MODAL ═══════ --}}
+{{-- ═══════════ APPROVE MODAL ═══════════ --}}
+<div id="vfyApproveModal" class="vfy-modal-backdrop" onclick="if(event.target === this) closeApproveModal()">
+    <div class="vfy-modal">
+        <div class="vfy-modal-head vfy-modal-head-approve">
+            <div class="vfy-modal-icon vfy-modal-icon-approve">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+            </div>
+            <div class="vfy-modal-heading">
+                <div class="vfy-modal-title">Approve Payment?</div>
+                <div class="vfy-modal-sub" id="vfyApprovePaymentNum"></div>
+            </div>
+        </div>
+        <form method="POST" id="vfyApproveForm">
+            @csrf
+            <div class="vfy-modal-body">
+                <div class="vfy-modal-info">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    Ma-count na sa sales report ug sa store balance ang bayad.
+                </div>
+
+                <div class="vfy-modal-summary">
+                    <div class="vfy-modal-summary-row">
+                        <span>Store</span>
+                        <strong id="vfyApproveStore">-</strong>
+                    </div>
+                    <div class="vfy-modal-summary-row">
+                        <span>Amount</span>
+                        <strong class="gold" id="vfyApproveAmount">₱0.00</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="vfy-modal-foot">
+                <button type="button" class="vfy-modal-btn vfy-modal-btn-ghost" onclick="closeApproveModal()">Cancel</button>
+                <button type="submit" class="vfy-modal-btn vfy-modal-btn-success">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                    Confirm Approve
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ═══════════ REJECT MODAL ═══════════ --}}
+<div id="vfyRejectModal" class="vfy-modal-backdrop" onclick="if(event.target === this) closeRejectModal()">
+    <div class="vfy-modal">
+        <div class="vfy-modal-head vfy-modal-head-reject">
+            <div class="vfy-modal-icon vfy-modal-icon-reject">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </div>
+            <div class="vfy-modal-heading">
+                <div class="vfy-modal-title">Reject Payment?</div>
+                <div class="vfy-modal-sub" id="vfyRejectPaymentNum"></div>
+            </div>
+        </div>
+        <form method="POST" id="vfyRejectForm">
+            @csrf
+            <div class="vfy-modal-body">
+                <div class="vfy-modal-warn">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                    <div>Ang store ma-notify niini. <strong>Dili ma-count</strong> sa sales report ug store balance.</div>
+                </div>
+
+                <div class="vfy-modal-summary">
+                    <div class="vfy-modal-summary-row">
+                        <span>Store</span>
+                        <strong id="vfyRejectStore">-</strong>
+                    </div>
+                    <div class="vfy-modal-summary-row">
+                        <span>Amount</span>
+                        <strong class="strike" id="vfyRejectAmount">₱0.00</strong>
+                    </div>
+                </div>
+
+                <label class="vfy-modal-label">Reason for rejection <span style="color:#ef4444;">*</span></label>
+                <textarea name="rejection_reason" class="vfy-modal-textarea" rows="3" placeholder="Example: Walay proof of payment, wrong amount, invalid reference..." required maxlength="500"></textarea>
+            </div>
+            <div class="vfy-modal-foot">
+                <button type="button" class="vfy-modal-btn vfy-modal-btn-ghost" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="vfy-modal-btn vfy-modal-btn-danger">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    Confirm Reject
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <div class="py-stats">
     <div class="py-stat">
         <div class="py-stat-icon gold">
@@ -245,17 +384,34 @@
                                 <div class="py-amount">+ &#8369;{{ number_format($payment->amount, 2) }}</div>
                             </td>
                             <td style="text-align: center;">
-                                @if($payment->sales_report_id)
-                                    <span class="py-status linked">Linked</span>
+                                @if($payment->verification_status === 'verified')
+                                    <span class="vfy-badge verified"><span class="vfy-dot"></span>Verified</span>
+                                @elseif($payment->verification_status === 'rejected')
+                                    <span class="vfy-badge rejected"><span class="vfy-dot"></span>Rejected</span>
                                 @else
-                                    <span class="py-status unlinked">Unlinked</span>
+                                    <span class="vfy-badge pending"><span class="vfy-dot"></span>Pending</span>
                                 @endif
                             </td>
                             <td style="text-align: right;">
-                                <a href="{{ route('consignment.payments.show', $payment->id) }}" class="py-btn-view">
-                                    View
-                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path d="M9 18l6-6-6-6"/>
+                                @if($payment->verification_status === 'pending')
+                                    <div class="vfy-actions">
+                                        <button type="button" class="vfy-btn vfy-btn-approve" onclick="openApproveModal({{ $payment->id }}, '{{ $payment->payment_number }}', '{{ $payment->store->store_name ?? "-" }}', {{ (float) $payment->amount }})">
+                                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                                            Approve
+                                        </button>
+                                        <button type="button" class="vfy-btn vfy-btn-reject" onclick="openRejectModal({{ $payment->id }}, '{{ $payment->payment_number }}', '{{ $payment->store->store_name ?? "-" }}', {{ (float) $payment->amount }})">
+                                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                            Reject
+                                        </button>
+                                    </div>
+                                @else
+                                    <a href="{{ route('consignment.payments.show', $payment->id) }}" class="py-btn-view">
+                                        View
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path d="M9 18l6-6-6-6"/>
+                                        </svg>
+                                    </a>
+                                @endif
                                     </svg>
                                 </a>
                             </td>
@@ -784,5 +940,773 @@
         .py-filter { width: 100%; }
         .py-btn-filter { width: 100%; justify-content: center; }
     }
+
+    /* ═══════════ VERIFICATION BADGES ═══════════ */
+    .vfy-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid;
+        white-space: nowrap;
+    }
+    .vfy-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .vfy-badge.pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.35);
+    }
+    .vfy-badge.pending .vfy-dot { background: #f59e0b; animation: vfyPulse 2s ease-in-out infinite; }
+    .vfy-badge.verified {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.35);
+    }
+    .vfy-badge.verified .vfy-dot { background: #22c55e; }
+    .vfy-badge.rejected {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+    .vfy-badge.rejected .vfy-dot { background: #ef4444; }
+
+    @keyframes vfyPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* INLINE VERIFY ACTIONS */
+    .vfy-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .vfy-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 6px 11px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        border: 1px solid;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .vfy-btn-approve {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 4px 12px -4px rgba(34, 197, 94, 0.5);
+    }
+    .vfy-btn-approve:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px -4px rgba(34, 197, 94, 0.7);
+    }
+    .vfy-btn-reject {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+    .vfy-btn-reject:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+    }
+
+    /* PENDING ALERT BANNER */
+    .vfy-alert {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        margin-bottom: 18px;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.03));
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-left: 3px solid #f59e0b;
+        border-radius: 14px;
+        animation: vfyAlertIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes vfyAlertIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .vfy-alert-icon {
+        width: 40px; height: 40px;
+        border-radius: 11px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        animation: vfyPulse 2s ease-in-out infinite;
+    }
+    .vfy-alert-body { flex: 1; min-width: 0; }
+    .vfy-alert-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: #fafafa;
+        margin-bottom: 3px;
+    }
+    .vfy-alert-desc {
+        font-size: 11.5px;
+        color: #a1a1aa;
+    }
+    .vfy-alert-desc strong { color: #f59e0b; }
+    .vfy-alert-btn {
+        padding: 9px 16px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px -4px rgba(245, 158, 11, 0.5);
+    }
+    .vfy-alert-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px -4px rgba(245, 158, 11, 0.7);
+    }
+
+    /* FILTER TABS */
+    .vfy-tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        margin-bottom: 18px;
+    }
+    .vfy-tab {
+        padding: 8px 16px;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #a1a1aa;
+        text-decoration: none;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .vfy-tab:hover { color: #fafafa; background: rgba(255, 255, 255, 0.04); }
+    .vfy-tab.active {
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
+    }
+    .vfy-tab-count {
+        padding: 1px 7px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 900;
+        min-width: 18px;
+        text-align: center;
+    }
+    .vfy-tab.active .vfy-tab-count {
+        background: rgba(15, 15, 20, 0.25);
+    }
+
+    .vfy-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+    .vfy-modal-backdrop.open { display: flex; }
+    .vfy-modal {
+        background: linear-gradient(165deg, #1e1a16, #15120f);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 440px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+        animation: vfyModalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes vfyModalIn {
+        from { transform: scale(0.94) translateY(12px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .vfy-modal-head {
+        display: flex; align-items: center; gap: 14px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .vfy-modal-icon {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        display: grid; place-items: center;
+        flex-shrink: 0;
+    }
+    .vfy-modal-title {
+        font-size: 16px; font-weight: 800; color: #fafafa;
+        letter-spacing: -0.02em; margin-bottom: 3px;
+    }
+    .vfy-modal-sub {
+        font-size: 11px; color: #71717a;
+        font-family: ui-monospace, monospace;
+    }
+    .vfy-modal-body { padding: 20px 24px; }
+    .vfy-modal-warn {
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 11px 13px;
+        margin-bottom: 16px;
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.22);
+        border-radius: 10px;
+        font-size: 11.5px; color: #d4a35a; line-height: 1.5;
+    }
+    .vfy-modal-warn svg { flex-shrink: 0; margin-top: 2px; color: #f59e0b; }
+    .vfy-modal-label {
+        display: block;
+        font-size: 10.5px; font-weight: 800;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+    }
+    .vfy-modal-textarea {
+        width: 100%;
+        padding: 11px 14px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        color: #fafafa;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 80px;
+    }
+    .vfy-modal-textarea:focus {
+        outline: none;
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    .vfy-modal-textarea::placeholder { color: #52525b; }
+    .vfy-modal-foot {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 18px 24px 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .vfy-modal-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 7px;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 12.5px; font-weight: 800;
+        border: 1px solid;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+    }
+    .vfy-modal-btn-ghost {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #d4d4d8;
+    }
+    .vfy-modal-btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fafafa;
+    }
+    .vfy-modal-btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 4px 14px -4px rgba(239, 68, 68, 0.5);
+    }
+    .vfy-modal-btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(239, 68, 68, 0.7);
+    }
+
+    /* ═══════════════════════════════════════════
+       PAYMENT VERIFICATION UI
+       ═══════════════════════════════════════════ */
+
+    /* BADGES */
+    .vfy-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid;
+        white-space: nowrap;
+    }
+    .vfy-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .vfy-badge.pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.35);
+    }
+    .vfy-badge.pending .vfy-dot {
+        background: #f59e0b;
+        animation: vfyPulse 2s ease-in-out infinite;
+    }
+    .vfy-badge.verified {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.35);
+    }
+    .vfy-badge.verified .vfy-dot { background: #22c55e; }
+    .vfy-badge.rejected {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+    .vfy-badge.rejected .vfy-dot { background: #ef4444; }
+
+    @keyframes vfyPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* ACTIONS */
+    .vfy-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        justify-content: flex-end;
+    }
+    .vfy-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 6px 11px;
+        border-radius: 8px;
+        font-size: 10.5px;
+        font-weight: 800;
+        border: 1px solid;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .vfy-btn-approve {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 3px 10px -3px rgba(34, 197, 94, 0.5);
+    }
+    .vfy-btn-approve:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px -3px rgba(34, 197, 94, 0.7);
+    }
+    .vfy-btn-reject {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+    .vfy-btn-reject:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+    }
+
+    /* PENDING ALERT */
+    .vfy-alert {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.03));
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-left: 3px solid #f59e0b;
+        border-radius: 14px;
+        animation: vfyAlertIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes vfyAlertIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .vfy-alert-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+        animation: vfyPulse 2s ease-in-out infinite;
+    }
+    .vfy-alert-body { flex: 1; min-width: 0; }
+    .vfy-alert-title {
+        font-size: 13px; font-weight: 800; color: #fafafa;
+        margin-bottom: 2px;
+    }
+    .vfy-alert-desc { font-size: 11.5px; color: #a1a1aa; }
+    .vfy-alert-desc strong { color: #f59e0b; font-weight: 800; }
+    .vfy-alert-tag {
+        padding: 3px 9px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 100px;
+        font-size: 11px; font-weight: 800;
+        color: #f59e0b;
+        font-family: ui-monospace, monospace;
+        flex-shrink: 0;
+    }
+
+    /* FILTER TABS */
+    .vfy-tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .vfy-tab {
+        padding: 8px 14px;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #a1a1aa;
+        text-decoration: none;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .vfy-tab:hover { color: #fafafa; background: rgba(255, 255, 255, 0.04); }
+    .vfy-tab.active {
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
+    }
+    .vfy-tab-count {
+        padding: 1px 7px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 900;
+        min-width: 18px;
+        text-align: center;
+    }
+    .vfy-tab.active .vfy-tab-count {
+        background: rgba(15, 15, 20, 0.25);
+    }
+
+    /* ═════════ MODALS ═════════ */
+    .vfy-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+    .vfy-modal-backdrop.open {
+        display: flex;
+        animation: vfyFadeIn 0.2s ease-out;
+    }
+    @keyframes vfyFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .vfy-modal {
+        background: linear-gradient(165deg, #1e1a16 0%, #15120f 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 460px;
+        overflow: hidden;
+        box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.9),
+                    0 0 0 1px rgba(255, 255, 255, 0.03);
+        animation: vfyModalIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes vfyModalIn {
+        from { transform: scale(0.94) translateY(12px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .vfy-modal-head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .vfy-modal-icon {
+        width: 48px; height: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+    .vfy-modal-icon-approve {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        box-shadow: 0 6px 20px -6px rgba(34, 197, 94, 0.4);
+    }
+    .vfy-modal-icon-reject {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        box-shadow: 0 6px 20px -6px rgba(239, 68, 68, 0.4);
+    }
+    .vfy-modal-heading { flex: 1; min-width: 0; }
+    .vfy-modal-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #fafafa;
+        letter-spacing: -0.02em;
+        margin-bottom: 3px;
+    }
+    .vfy-modal-sub {
+        font-size: 11px;
+        color: #71717a;
+        font-family: ui-monospace, monospace;
+    }
+
+    .vfy-modal-body { padding: 20px 24px; }
+    .vfy-modal-warn,
+    .vfy-modal-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        border-radius: 11px;
+        font-size: 11.5px;
+        line-height: 1.55;
+    }
+    .vfy-modal-warn {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.22);
+        color: #d4a35a;
+    }
+    .vfy-modal-warn svg { flex-shrink: 0; margin-top: 2px; color: #f59e0b; }
+    .vfy-modal-warn strong { color: #f59e0b; font-weight: 800; }
+    .vfy-modal-info {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.22);
+        color: #86efac;
+    }
+    .vfy-modal-info svg { flex-shrink: 0; margin-top: 2px; color: #22c55e; }
+
+    .vfy-modal-summary {
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 11px;
+        margin-bottom: 16px;
+    }
+    .vfy-modal-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 12.5px;
+    }
+    .vfy-modal-summary-row + .vfy-modal-summary-row {
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .vfy-modal-summary-row span { color: #71717a; font-weight: 600; }
+    .vfy-modal-summary-row strong {
+        color: #fafafa;
+        font-weight: 800;
+        font-family: ui-monospace, monospace;
+        text-align: right;
+        max-width: 65%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .vfy-modal-summary-row strong.gold { color: #c9a961; }
+    .vfy-modal-summary-row strong.strike {
+        color: #ef4444;
+        text-decoration: line-through;
+        opacity: 0.7;
+    }
+
+    .vfy-modal-label {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 800;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+    }
+    .vfy-modal-textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 11px;
+        color: #fafafa;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 80px;
+        transition: all 0.15s;
+        line-height: 1.55;
+    }
+    .vfy-modal-textarea:focus {
+        outline: none;
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        background: rgba(239, 68, 68, 0.03);
+    }
+    .vfy-modal-textarea::placeholder { color: #52525b; }
+
+    .vfy-modal-foot {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 18px 24px 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .vfy-modal-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 12px 18px;
+        border-radius: 11px;
+        font-size: 12.5px;
+        font-weight: 800;
+        border: 1px solid;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+        min-height: 46px;
+    }
+    .vfy-modal-btn-ghost {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #d4d4d8;
+    }
+    .vfy-modal-btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fafafa;
+    }
+    .vfy-modal-btn-success {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 4px 14px -4px rgba(34, 197, 94, 0.5);
+    }
+    .vfy-modal-btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(34, 197, 94, 0.7);
+    }
+    .vfy-modal-btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 4px 14px -4px rgba(239, 68, 68, 0.5);
+    }
+    .vfy-modal-btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(239, 68, 68, 0.7);
+    }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+(function() {
+    'use strict';
+
+    // ─── APPROVE MODAL ───
+    window.openApproveModal = function(id, num, store, amount) {
+        document.getElementById('vfyApprovePaymentNum').textContent = num;
+        document.getElementById('vfyApproveStore').textContent = store;
+        document.getElementById('vfyApproveAmount').textContent = '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('vfyApproveForm').action = '/consignment/payments/' + id + '/verify';
+        document.getElementById('vfyApproveModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeApproveModal = function() {
+        document.getElementById('vfyApproveModal').classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    // ─── REJECT MODAL ───
+    window.openRejectModal = function(id, num, store, amount) {
+        document.getElementById('vfyRejectPaymentNum').textContent = num;
+        document.getElementById('vfyRejectStore').textContent = store;
+        document.getElementById('vfyRejectAmount').textContent = '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('vfyRejectForm').action = '/consignment/payments/' + id + '/reject';
+        document.getElementById('vfyRejectModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function() {
+            var ta = document.querySelector('#vfyRejectModal textarea');
+            if (ta) ta.focus();
+        }, 200);
+    };
+
+    window.closeRejectModal = function() {
+        document.getElementById('vfyRejectModal').classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    // ─── ESC KEY ───
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeApproveModal();
+            closeRejectModal();
+        }
+    });
+
+    // ─── AUTO-CLEAR FLASH ───
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Verification] Modals ready');
+    });
+})();
+</script>
 @endpush

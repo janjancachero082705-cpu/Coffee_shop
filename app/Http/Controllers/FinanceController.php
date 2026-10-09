@@ -57,7 +57,7 @@ class FinanceController extends Controller
         $profitMargin = $totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0;
 
         // ==================== PAYMENTS RECEIVED ====================
-        $paymentsReceived = (float) ConsignmentPayment::whereBetween('payment_date', [$dateFrom, $dateTo])
+        $paymentsReceived = (float) ConsignmentPayment::verified()->whereBetween('payment_date', [$dateFrom, $dateTo])
             ->sum('amount');
 
         // Breakdown by method
@@ -71,23 +71,23 @@ class FinanceController extends Controller
                 'total' => (float) $p->total,
                 'count' => $p->count,
                 'icon' => match ($p->method) {
-                    'cash' => '💵',
-                    'gcash' => '📱',
-                    'maya' => '💜',
-                    'bank_transfer' => '🏦',
-                    'check' => '📝',
-                    default => '💰',
+                    'cash' => '’µ',
+                    'gcash' => '“±',
+                    'maya' => '’œ',
+                    'bank_transfer' => '¦',
+                    'check' => '“',
+                    default => '’°',
                 },
             ]);
 
         // ==================== CASH POSITION ====================
         // Money on hand (cash payments)
-        $cashOnHand = (float) ConsignmentPayment::where('method', 'cash')
+        $cashOnHand = (float) ConsignmentPayment::verified()->where('method', 'cash')
             ->whereBetween('payment_date', [$dateFrom, $dateTo])
             ->sum('amount');
 
         // Online (GCash, Maya, Bank)
-        $onlineReceived = (float) ConsignmentPayment::whereIn('method', ['gcash', 'maya', 'bank_transfer'])
+        $onlineReceived = (float) ConsignmentPayment::verified()->whereIn('method', ['gcash', 'maya', 'bank_transfer'])
             ->whereBetween('payment_date', [$dateFrom, $dateTo])
             ->sum('amount');
 
@@ -185,7 +185,7 @@ class FinanceController extends Controller
         $prevRevenue = (float) SalesReport::whereBetween('created_at', [$prevPeriodFrom, $prevPeriodTo])->sum('total_sales');
         $revenueChange = $prevRevenue > 0 ? (($totalRevenue - $prevRevenue) / $prevRevenue) * 100 : 0;
 
-        $prevPayments = (float) ConsignmentPayment::whereBetween('payment_date', [$prevPeriodFrom, $prevPeriodTo])->sum('amount');
+        $prevPayments = (float) ConsignmentPayment::verified()->whereBetween('payment_date', [$prevPeriodFrom, $prevPeriodTo])->sum('amount');
         $paymentsChange = $prevPayments > 0 ? (($paymentsReceived - $prevPayments) / $prevPayments) * 100 : 0;
 
         // ==================== BAR CHART SCALING ====================

@@ -66,3 +66,15 @@ ourcesviews*
 .idea/
 .DS_Store
 Thumbs.db
+
+# AUTO-GENERATED BACKUPS — ayaw commit
+*.bak
+*.bak_*
+*.bak-*
+*.orig
+*.old
+*~
+tinker_*.php
+temp_*.php
+tmp_*.php
+_*.php

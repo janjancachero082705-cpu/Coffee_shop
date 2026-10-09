@@ -145,3 +145,9 @@ Route::middleware('auth')->get('/nav/pending-orders', function () {
         'rejected' => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['rejected'])->count(),
     ]);
 })->name('nav.pending-orders');
+
+// ═══════════ PAYMENT VERIFICATION ═══════════
+Route::middleware('auth')->prefix('consignment/payments')->name('consignment.payments.')->group(function () {
+    Route::post('{id}/verify', [\App\Http\Controllers\ConsignmentPaymentController::class, 'verify'])->name('verify');
+    Route::post('{id}/reject', [\App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('reject');
+});

@@ -75,8 +75,10 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        $data['is_active'] = $request->boolean('is_active');
+        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
         $data['reorder_level'] = $data['reorder_level'] ?? 10;
+        $data['category_id'] = $data['category_id'] ?? null;
+        $data['stock'] = $data['stock'] ?? 0;
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -115,8 +117,10 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        $data['is_active'] = $request->boolean('is_active');
+        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
         $data['reorder_level'] = $data['reorder_level'] ?? 10;
+        $data['category_id'] = $data['category_id'] ?? null;
+        $data['stock'] = $data['stock'] ?? 0;
 
         if ($request->hasFile('image')) {
             // Delete old image

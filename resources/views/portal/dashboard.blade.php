@@ -11,7 +11,7 @@
     $totalOrders = \App\Models\ReorderRequest::where('store_id', $store->id)->count();
     $pendingOrders = \App\Models\ReorderRequest::where('store_id', $store->id)->where('status', 'pending')->count();
     $totalDelivered = (float) \App\Models\DeliveryReceipt::where('store_id', $store->id)->sum('total_amount');
-    $totalPaid = (float) \App\Models\ConsignmentPayment::where('store_id', $store->id)->sum('amount');
+    $totalPaid = (float) \App\Models\ConsignmentPayment::verified()->where('store_id', $store->id)->sum('amount');
     $balance = max(0, $totalDelivered - $totalPaid);
     $deliveriesCount = \App\Models\DeliveryReceipt::where('store_id', $store->id)->count();
     $recentOrders = \App\Models\ReorderRequest::where('store_id', $store->id)->latest()->take(3)->get();

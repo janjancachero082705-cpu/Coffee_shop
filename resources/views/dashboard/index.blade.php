@@ -14,9 +14,9 @@
     $drTotal         = \App\Models\DeliveryReceipt::count();
 
     $totalSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->sum('total_sales');
-    $totalPaid       = (float) \App\Models\ConsignmentPayment::sum('amount');
+    $totalPaid       = (float) \App\Models\ConsignmentPayment::verified()->sum('amount');
     $outstanding     = (float) \App\Models\SalesReport::sum('balance');
-    $paymentsToday   = (float) \App\Models\ConsignmentPayment::whereDate('payment_date', today())->sum('amount');
+    $paymentsToday   = (float) \App\Models\ConsignmentPayment::verified()->whereDate('payment_date', today())->sum('amount');
 
     $monthSales      = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->where('created_at','>=',now()->startOfMonth())->sum('total_sales');
     $lastMonthSales  = (float) \App\Models\SalesReport::where('amount_paid', '>', 0)->whereBetween('created_at',[now()->subMonth()->startOfMonth(),now()->subMonth()->endOfMonth()])->sum('total_sales');
@@ -82,7 +82,7 @@
             'label'   => $date->format('D'),
             'day'     => $date->format('d'),
             'revenue' => (float) \App\Models\SalesReport::whereDate('created_at', $date)->sum('total_sales'),
-            'paid'    => (float) \App\Models\ConsignmentPayment::whereDate('payment_date', $date)->sum('amount'),
+            'paid'    => (float) \App\Models\ConsignmentPayment::verified()->whereDate('payment_date', $date)->sum('amount'),
         ]);
     }
     $maxWeekly = max($weeklyRevenue->max('revenue'), $weeklyRevenue->max('paid'), 1);
@@ -92,7 +92,7 @@
 
     \App\Models\ReorderRequest::with('store')->latest()->take(3)->get()->each(function($r) use (&$activities) {
         $activities->push([
-            'icon' => '🛒',
+            'icon' => '›’',
             'color' => '#f59e0b',
             'title' => 'New Order',
             'desc' => ($r->store->store_name ?? '-') . ' · ' . $r->request_number,
@@ -104,7 +104,7 @@
 
     \App\Models\ConsignmentPayment::with('store')->latest()->take(3)->get()->each(function($p) use (&$activities) {
         $activities->push([
-            'icon' => '💰',
+            'icon' => '’°',
             'color' => '#22c55e',
             'title' => 'Payment',
             'desc' => ($p->store->store_name ?? '-') . ' · ' . ucfirst($p->method),
@@ -116,7 +116,7 @@
 
     \App\Models\DeliveryReceipt::with('store')->latest()->take(3)->get()->each(function($d) use (&$activities) {
         $activities->push([
-            'icon' => '🚚',
+            'icon' => 'šš',
             'color' => '#3b82f6',
             'title' => 'Delivery',
             'desc' => ($d->store->store_name ?? '-') . ' · ' . $d->dr_number,
@@ -418,7 +418,7 @@
                 <div class="db-section-eyebrow">LIVE FEED</div>
                 <h3 class="db-section-title">Recent Activity</h3>
             </div>
-            <a href="{{ route('transactions.index') }}" class="db-section-link">View all →</a>
+            <a href="{{ route('transactions.index') }}" class="db-section-link">View all â†’</a>
         </div>
 
         @if($recentActivities->count() > 0)
@@ -490,7 +490,7 @@
 @push('styles')
 <style>
     /* ============================================================
-       DASHBOARD — MODERN DEVELOPER DESIGN
+       DASHBOARD "” MODERN DEVELOPER DESIGN
        ============================================================ */
 
     /* ========== GREETING ========== */

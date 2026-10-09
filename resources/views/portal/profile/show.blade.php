@@ -8,7 +8,7 @@
     $store = Auth::guard('store')->user();
     $totalOrders = \App\Models\ReorderRequest::where('store_id', $store->id)->count();
     $totalDeliveries = \App\Models\DeliveryReceipt::where('store_id', $store->id)->count();
-    $totalPaid = (float) \App\Models\ConsignmentPayment::where('store_id', $store->id)->sum('amount');
+    $totalPaid = (float) \App\Models\ConsignmentPayment::verified()->where('store_id', $store->id)->sum('amount');
     $memberSince = $store->created_at;
 @endphp
 

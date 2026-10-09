@@ -1,634 +1,815 @@
 @extends('layouts.admin')
 
 @section('title', 'Sales Reports')
-@section('subtitle', 'Manage sales and payments per store')
-
-@section('actions')
-    <a href="{{ route('consignment.reports.create') }}" class="btn btn-primary btn-sm">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-        New Report
-    </a>
-@endsection
+@section('subtitle', 'Monitor store sales performance')
 
 @section('content')
 
-{{-- ========== SUMMARY CARDS ========== --}}
-<div class="summary-grid">
-    <div class="summary">
-        <div class="summary-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $stats['total'] }}</div>
-            <div class="summary-label">Reports</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon blue">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">₱{{ number_format($stats['total_sales'], 0) }}</div>
-            <div class="summary-label">Total Sales</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon green">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">₱{{ number_format($stats['total_paid'], 0) }}</div>
-            <div class="summary-label">Total Paid</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon amber">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">₱{{ number_format($stats['total_balance'], 0) }}</div>
-            <div class="summary-label">Balance</div>
-        </div>
-    </div>
-</div>
+@php
+    use App\Models\Store;
+    use App\Models\SalesReport;
 
-{{-- ========== TABS ========== --}}
-<div class="tabs">
-    @php
-        $tabList = [
-            'all'     => ['label' => 'All Reports'],
-            'pending' => ['label' => 'Pending'],
-            'partial' => ['label' => 'Partial'],
-            'paid'    => ['label' => 'Paid'],
-        ];
-    @endphp
-    @foreach($tabList as $key => $item)
-        <a href="{{ route('consignment.reports.index', array_merge(request()->only(['search','store']), ['tab' => $key])) }}"
-           class="tab {{ $tab === $key ? 'active' : '' }}">
-            <span>{{ $item['label'] }}</span>
-            <span class="tab-count">{{ $tabCounts[$key] ?? 0 }}</span>
-        </a>
-    @endforeach
-</div>
+    $search = request('search');
+    $storeId = request('store');
+    $statusFilter = request('status');
 
-{{-- ========== TOOLBAR ========== --}}
-<div class="toolbar">
-    <form method="GET" class="toolbar-form">
-        <input type="hidden" name="tab" value="{{ $tab }}">
+    $totalSales = (float) SalesReport::sum('total_sales');
+    $totalCollected = (float) SalesReport::sum('amount_paid');
+    $totalOutstanding = (float) SalesReport::sum('balance');
+    $totalReports = SalesReport::count();
+    $paidPct = $totalSales > 0 ? ($totalCollected / $totalSales) * 100 : 0;
 
-        <div class="search-box">
-            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search report #, store, or DR..." class="search-input">
-        </div>
+    $storesQuery = Store::query()->whereHas('salesReports');
+    if ($storeId) $storesQuery->where('id', $storeId);
+    if ($search) {
+        $storesQuery->where(function ($q) use ($search) {
+            $q->where('store_name', 'like', "%{$search}%")
+              ->orWhere('code', 'like', "%{$search}%");
+        });
+    }
+    $stores = $storesQuery->orderBy('store_name')->get();
 
-        <select name="store" class="filter-select" onchange="this.form.submit()">
-            <option value="">All Stores</option>
-            @foreach($stores as $s)
-                <option value="{{ $s->id }}" {{ request('store')==$s->id?'selected':'' }}>{{ $s->store_name }}</option>
-            @endforeach
-        </select>
+    $storeGroups = collect();
+    foreach ($stores as $store) {
+        $reportsQuery = SalesReport::where('store_id', $store->id);
+        if ($statusFilter === 'paid') $reportsQuery->where('balance', '<=', 0);
+        elseif ($statusFilter === 'partial') $reportsQuery->where('amount_paid', '>', 0)->where('balance', '>', 0);
+        elseif ($statusFilter === 'pending') $reportsQuery->where('amount_paid', '<=', 0);
 
-        <button type="submit" class="btn-filter">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-            Filter
-        </button>
+        $reports = $reportsQuery->latest()->get();
+        if ($reports->isEmpty()) continue;
 
-        @if(request()->hasAny(['search','store']))
-            <a href="{{ route('consignment.reports.index', ['tab' => $tab]) }}" class="btn-clear" title="Clear filters">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </a>
-        @endif
-    </form>
-</div>
+        $storeGroups->push([
+            'store' => $store,
+            'reports' => $reports,
+            'total_sales' => $reports->sum('total_sales'),
+            'total_paid' => $reports->sum('amount_paid'),
+            'total_balance' => $reports->sum('balance'),
+            'count' => $reports->count(),
+            'latest' => $reports->first()->created_at,
+        ]);
+    }
+    $storeGroups = $storeGroups->sortByDesc('latest')->values();
+    $allStores = Store::orderBy('store_name')->get();
+@endphp
 
-{{-- ========== MANAGEMENT TABLE ========== --}}
-@if($reports->isEmpty())
-    <div class="card">
-        <div class="empty">
-            <div class="empty-icon">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+{{-- ═══════ KPI CARDS ═══════ --}}
+<div class="sr-kpis">
+    <div class="sr-kpi sr-kpi-primary">
+        <div class="sr-kpi-head">
+            <div class="sr-kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 4 4 6-6"/></svg>
             </div>
-            <div class="empty-title">Walay reports</div>
-            <div class="empty-text">
-                @if(request()->hasAny(['search','store']) || $tab !== 'all')
-                    Try adjusting your filters or tab
-                @else
-                    Create your first sales report to get started
-                @endif
+            <div class="sr-kpi-label">Total Sales</div>
+        </div>
+        <div class="sr-kpi-value">₱{{ number_format($totalSales, 0) }}</div>
+        <div class="sr-kpi-foot">{{ $totalReports }} report{{ $totalReports !== 1 ? 's' : '' }}</div>
+    </div>
+
+    <div class="sr-kpi sr-kpi-green">
+        <div class="sr-kpi-head">
+            <div class="sr-kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             </div>
+            <div class="sr-kpi-label">Total Collected</div>
+        </div>
+        <div class="sr-kpi-value">₱{{ number_format($totalCollected, 0) }}</div>
+        <div class="sr-kpi-foot">{{ number_format($paidPct, 1) }}% paid</div>
+    </div>
+
+    <div class="sr-kpi sr-kpi-amber">
+        <div class="sr-kpi-head">
+            <div class="sr-kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="sr-kpi-label">Outstanding</div>
+        </div>
+        <div class="sr-kpi-value">₱{{ number_format($totalOutstanding, 0) }}</div>
+        <div class="sr-kpi-foot">Unpaid balance</div>
+    </div>
+
+    <div class="sr-kpi sr-kpi-red">
+        <div class="sr-kpi-head">
+            <div class="sr-kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 10h16M10 4v16"/></svg>
+            </div>
+            <div class="sr-kpi-label">Pending</div>
+        </div>
+        <div class="sr-kpi-value">{{ SalesReport::where('amount_paid', 0)->count() }}</div>
+        <div class="sr-kpi-foot">Awaiting payment</div>
+    </div>
+</div>
+
+{{-- ═══════ TOOLBAR ═══════ --}}
+<div class="sr-toolbar">
+    <div class="sr-toolbar-title">
+        <h2 class="sr-title">All Reports</h2>
+        <div class="sr-subtitle">
+            <span class="sr-grouped-badge">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/></svg>
+                Grouped by store
+            </span>
+            · {{ $storeGroups->count() }} store{{ $storeGroups->count() !== 1 ? 's' : '' }}
+            · {{ $totalReports }} total report{{ $totalReports !== 1 ? 's' : '' }}
+        </div>
+    </div>
+</div>
+
+{{-- ═══════ FILTERS ═══════ --}}
+<form method="GET" class="sr-filters">
+    <div class="sr-search-wrap">
+        <svg class="sr-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" name="search" class="sr-search" placeholder="Search store name or code..." value="{{ $search }}" autocomplete="off">
+    </div>
+
+    <select name="store" class="sr-select">
+        <option value="">All Stores</option>
+        @foreach($allStores as $s)
+            <option value="{{ $s->id }}" {{ $storeId == $s->id ? 'selected' : '' }}>{{ $s->store_name }}</option>
+        @endforeach
+    </select>
+
+    <select name="status" class="sr-select">
+        <option value="">All Status</option>
+        <option value="paid" {{ $statusFilter === 'paid' ? 'selected' : '' }}>Paid</option>
+        <option value="partial" {{ $statusFilter === 'partial' ? 'selected' : '' }}>Partial</option>
+        <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Pending</option>
+    </select>
+
+    <button type="submit" class="sr-filter-btn">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+        Filter
+    </button>
+
+    @if($search || $storeId || $statusFilter)
+        <a href="{{ route('consignment.reports.index') }}" class="sr-clear-btn">Clear</a>
+    @endif
+</form>
+
+{{-- ═══════ STORE GROUPS (HORIZONTAL GRID) ═══════ --}}
+@if($storeGroups->isEmpty())
+    <div class="sr-empty">
+        <div class="sr-empty-icon">
+            <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M3 3v18h18M7 14l3-3 4 4 6-6"/>
+            </svg>
+        </div>
+        <div class="sr-empty-title">
+            @if($search || $storeId || $statusFilter)
+                Walay reports match sa filter
+            @else
+                Walay sales reports yet
+            @endif
         </div>
     </div>
 @else
-    <div class="card" style="padding:0; overflow:hidden;">
-        <div class="table-wrap">
-            <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th style="width:36px;"></th>
-                        <th>Report #</th>
-                        <th>Store</th>
-                        <th>Period</th>
-                        <th style="text-align:center;">Items</th>
-                        <th style="text-align:right;">Total Sales</th>
-                        <th style="text-align:right;">Paid</th>
-                        <th style="text-align:right;">Balance</th>
-                        <th>Status</th>
-                        <th style="width:100px; text-align:right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($reports as $report)
-                        <tr class="mgmt-row" data-id="{{ $report->id }}">
-                            <td class="expand-cell">
-                                <button type="button" class="expand-btn" data-report-id="{{ $report->id }}" aria-label="Expand">
-                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                                </button>
-                            </td>
-                            <td>
-                                <div class="cell-primary" style="color:#c9a961; font-family:ui-monospace; font-weight:700;">{{ $report->report_number }}</div>
-                                @if($report->deliveryReceipt)
-                                    <div class="cell-secondary">DR: {{ $report->deliveryReceipt->dr_number }}</div>
-                                @endif
-                            </td>
-                            <td>
-                                <div class="cell-primary">{{ $report->store->store_name ?? '-' }}</div>
-                                <div class="cell-secondary">{{ $report->store->code ?? '' }}</div>
-                            </td>
-                            <td>
-                                <div class="cell-primary">{{ \Carbon\Carbon::parse($report->period_from)->format('M d') }} - {{ \Carbon\Carbon::parse($report->period_to)->format('M d, Y') }}</div>
-                                <div class="cell-secondary">{{ $report->created_at->diffForHumans() }}</div>
-                            </td>
-                            <td style="text-align:center;">
-                                <span class="items-badge">{{ $report->items->count() }}</span>
-                            </td>
-                            <td style="text-align:right;" class="money">
-                                ₱{{ number_format($report->total_sales, 2) }}
-                            </td>
-                            <td style="text-align:right;" class="money green">
-                                ₱{{ number_format($report->amount_paid, 2) }}
-                            </td>
-                            <td style="text-align:right;" class="money {{ $report->balance > 0 ? 'amber' : 'green' }}">
-                                ₱{{ number_format($report->balance, 2) }}
-                            </td>
-                            <td>
-                                @if($report->status === 'paid')
-                                    <span class="badge badge-paid">✓ Paid</span>
-                                @elseif($report->status === 'partial')
-                                    <span class="badge badge-partial">◐ Partial</span>
-                                @else
-                                    <span class="badge badge-pending">⏱ Pending</span>
-                                @endif
-                            </td>
-                            <td>
-                                <div class="action-group">
-                                    <a href="{{ route('consignment.reports.show', $report) }}" class="btn-icon" title="View report">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </a>
-                                    @if($report->balance > 0)
-                                        <a href="{{ route('consignment.payments.create', ['store_id' => $report->store_id, 'sales_report_id' => $report->id]) }}" class="btn-icon accent" title="Record Payment">
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                                        </a>
-                                    @endif
+    <div class="sr-groups">
+        @foreach($storeGroups as $group)
+            @php
+                $store = $group['store'];
+                $reports = $group['reports'];
+                $groupPaidPct = $group['total_sales'] > 0 ? ($group['total_paid'] / $group['total_sales']) * 100 : 0;
+                $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
+            @endphp
+
+            <div class="sr-group" data-store="{{ $store->id }}" id="sr-group-{{ $store->id }}">
+                {{-- STORE HEADER --}}
+                <div class="sr-group-head" onclick="srToggleGroup({{ $store->id }})">
+                    <div class="sr-store-avatar">
+                        @if($store->logo_url)
+                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </div>
+
+                    <div class="sr-store-info">
+                        <div class="sr-store-name">{{ $store->store_name }}</div>
+                        <div class="sr-store-meta">
+                            <span class="sr-store-code">{{ $store->code ?? '' }}</span>
+                            <span class="sr-dot">·</span>
+                            <span class="sr-report-count">{{ $group['count'] }} report{{ $group['count'] !== 1 ? 's' : '' }}</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="sr-toggle-btn">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- STATS ROWS --}}
+                <div class="sr-group-stats">
+                    <div class="sr-stat">
+                        <div class="sr-stat-lbl">Total Sales</div>
+                        <div class="sr-stat-val">₱{{ number_format($group['total_sales'], 0) }}</div>
+                    </div>
+                    <div class="sr-stat">
+                        <div class="sr-stat-lbl">Collected</div>
+                        <div class="sr-stat-val green">₱{{ number_format($group['total_paid'], 0) }}</div>
+                    </div>
+                    <div class="sr-stat">
+                        <div class="sr-stat-lbl">Balance</div>
+                        <div class="sr-stat-val {{ $group['total_balance'] > 0 ? 'amber' : 'green' }}">₱{{ number_format($group['total_balance'], 0) }}</div>
+                    </div>
+                </div>
+
+                {{-- PROGRESS --}}
+                <div class="sr-group-progress">
+                    <div class="sr-group-progress-bar">
+                        <div class="sr-group-progress-fill" style="width: {{ $groupPaidPct }}%; {{ $groupPaidPct >= 100 ? 'background: linear-gradient(90deg, #22c55e, #16a34a);' : '' }}"></div>
+                    </div>
+                    <div class="sr-group-progress-info">
+                        <span class="sr-progress-pct">{{ number_format($groupPaidPct, 0) }}% paid</span>
+                        <span class="sr-progress-time">{{ $group['latest']->diffForHumans() }}</span>
+                    </div>
+                </div>
+
+                {{-- REPORTS LIST (Expanded - full width) --}}
+                <div class="sr-group-body" id="sr-group-body-{{ $store->id }}">
+                    <div class="sr-group-body-head">
+                        <div class="sr-body-title">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M12 8v4l3 3M12 22a10 10 0 100-20 10 10 0 000 20z"/>
+                            </svg>
+                            Report History — {{ $store->store_name }}
+                        </div>
+                        <div class="sr-body-count">{{ $reports->count() }} total</div>
+                    </div>
+
+                    <div class="sr-reports-list">
+                        @foreach($reports as $report)
+                            @php
+                                $total = (float) ($report->total_sales ?? 0);
+                                $paid = (float) ($report->amount_paid ?? 0);
+                                $balance = (float) ($report->balance ?? 0);
+                                $isPaid = $balance <= 0;
+                                $isPartial = $paid > 0 && $balance > 0;
+                                $status = $isPaid ? 'paid' : ($isPartial ? 'partial' : 'pending');
+                            @endphp
+
+                            <a href="{{ route('consignment.reports.show', $report) }}" class="sr-report-item">
+                                <div class="sr-report-badge sr-badge-{{ $status }}">
+                                    <span class="sr-badge-dot"></span>
+                                    {{ ucfirst($status) }}
                                 </div>
-                            </td>
-                        </tr>
 
-                        {{-- EXPANDABLE DETAILS --}}
-                        <tr class="products-row" id="products-{{ $report->id }}" data-products-row="{{ $report->id }}" style="display:none;">
-                            <td colspan="10">
-                                <div class="products-panel">
-                                    <div class="details-grid">
+                                <div class="sr-report-info">
+                                    <div class="sr-report-num">{{ $report->report_number }}</div>
+                                    <div class="sr-report-date">{{ \Carbon\Carbon::parse($report->created_at)->format('M d, Y · g:i A') }}</div>
+                                </div>
 
-                                        {{-- LEFT: Products --}}
-                                        <div class="details-col">
-                                            <div class="details-header">
-                                                <div class="details-title">
-                                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                                    Products Sold
-                                                </div>
-                                                <div class="details-count">{{ $report->items->count() }} item(s)</div>
-                                            </div>
-                                            @if($report->items->count() > 0)
-                                                <table class="mini-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Product</th>
-                                                            <th style="text-align:right;">Qty</th>
-                                                            <th style="text-align:right;">Unit Price</th>
-                                                            <th style="text-align:right;">Subtotal</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($report->items as $item)
-                                                            <tr>
-                                                                <td>
-                                                                    <div style="font-weight:600; color:var(--text-primary);">{{ $item->product->name ?? '-' }}</div>
-                                                                    @if($item->product->sku)
-                                                                        <div style="font-size:10px; color:var(--text-muted); font-family:ui-monospace;">{{ $item->product->sku }}</div>
-                                                                    @endif
-                                                                </td>
-                                                                <td style="text-align:right;">{{ $item->quantity_sold }}</td>
-                                                                <td style="text-align:right;" class="money">₱{{ number_format($item->unit_price, 2) }}</td>
-                                                                <td style="text-align:right;" class="money strong">₱{{ number_format($item->subtotal, 2) }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            @else
-                                                <div class="details-empty">Walay products sa report niini.</div>
-                                            @endif
-                                        </div>
-
-                                        {{-- RIGHT: Payment History --}}
-                                        <div class="details-col">
-                                            <div class="details-header">
-                                                <div class="details-title green">
-                                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                                                    Payment History
-                                                </div>
-                                                <div class="details-count">{{ $report->store_payments->count() }} payment(s)</div>
-                                            </div>
-                                            @php
-                                                $payments = $report->deliveryReceipt 
-                                                    ? $report->deliveryReceipt->payments 
-                                                    : $report->store_payments;
-                                            @endphp
-                                            @if($payments->count() > 0)
-                                                <table class="mini-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Date</th>
-                                                            <th>Method</th>
-                                                            <th>Ref #</th>
-                                                            <th style="text-align:right;">Amount</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($payments as $p)
-                                                            <tr>
-                                                                <td>{{ \Carbon\Carbon::parse($p->payment_date)->format('M d, Y') }}</td>
-                                                                <td>
-                                                                    <span class="method-badge {{ $p->method }}">
-                                                                        {{ $p->method_icon ?? '💵' }} {{ ucfirst($p->method) }}
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-                                                                    @if($p->reference_number)
-                                                                        <span class="mono">{{ $p->reference_number }}</span>
-                                                                    @else
-                                                                        <span style="color:var(--text-muted);">—</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td style="text-align:right;" class="money green">₱{{ number_format($p->amount, 2) }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            @else
-                                                <div class="details-empty">Wala pay bayad.</div>
-                                            @endif
-                                        </div>
+                                <div class="sr-report-metrics">
+                                    <div class="sr-metric">
+                                        <div class="sr-metric-lbl">Total</div>
+                                        <div class="sr-metric-val">₱{{ number_format($total, 2) }}</div>
+                                    </div>
+                                    <div class="sr-metric">
+                                        <div class="sr-metric-lbl">Paid</div>
+                                        <div class="sr-metric-val green">₱{{ number_format($paid, 2) }}</div>
+                                    </div>
+                                    <div class="sr-metric">
+                                        <div class="sr-metric-lbl">Balance</div>
+                                        <div class="sr-metric-val {{ $balance > 0 ? 'amber' : 'green' }}">₱{{ number_format($balance, 2) }}</div>
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr class="totals-row">
-                        <td colspan="5" style="text-align:right; font-weight:800;">TOTALS (page):</td>
-                        <td style="text-align:right;" class="money strong">₱{{ number_format($reports->sum('total_sales'), 2) }}</td>
-                        <td style="text-align:right;" class="money green strong">₱{{ number_format($reports->sum('amount_paid'), 2) }}</td>
-                        <td style="text-align:right;" class="money amber strong">₱{{ number_format($reports->sum('balance'), 2) }}</td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
 
-    @if(method_exists($reports, 'links') && $reports->hasPages())
-        <div class="pagination-wrap">{{ $reports->withQueryString()->links() }}</div>
-    @endif
+                                <div class="sr-report-items">
+                                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                    {{ $report->items?->count() ?? 0 }}
+                                </div>
+
+                                <svg class="sr-report-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
 @endif
 
 @endsection
 
 @push('styles')
 <style>
-    /* ========== SUMMARY ========== */
-    .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
-    .summary {
-        background:rgba(34,34,44,0.55); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-        border:1px solid rgba(255,255,255,0.06); border-radius:14px;
-        padding:16px; display:flex; align-items:center; gap:12px;
-        transition:all 0.2s;
+    /* KPI */
+    .sr-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
     }
-    .summary:hover { transform:translateY(-2px); border-color:rgba(169,120,74,0.25); }
-    .summary-icon {
-        width:40px; height:40px; border-radius:10px;
-        background:rgba(169,120,74,0.1); border:1px solid rgba(169,120,74,0.2);
-        display:grid; place-items:center; color:#c9a961; flex-shrink:0;
+    .sr-kpi {
+        position: relative;
+        padding: 16px 18px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: all 0.2s;
     }
-    .summary-icon.green { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.2); color:#22c55e; }
-    .summary-icon.blue { background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.2); color:#3b82f6; }
-    .summary-icon.amber { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.2); color:#f59e0b; }
-    .summary-value { font-size:18px; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em; line-height:1; font-variant-numeric:tabular-nums; }
-    .summary-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; margin-top:3px; }
+    .sr-kpi::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 2px;
+    }
+    .sr-kpi-primary::before { background: linear-gradient(90deg, #c9a961, transparent); }
+    .sr-kpi-green::before { background: linear-gradient(90deg, #22c55e, transparent); }
+    .sr-kpi-amber::before { background: linear-gradient(90deg, #f59e0b, transparent); }
+    .sr-kpi-red::before { background: linear-gradient(90deg, #ef4444, transparent); }
+    .sr-kpi:hover { transform: translateY(-2px); border-color: rgba(201, 169, 97, 0.25); }
+    .sr-kpi-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sr-kpi-icon {
+        width: 32px; height: 32px; border-radius: 9px;
+        display: grid; place-items: center; flex-shrink: 0;
+    }
+    .sr-kpi-primary .sr-kpi-icon { background: rgba(201, 169, 97, 0.15); color: #c9a961; }
+    .sr-kpi-green .sr-kpi-icon { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .sr-kpi-amber .sr-kpi-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .sr-kpi-red .sr-kpi-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .sr-kpi-label {
+        font-size: 10.5px; font-weight: 800; color: #71717a;
+        text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .sr-kpi-value {
+        font-size: 24px; font-weight: 800; color: #fafafa;
+        letter-spacing: -0.03em; line-height: 1;
+        font-variant-numeric: tabular-nums; margin-bottom: 6px;
+    }
+    .sr-kpi-foot { font-size: 11px; color: #71717a; }
 
-    /* ========== TABS ========== */
-    .tabs {
-        display:flex; gap:6px; margin-bottom:16px; padding:5px;
-        background:rgba(34,34,44,0.55); backdrop-filter:blur(20px);
-        border:1px solid rgba(255,255,255,0.06); border-radius:12px;
-        overflow-x:auto;
+    /* TOOLBAR */
+    .sr-toolbar { margin-bottom: 14px; }
+    .sr-title {
+        font-size: 20px; font-weight: 800; color: #fafafa;
+        letter-spacing: -0.02em; margin-bottom: 4px;
     }
-    .tab {
-        display:inline-flex; align-items:center; gap:8px; padding:9px 16px;
-        border-radius:8px; font-size:12.5px; font-weight:600;
-        color:var(--text-secondary); transition:all 0.15s;
-        white-space:nowrap; flex-shrink:0; text-decoration:none;
+    .sr-subtitle {
+        font-size: 12px; color: #71717a;
+        display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .tab:hover { background:rgba(255,255,255,0.04); color:var(--text-primary); }
-    .tab.active {
-        background:linear-gradient(135deg,rgba(169,120,74,0.25),rgba(169,120,74,0.15));
-        color:#c9a961;
-        box-shadow:inset 0 0 0 1px rgba(169,120,74,0.4);
-    }
-    .tab-count {
-        padding:2px 8px; background:rgba(255,255,255,0.05); border-radius:10px;
-        font-size:10.5px; font-weight:800; min-width:22px; text-align:center;
-        color:var(--text-muted);
-    }
-    .tab.active .tab-count { background:rgba(169,120,74,0.3); color:#f0e6dc; }
-
-    /* ========== TOOLBAR ========== */
-    .toolbar { margin-bottom:16px; }
-    .toolbar-form { display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
-    .search-box { flex:1; min-width:0; max-width:420px; position:relative; display:flex; align-items:center; }
-    .search-icon { position:absolute; left:12px; color:var(--text-muted); pointer-events:none; }
-    .search-input {
-        width:100%; padding:9px 14px 9px 36px;
-        background:rgba(20,20,26,0.6); border:1px solid var(--border-strong);
-        border-radius:8px; color:var(--text-primary); font-size:13px;
-        font-family:inherit; outline:none; transition:all 0.15s;
-    }
-    .search-input::placeholder { color:var(--text-muted); }
-    .search-input:focus { border-color:var(--accent); background:rgba(20,20,26,0.9); box-shadow:0 0 0 4px rgba(169,120,74,0.15); }
-    .filter-select {
-        padding:9px 32px 9px 12px;
-        background:rgba(20,20,26,0.6); border:1px solid var(--border-strong);
-        border-radius:8px; color:var(--text-primary);
-        font-size:13px; font-family:inherit; outline:none; cursor:pointer;
-        appearance:none; -webkit-appearance:none;
-        background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6862' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
-        background-repeat:no-repeat; background-position:right 10px center;
-        min-width:180px; flex-shrink:0;
-    }
-    .filter-select:focus { border-color:var(--accent); box-shadow:0 0 0 4px rgba(169,120,74,0.15); }
-    .btn-filter {
-        display:inline-flex; align-items:center; justify-content:center; gap:6px;
-        padding:9px 16px; background:linear-gradient(135deg,#a9784a,#8a5f36);
-        color:#fff; border:none; border-radius:8px;
-        font-size:13px; font-weight:600; font-family:inherit;
-        cursor:pointer; flex-shrink:0;
-        box-shadow:0 4px 10px -4px rgba(169,120,74,0.5);
-    }
-    .btn-clear {
-        width:36px; height:36px; border-radius:8px;
-        background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25);
-        color:#ef4444; display:grid; place-items:center;
-        cursor:pointer; flex-shrink:0; text-decoration:none;
-    }
-    .btn-clear:hover { background:rgba(239,68,68,0.2); }
-
-    /* ========== MGMT TABLE ========== */
-    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .mgmt-table { width:100%; border-collapse:collapse; min-width:900px; }
-    .mgmt-table thead th {
-        padding:12px 14px; text-align:left;
-        font-size:10.5px; font-weight:800; text-transform:uppercase;
-        letter-spacing:0.08em; color:var(--text-muted);
-        background:rgba(20,20,26,0.6);
-        border-bottom:1px solid rgba(255,255,255,0.06);
-        white-space:nowrap;
-    }
-    .mgmt-row {
-        border-bottom:1px solid rgba(255,255,255,0.04);
-        transition:background 0.15s;
-    }
-    .mgmt-row:hover { background:rgba(169,120,74,0.04); }
-    .mgmt-table td { padding:12px 14px; font-size:12.5px; vertical-align:middle; }
-
-    .expand-cell { text-align:center; padding:12px 6px !important; }
-    .expand-btn {
-        width:24px; height:24px; border-radius:6px;
-        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-        color:var(--text-muted); cursor:pointer;
-        display:grid; place-items:center; transition:all 0.15s;
-        padding:0;
-    }
-    .expand-btn:hover { background:rgba(169,120,74,0.15); color:#c9a961; border-color:rgba(169,120,74,0.3); }
-    .expand-btn.open { transform:rotate(90deg); background:rgba(169,120,74,0.2); color:#c9a961; border-color:rgba(169,120,74,0.4); }
-
-    .cell-primary { font-weight:600; color:var(--text-primary); }
-    .cell-secondary { font-size:10.5px; color:var(--text-muted); margin-top:2px; font-family:ui-monospace,monospace; }
-
-    .money { font-variant-numeric:tabular-nums; font-weight:700; font-family:ui-monospace,monospace; white-space:nowrap; }
-    .money.green { color:#22c55e; }
-    .money.amber { color:#f59e0b; }
-    .money.strong { font-size:13px; }
-
-    .items-badge {
-        display:inline-flex; align-items:center; justify-content:center;
-        min-width:26px; height:26px; padding:0 8px;
-        background:rgba(201,169,97,0.12); border:1px solid rgba(201,169,97,0.25);
-        border-radius:8px; color:#c9a961; font-size:11.5px; font-weight:800;
-        font-family:ui-monospace,monospace;
+    .sr-grouped-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 9px;
+        background: rgba(201, 169, 97, 0.12);
+        color: #c9a961;
+        border-radius: 100px;
+        font-size: 10px; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        border: 1px solid rgba(201, 169, 97, 0.25);
     }
 
-    .badge {
-        display:inline-flex; align-items:center; gap:4px;
-        padding:4px 9px; border-radius:6px;
-        font-size:10.5px; font-weight:800;
-        text-transform:uppercase; letter-spacing:0.03em;
-        white-space:nowrap;
+    /* FILTERS */
+    .sr-filters {
+        display: flex; gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: nowrap; align-items: center;
+        padding: 12px 14px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.6), rgba(21, 18, 15, 0.6));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        overflow-x: auto;
     }
-    .badge-paid { background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); }
-    .badge-partial { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); }
-    .badge-pending { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); }
+    .sr-search-wrap {
+        position: relative;
+        flex: 1 1 200px;
+        min-width: 160px;
+        max-width: 400px;
+    }
+    .sr-search-icon {
+        position: absolute; left: 14px; top: 50%;
+        transform: translateY(-50%);
+        color: #71717a; pointer-events: none;
+    }
+    .sr-search {
+        width: 100%;
+        padding: 11px 14px 11px 40px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 11px;
+        color: #fafafa; font-size: 13px;
+        font-family: inherit; transition: all 0.18s;
+    }
+    .sr-search:focus {
+        outline: none; border-color: #c9a961;
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
+    }
+    .sr-search::placeholder { color: #52525b; }
+    .sr-select {
+        flex: 0 0 auto;
+        padding: 11px 14px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 11px;
+        color: #fafafa; font-size: 12.5px;
+        font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: all 0.18s;
+        min-width: 130px;
+    }
+    .sr-select:focus {
+        outline: none; border-color: #c9a961;
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
+    }
+    .sr-filter-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 11px 18px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        border: none; border-radius: 11px;
+        color: #0f0f14; font-size: 12.5px;
+        font-weight: 800; cursor: pointer;
+        font-family: inherit; transition: all 0.15s;
+        flex-shrink: 0;
+    }
+    .sr-filter-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px -6px rgba(201, 169, 97, 0.6);
+    }
+    .sr-clear-btn {
+        padding: 11px 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 11px;
+        color: #d4d4d8; font-size: 12.5px;
+        font-weight: 700; text-decoration: none;
+        flex-shrink: 0;
+    }
+    .sr-clear-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fafafa; }
 
-    .action-group { display:flex; gap:6px; justify-content:flex-end; }
-    .btn-icon {
-        width:30px; height:30px; border-radius:8px;
-        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-        color:var(--text-secondary); display:grid; place-items:center;
-        text-decoration:none; transition:all 0.15s;
-    }
-    .btn-icon:hover { background:rgba(255,255,255,0.08); color:var(--text-primary); }
-    .btn-icon.accent { background:rgba(201,169,97,0.12); border-color:rgba(201,169,97,0.3); color:#c9a961; }
-    .btn-icon.accent:hover { background:rgba(201,169,97,0.25); }
-
-    /* ========== EXPANDED DETAILS ========== */
-    .products-row td { padding:0 !important; background:rgba(15,15,20,0.4); }
-    .products-panel {
-        padding:18px;
-        border-top:1px solid rgba(169,120,74,0.15);
-        animation:slideDown 0.25s ease;
-    }
-    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-
-    .details-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    .details-col {
-        background:rgba(30,30,38,0.5);
-        border:1px solid rgba(255,255,255,0.05);
-        border-radius:12px;
-        padding:14px;
-    }
-    .details-header {
-        display:flex; justify-content:space-between; align-items:center;
-        margin-bottom:10px; padding-bottom:10px;
-        border-bottom:1px solid rgba(255,255,255,0.05);
-    }
-    .details-title {
-        display:flex; align-items:center; gap:6px;
-        font-size:12px; font-weight:800; color:#c9a961;
-        letter-spacing:0.02em;
-    }
-    .details-title.green { color:#22c55e; }
-    .details-count { font-size:10.5px; color:var(--text-muted); font-weight:600; }
-
-    .mini-table { width:100%; border-collapse:collapse; }
-    .mini-table th {
-        padding:7px 8px; text-align:left;
-        font-size:9.5px; font-weight:800; text-transform:uppercase;
-        letter-spacing:0.08em; color:var(--text-muted);
-        border-bottom:1px solid rgba(255,255,255,0.06);
-    }
-    .mini-table td {
-        padding:8px; font-size:11.5px;
-        border-bottom:1px solid rgba(255,255,255,0.03);
-    }
-    .mini-table tbody tr:last-child td { border-bottom:none; }
-    .mini-table tbody tr:hover { background:rgba(255,255,255,0.02); }
-
-    .mono { font-family:ui-monospace,monospace; color:var(--text-muted); font-size:11px; }
-
-    .method-badge {
-        display:inline-flex; align-items:center; gap:4px;
-        padding:3px 8px; border-radius:6px;
-        font-size:10.5px; font-weight:700;
-        white-space:nowrap;
-    }
-    .method-badge.cash { background:rgba(34,197,94,0.12); color:#22c55e; }
-    .method-badge.gcash { background:rgba(59,130,246,0.12); color:#60a5fa; }
-    .method-badge.maya { background:rgba(168,85,247,0.12); color:#a855f7; }
-    .method-badge.bank_transfer { background:rgba(245,158,11,0.12); color:#f59e0b; }
-    .method-badge.check { background:rgba(148,163,184,0.12); color:#94a3b8; }
-
-    .details-empty {
-        text-align:center; padding:24px 12px;
-        color:var(--text-muted); font-size:11.5px;
+    /* ═══════════ STORE GROUPS — HORIZONTAL GRID ═══════════ */
+    .sr-groups {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        align-items: start;
     }
 
-    /* ========== TOTALS ========== */
-    .totals-row {
-        background:linear-gradient(135deg,rgba(201,169,97,0.08),rgba(138,95,54,0.04));
-        border-top:2px solid rgba(201,169,97,0.3);
+    .sr-group {
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.22s;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
-    .totals-row td { padding:14px !important; font-size:13px; color:var(--text-primary); }
-
-    .pagination-wrap { margin-top:20px; display:flex; justify-content:center; }
-
-    /* ========== EMPTY ========== */
-    .empty { text-align:center; padding:60px 20px; }
-    .empty-icon {
-        width:64px; height:64px; margin:0 auto 16px;
-        border-radius:16px; background:rgba(169,120,74,0.1);
-        border:1px solid rgba(169,120,74,0.2);
-        color:#c9a961; display:grid; place-items:center;
+    .sr-group:hover {
+        border-color: rgba(201, 169, 97, 0.3);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+        transform: translateY(-2px);
     }
-    .empty-title { font-size:15px; font-weight:800; color:var(--text-primary); margin-bottom:6px; }
-    .empty-text { font-size:12.5px; color:var(--text-muted); }
 
-    /* ========== RESPONSIVE ========== */
+    /* EXPANDED — full width */
+    .sr-group.expanded {
+        grid-column: 1 / -1;
+        border-color: rgba(201, 169, 97, 0.4);
+        box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+        transform: none;
+    }
+
+    /* STORE HEADER (compact for grid) */
+    .sr-group-head {
+        display: grid;
+        grid-template-columns: 44px 1fr 32px;
+        gap: 12px;
+        padding: 16px;
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .sr-group-head:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .sr-store-avatar {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        display: grid; place-items: center;
+        font-size: 14px; font-weight: 900;
+        letter-spacing: -0.02em;
+        flex-shrink: 0; overflow: hidden;
+        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
+    }
+    .sr-store-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .sr-store-info { min-width: 0; }
+    .sr-store-name {
+        font-size: 14px; font-weight: 800;
+        color: #fafafa; letter-spacing: -0.02em;
+        margin-bottom: 3px;
+        white-space: nowrap; overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sr-store-meta {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 10.5px; color: #71717a;
+        flex-wrap: wrap;
+    }
+    .sr-store-code { font-family: ui-monospace, monospace; }
+    .sr-dot { color: #52525b; }
+    .sr-report-count { color: #c9a961; font-weight: 800; }
+
+    .sr-toggle-btn {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #a1a1aa;
+        display: grid; place-items: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        flex-shrink: 0;
+    }
+    .sr-toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fafafa;
+        border-color: rgba(201, 169, 97, 0.3);
+    }
+    .sr-toggle-btn.open {
+        background: rgba(201, 169, 97, 0.15);
+        color: #c9a961;
+        border-color: rgba(201, 169, 97, 0.4);
+    }
+    .sr-toggle-btn svg { transition: transform 0.25s; }
+    .sr-toggle-btn.open svg { transform: rotate(180deg); }
+
+    /* STATS (stacked vertical in card) */
+    .sr-group-stats {
+        padding: 0 16px 14px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    .sr-stat {
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        text-align: center;
+    }
+    .sr-stat-lbl {
+        font-size: 8.5px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+    }
+    .sr-stat-val {
+        font-size: 13px;
+        font-weight: 800;
+        color: #fafafa;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+    }
+    .sr-stat-val.green { color: #22c55e; }
+    .sr-stat-val.amber { color: #f59e0b; }
+
+    /* PROGRESS */
+    .sr-group-progress { padding: 0 16px 16px; }
+    .sr-group-progress-bar {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    .sr-group-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #c9a961, #d4b673);
+        border-radius: 3px;
+        transition: width 0.4s;
+        min-width: 3px;
+    }
+    .sr-group-progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10.5px;
+        font-weight: 600;
+    }
+    .sr-progress-pct { color: #c9a961; font-weight: 800; }
+    .sr-progress-time { color: #71717a; }
+
+    /* REPORTS LIST (expanded) */
+    .sr-group-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .sr-group-body.open { max-height: 4000px; }
+
+    .sr-group-body-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .sr-body-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #c9a961;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .sr-body-count {
+        font-size: 11px;
+        color: #71717a;
+        font-weight: 700;
+    }
+
+    .sr-reports-list {
+        padding: 14px 20px 18px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 10px;
+    }
+
+    .sr-report-item {
+        display: grid;
+        grid-template-columns: 90px 1fr auto 50px 20px;
+        gap: 14px;
+        align-items: center;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.18s;
+    }
+    .sr-report-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(201, 169, 97, 0.25);
+        transform: translateX(4px);
+    }
+
+    .sr-report-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 1px solid;
+        justify-content: center;
+    }
+    .sr-badge-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .sr-badge-paid {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+    .sr-badge-paid .sr-badge-dot { background: #22c55e; }
+    .sr-badge-partial {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    .sr-badge-partial .sr-badge-dot { background: #3b82f6; }
+    .sr-badge-pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    .sr-badge-pending .sr-badge-dot { background: #f59e0b; }
+
+    .sr-report-info { min-width: 0; }
+    .sr-report-num {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #fafafa;
+        font-family: ui-monospace, monospace;
+        margin-bottom: 2px;
+    }
+    .sr-report-date { font-size: 10.5px; color: #71717a; }
+
+    .sr-report-metrics { display: flex; gap: 12px; }
+    .sr-metric { text-align: right; min-width: 60px; }
+    .sr-metric-lbl {
+        font-size: 8.5px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 2px;
+    }
+    .sr-metric-val {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #fafafa;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .sr-metric-val.green { color: #22c55e; }
+    .sr-metric-val.amber { color: #f59e0b; }
+
+    .sr-report-items {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10.5px;
+        color: #71717a;
+        font-weight: 700;
+        padding: 3px 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 100px;
+        justify-self: center;
+    }
+
+    .sr-report-arrow {
+        color: #52525b;
+        transition: all 0.15s;
+    }
+    .sr-report-item:hover .sr-report-arrow {
+        color: #c9a961;
+        transform: translateX(2px);
+    }
+
+    /* EMPTY */
+    .sr-empty {
+        text-align: center;
+        padding: 80px 24px;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.6), rgba(21, 18, 15, 0.6));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+    }
+    .sr-empty-icon {
+        width: 88px; height: 88px;
+        margin: 0 auto 20px;
+        border-radius: 24px;
+        background: rgba(201, 169, 97, 0.08);
+        border: 1px solid rgba(201, 169, 97, 0.15);
+        display: grid; place-items: center;
+        color: rgba(201, 169, 97, 0.5);
+    }
+    .sr-empty-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #fafafa;
+        letter-spacing: -0.02em;
+    }
+
+    /* ═══════════ RESPONSIVE ═══════════ */
+    @media (max-width: 1400px) {
+        .sr-groups {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
     @media (max-width: 1100px) {
-        .summary-grid { grid-template-columns:repeat(2,1fr); }
-        .details-grid { grid-template-columns:1fr; }
-    }
-    @media (max-width: 900px) {
-        .toolbar-form { flex-wrap:wrap; }
-        .search-box { max-width:100%; flex:1 1 100%; }
-        .filter-select { flex:1; min-width:auto; }
+        .sr-kpis { grid-template-columns: repeat(2, 1fr); }
+        .sr-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 700px) {
-        .summary-grid { grid-template-columns:1fr; }
-        .toolbar-form { flex-direction:column; }
-        .search-box, .filter-select, .btn-filter, .btn-clear { width:100%; }
-        .filter-select { min-width:auto; }
-        .products-panel { padding:14px 12px; }
+        .sr-kpis { grid-template-columns: 1fr; }
+        .sr-groups { grid-template-columns: 1fr; }
+        .sr-filters { flex-wrap: wrap; }
+        .sr-search-wrap { flex: 1 1 100%; max-width: 100%; }
+        .sr-reports-list { grid-template-columns: 1fr; padding: 12px 14px; }
+        .sr-report-item {
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            padding: 10px;
+        }
+        .sr-report-badge, .sr-report-items { display: none; }
+        .sr-report-metrics { flex-direction: column; gap: 2px; align-items: flex-end; }
+        .sr-metric { min-width: 55px; }
+        .sr-group-head { padding: 14px; }
+        .sr-group-stats { padding: 0 14px 12px; gap: 6px; }
+        .sr-stat { padding: 8px 6px; }
+        .sr-stat-val { font-size: 11px; }
+        .sr-group-progress { padding: 0 14px 14px; }
     }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-(function() {
-    'use strict';
-
-    console.log('[Reports] Script loaded');
-
-    function toggleProducts(reportId) {
-        var row = document.getElementById('products-' + reportId);
-        var btn = document.querySelector('.expand-btn[data-report-id="' + reportId + '"]');
-
-        if (!row) {
-            console.warn('[Reports] Row not found:', 'products-' + reportId);
-            return;
-        }
-
-        var isOpen = row.style.display === 'table-row';
-
-        if (isOpen) {
-            row.style.display = 'none';
-            if (btn) btn.classList.remove('open');
-        } else {
-            row.style.display = 'table-row';
-            if (btn) btn.classList.add('open');
-        }
+    function srToggleGroup(id) {
+        var body = document.getElementById('sr-group-body-' + id);
+        var group = document.getElementById('sr-group-' + id);
+        if (!body || !group) return;
+        var btn = group.querySelector('.sr-toggle-btn');
+        body.classList.toggle('open');
+        btn.classList.toggle('open');
+        group.classList.toggle('expanded');
     }
-
-    // Attach click handlers after DOM ready
-    function attachHandlers() {
-        var buttons = document.querySelectorAll('.expand-btn[data-report-id]');
-        console.log('[Reports] Found ' + buttons.length + ' expand buttons');
-
-        buttons.forEach(function(btn) {
-            if (btn.dataset.handlerAttached === '1') return;
-
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var reportId = btn.dataset.reportId;
-                console.log('[Reports] Toggling row:', reportId);
-                toggleProducts(reportId);
-            });
-
-            btn.dataset.handlerAttached = '1';
-        });
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attachHandlers);
-    } else {
-        attachHandlers();
-    }
-
-    // Re-attach sa mga bag-ong elements (kung dynamic)
-    window.addEventListener('pageshow', attachHandlers);
-
-    // Global fallback
-    window.toggleProducts = toggleProducts;
-})();
 </script>
 @endpush

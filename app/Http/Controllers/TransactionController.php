@@ -171,7 +171,7 @@ class TransactionController extends Controller
         // 3. PAYMENTS
         // ==========================================
         if (in_array($type, ['all', 'payment'])) {
-            $query = ConsignmentPayment::with(['store', 'deliveryReceipt'])
+            $query = ConsignmentPayment::verified()->with(['store', 'deliveryReceipt'])
                 ->when($storeId, fn($q) => $q->where('store_id', $storeId))
                 ->when($dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $dateFrom))
                 ->when($dateTo, fn($q) => $q->whereDate('payment_date', '<=', $dateTo))
