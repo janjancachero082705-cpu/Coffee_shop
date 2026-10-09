@@ -538,7 +538,8 @@
 
     
     
-    /* ═══════ ULTRA-COMPACT FILTER BAR ═══════ */
+    
+    /* ═══════ FILTER BAR — FINAL ═══════ */
     .sr-filters {
         display: flex !important;
         flex-wrap: nowrap !important;
@@ -547,15 +548,12 @@
         margin-bottom: 16px !important;
         border-radius: 12px !important;
         align-items: center !important;
-        overflow: visible !important;
     }
-
-    /* Search — narrower */
     .sr-search-wrap {
         position: relative !important;
-        flex: 0 1 180px !important;
-        min-width: 130px !important;
-        max-width: 180px !important;
+        flex: 0 1 170px !important;
+        min-width: 120px !important;
+        max-width: 170px !important;
     }
     .sr-search-icon {
         position: absolute !important;
@@ -583,8 +581,6 @@
         border-color: #c9a961 !important;
         box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
     }
-
-    /* Selects — compact */
     .sr-select {
         flex: 0 0 auto !important;
         height: 32px !important;
@@ -612,8 +608,6 @@
         border-color: #c9a961 !important;
         box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
     }
-
-    /* Filter button */
     .sr-filter-btn {
         display: inline-flex !important;
         align-items: center !important;
@@ -641,8 +635,6 @@
         transform: none !important;
         box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5) !important;
     }
-
-    /* Clear button */
     .sr-clear-btn {
         display: inline-flex !important;
         align-items: center !important;
@@ -664,154 +656,9 @@
         background: rgba(255, 255, 255, 0.08) !important;
         color: #fafafa !important;
     }
-
-    /* Responsive — wrap kung gamay screen */
     @media (max-width: 768px) {
-        .sr-filters {
-            flex-wrap: wrap !important;
-        }
-        .sr-search-wrap {
-            flex: 1 1 100% !important;
-            max-width: 100% !important;
-        }
-    }
-
-    /* ═══════ ULTRA-COMPACT FILTER BAR ═══════ */
-    .sr-filters {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        gap: 6px !important;
-        padding: 8px 10px !important;
-        margin-bottom: 16px !important;
-        border-radius: 12px !important;
-        align-items: center !important;
-        overflow: visible !important;
-    }
-
-    /* Search — narrower */
-    .sr-search-wrap {
-        position: relative !important;
-        flex: 0 1 180px !important;
-        min-width: 130px !important;
-        max-width: 180px !important;
-    }
-    .sr-search-icon {
-        position: absolute !important;
-        left: 9px !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        width: 12px !important;
-        height: 12px !important;
-        margin: 0 !important;
-        pointer-events: none !important;
-    }
-    .sr-search {
-        width: 100% !important;
-        height: 32px !important;
-        padding: 0 10px 0 28px !important;
-        font-size: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 8px !important;
-        background: rgba(0, 0, 0, 0.3) !important;
-        color: #fafafa !important;
-        box-sizing: border-box !important;
-    }
-    .sr-search:focus {
-        outline: none !important;
-        border-color: #c9a961 !important;
-        box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
-    }
-
-    /* Selects — compact */
-    .sr-select {
-        flex: 0 0 auto !important;
-        height: 32px !important;
-        padding: 0 24px 0 10px !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        border-radius: 8px !important;
-        background-color: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        color: #fafafa !important;
-        cursor: pointer !important;
-        box-sizing: border-box !important;
-        appearance: none !important;
-        -webkit-appearance: none !important;
-        -moz-appearance: none !important;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 8px center !important;
-        background-size: 10px !important;
-        min-width: 90px !important;
-        max-width: 110px !important;
-    }
-    .sr-select:focus {
-        outline: none !important;
-        border-color: #c9a961 !important;
-        box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
-    }
-
-    /* Filter button */
-    .sr-filter-btn {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 5px !important;
-        height: 32px !important;
-        padding: 0 12px !important;
-        font-size: 12px !important;
-        font-weight: 800 !important;
-        border: none !important;
-        border-radius: 8px !important;
-        background: linear-gradient(135deg, #c9a961, #b8944d) !important;
-        color: #0f0f14 !important;
-        cursor: pointer !important;
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
-        box-sizing: border-box !important;
-    }
-    .sr-filter-btn svg {
-        width: 11px !important;
-        height: 11px !important;
-        flex-shrink: 0 !important;
-    }
-    .sr-filter-btn:hover {
-        transform: none !important;
-        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5) !important;
-    }
-
-    /* Clear button */
-    .sr-clear-btn {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        height: 32px !important;
-        padding: 0 12px !important;
-        font-size: 12px !important;
-        font-weight: 700 !important;
-        border-radius: 8px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        background: rgba(255, 255, 255, 0.04) !important;
-        color: #d4d4d8 !important;
-        text-decoration: none !important;
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
-        box-sizing: border-box !important;
-    }
-    .sr-clear-btn:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: #fafafa !important;
-    }
-
-    /* Responsive — wrap kung gamay screen */
-    @media (max-width: 768px) {
-        .sr-filters {
-            flex-wrap: wrap !important;
-        }
-        .sr-search-wrap {
-            flex: 1 1 100% !important;
-            max-width: 100% !important;
-        }
+        .sr-filters { flex-wrap: wrap !important; }
+        .sr-search-wrap { flex: 1 1 100% !important; max-width: 100% !important; }
     }
 </style>
 @endpush
