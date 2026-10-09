@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
@@ -78,6 +79,10 @@ Route::middleware('auth')->group(function () {
 // ==================================================================
 
 Route::prefix('portal')->name('portal.')->group(function () {
+
+    // Portal Inventory — delivered products per store
+    Route::get('inventory', [\App\Http\Controllers\Portal\PortalInventoryController::class, 'index'])
+        ->name('inventory.index');
 
     // Guest routes
     Route::middleware('guest:store')->group(function () {
@@ -163,3 +168,7 @@ Route::middleware(['auth'])->get('sales-reports/store/{store}/modal', [SalesRepo
 // ===== Store-specific Sales Reports page =====
 Route::middleware(['auth'])->get('reports/store/{store}', [SalesReportController::class, 'storeReports'])
     ->name('reports.store-reports');
+
+// ===== Store-specific Transactions page =====
+Route::middleware(['auth'])->get('transactions/store/{store}', [\App\Http\Controllers\TransactionController::class, 'storeTransactions'])
+    ->name('transactions.store-transactions');

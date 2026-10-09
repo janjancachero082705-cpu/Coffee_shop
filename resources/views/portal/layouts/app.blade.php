@@ -2117,18 +2117,17 @@
             </svg>
             Deliveries
         </a>
-        <a href="{{ route('portal.reports.index') }}" class="p-nav-item {{ request()->routeIs('portal.reports.*') ? 'active' : '' }}">
+        <a href="{{ route('portal.inventory.index') }}" class="p-nav-item {{ request()->routeIs('portal.inventory.*') ? 'active' : '' }}">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/>
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
             </svg>
-            Sales
+            Inventory
         </a>
-        <a href="{{ route('portal.payments.index') }}" class="p-nav-item {{ request()->routeIs('portal.payments.*') ? 'active' : '' }}">
+        <a href="{{ route('portal.reports.index') }}" class="p-nav-item {{ request()->routeIs('portal.reports.*') || request()->routeIs('portal.payments.*') ? 'active' : '' }}">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="5" width="20" height="14" rx="2"/>
-                <path d="M2 10h20"/>
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
             </svg>
-            Payments
+            Finance
         </a>
     </nav>
 

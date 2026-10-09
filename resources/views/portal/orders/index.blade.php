@@ -21,9 +21,9 @@
     </div>
     <a href="{{ route('portal.orders.create') }}" class="po-cta">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
-            <path d="M12 5v14M5 12h14"/>
+            <path d="M4 7h16M4 12h16M4 17h16"/>
         </svg>
-        New Order
+        Browse
     </a>
 </div>
 

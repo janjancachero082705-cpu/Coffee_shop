@@ -149,10 +149,7 @@
                                     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                     <span>Edit</span>
                                 </a>
-                                <button type="button" class="dots-item danger" onclick="confirmDelete(event, {{ $store->id }}, '{{ addslashes($store->store_name) }}')">
-                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                                    <span>Delete</span>
-                                </button>
+                                
                             </div>
                         </div>
                     </div>
@@ -198,10 +195,7 @@
 @endif
 
 {{-- ===== HIDDEN DELETE FORM ===== --}}
-<form id="deleteForm" method="POST" style="display:none;">
-    @csrf
-    @method('DELETE')
-</form>
+
 
 @endsection
 
@@ -590,19 +584,6 @@
         }
     });
 
-    // Delete confirmation
-    function confirmDelete(event, id, name) {
-        event.stopPropagation();
-        event.preventDefault();
-
-        // Close menu
-        document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
-
-        if (!confirm('Delete "' + name + '"?\n\nThis action cannot be undone.')) return;
-
-        const form = document.getElementById('deleteForm');
-        form.action = '/stores/' + id;
-        form.submit();
-    }
+    
 </script>
 @endpush

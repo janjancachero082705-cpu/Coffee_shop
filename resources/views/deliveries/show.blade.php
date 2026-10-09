@@ -266,17 +266,7 @@
                     </svg>
                     Edit Delivery
                 </a>
-                <form method="POST" action="{{ route('deliveries.destroy', $delivery) }}"
-                      onsubmit="return confirm('Delete this delivery? This will revert store inventory.');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="dv-action-btn dv-action-danger">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                        </svg>
-                        Delete
-                    </button>
-                </form>
+                
             </div>
         </div>
     </div>

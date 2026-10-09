@@ -230,7 +230,7 @@
                 $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
             @endphp
 
-            <div class="tx-store-card" data-store="{{ $store->id }}">
+            <a href="{{ route('transactions.store-transactions', $store->id) }}" class="tx-store-card" data-store="{{ $store->id }}">
                 {{-- STORE HEADER --}}
                 <div class="tx-store-head">
                     <div class="tx-store-avatar">
@@ -256,12 +256,6 @@
                         <div class="tx-store-summary-label">Recent Total</div>
                         <div class="tx-store-summary-value">₱{{ number_format($item['total_amount'], 2) }}</div>
                     </div>
-
-                    <button type="button" class="tx-store-toggle" onclick="txToggleStore({{ $store->id }}, this)">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path d="M6 9l6 6 6-6"/>
-                        </svg>
-                    </button>
                 </div>
 
                 {{-- ACTIVITY LIST (COLLAPSED BY DEFAULT) --}}
@@ -302,8 +296,8 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
-        @endforeach
+            </a>
+            @endforeach
     </div>
 @endif
 
@@ -789,6 +783,175 @@
         .tx-item-meta { display: none; }
         .tx-item-amount { min-width: 70px; font-size: 12px; }
         .tx-timeline::before { display: none; }
+    }
+
+    .tx-store-card {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: block;
+    }
+    .tx-store-card:hover {
+        border-color: rgba(201, 169, 97, 0.4) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    }
+    .tx-store-toggle { display: none !important; }
+    .tx-store-body { display: none !important; }
+
+    /* ═══════ COMPACT FILTER BAR (Transactions) ═══════ */
+    .tx-filters {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        padding: 10px 12px !important;
+        margin-bottom: 18px !important;
+        border-radius: 12px !important;
+        align-items: center !important;
+        background: linear-gradient(165deg, rgba(30, 26, 22, 0.6), rgba(21, 18, 15, 0.6)) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* Search — saktong width */
+    .tx-search-wrap {
+        position: relative !important;
+        flex: 1 1 240px !important;
+        min-width: 200px !important;
+        max-width: 320px !important;
+    }
+    .tx-search-icon {
+        position: absolute !important;
+        left: 11px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 13px !important;
+        height: 13px !important;
+        margin: 0 !important;
+        pointer-events: none !important;
+        color: #71717a !important;
+    }
+    .tx-search {
+        width: 100% !important;
+        height: 34px !important;
+        padding: 0 12px 0 32px !important;
+        font-size: 12.5px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 9px !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        color: #fafafa !important;
+        box-sizing: border-box !important;
+    }
+    .tx-search:focus {
+        outline: none !important;
+        border-color: #c9a961 !important;
+        box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
+    }
+    .tx-search::placeholder { color: #52525b !important; }
+
+    /* Selects + dates — compact */
+    .tx-select {
+        flex: 0 0 auto !important;
+        height: 34px !important;
+        padding: 0 26px 0 12px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        border-radius: 9px !important;
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #fafafa !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 9px center !important;
+        background-size: 10px !important;
+        min-width: 100px !important;
+    }
+    /* Select dropdown (All Stores) — shorter width */
+    select.tx-select {
+        max-width: 140px !important;
+    }
+    /* Date inputs — mas mubo */
+    input[type="date"].tx-select {
+        max-width: 130px !important;
+        min-width: 120px !important;
+    }
+    .tx-select:focus {
+        outline: none !important;
+        border-color: #c9a961 !important;
+        box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.15) !important;
+    }
+    /* Date input icon color */
+    input[type="date"].tx-select::-webkit-calendar-picker-indicator {
+        filter: invert(0.5) !important;
+        cursor: pointer !important;
+    }
+
+    /* Filter button */
+    .tx-filter-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        height: 34px !important;
+        padding: 0 14px !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        border: none !important;
+        border-radius: 9px !important;
+        background: linear-gradient(135deg, #c9a961, #b8944d) !important;
+        color: #0f0f14 !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+    .tx-filter-btn svg {
+        width: 12px !important;
+        height: 12px !important;
+        flex-shrink: 0 !important;
+    }
+    .tx-filter-btn:hover {
+        transform: none !important;
+        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5) !important;
+    }
+
+    /* Clear button */
+    .tx-clear-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 34px !important;
+        padding: 0 14px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-radius: 9px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: #d4d4d8 !important;
+        text-decoration: none !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+    .tx-clear-btn:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #fafafa !important;
+    }
+
+    /* Responsive — wrap sa mobile */
+    @media (max-width: 900px) {
+        .tx-filters { flex-wrap: wrap !important; }
+        .tx-search-wrap {
+            flex: 1 1 100% !important;
+            max-width: 100% !important;
+        }
+        select.tx-select { max-width: none !important; flex: 1 1 auto !important; }
+        input[type="date"].tx-select { max-width: none !important; flex: 1 1 auto !important; }
     }
 </style>
 @endpush

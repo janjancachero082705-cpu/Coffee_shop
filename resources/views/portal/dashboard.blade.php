@@ -213,11 +213,11 @@
     <div class="pp-quick-grid">
         <a href="{{ route('portal.orders.create') }}" class="pp-quick">
             <div class="pp-quick-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M12 5v14M5 12h14"/>
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
+                    <path d="M4 7h16M4 12h16M4 17h16"/>
                 </svg>
             </div>
-            <div class="pp-quick-label">New Order</div>
+            <div class="pp-quick-label">Browse</div>
         </a>
 
         <a href="{{ route('portal.deliveries.index') }}" class="pp-quick">

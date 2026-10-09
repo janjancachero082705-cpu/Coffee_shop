@@ -92,7 +92,7 @@
 
     \App\Models\ReorderRequest::with('store')->latest()->take(3)->get()->each(function($r) use (&$activities) {
         $activities->push([
-            'icon' => '›’',
+            'icon' => '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>',
             'color' => '#f59e0b',
             'title' => 'New Order',
             'desc' => ($r->store->store_name ?? '-') . ' · ' . $r->request_number,
@@ -104,7 +104,7 @@
 
     \App\Models\ConsignmentPayment::with('store')->latest()->take(3)->get()->each(function($p) use (&$activities) {
         $activities->push([
-            'icon' => '’°',
+            'icon' => '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
             'color' => '#22c55e',
             'title' => 'Payment',
             'desc' => ($p->store->store_name ?? '-') . ' · ' . ucfirst($p->method),
@@ -116,7 +116,7 @@
 
     \App\Models\DeliveryReceipt::with('store')->latest()->take(3)->get()->each(function($d) use (&$activities) {
         $activities->push([
-            'icon' => 'šš',
+            'icon' => '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
             'color' => '#3b82f6',
             'title' => 'Delivery',
             'desc' => ($d->store->store_name ?? '-') . ' · ' . $d->dr_number,
@@ -418,14 +418,14 @@
                 <div class="db-section-eyebrow">LIVE FEED</div>
                 <h3 class="db-section-title">Recent Activity</h3>
             </div>
-            <a href="{{ route('transactions.index') }}" class="db-section-link">View all â†’</a>
+            <a href="{{ route('transactions.index') }}" class="db-section-link">View all →’</a>
         </div>
 
         @if($recentActivities->count() > 0)
             <div class="db-activity-list">
                 @foreach($recentActivities as $act)
                     <a href="{{ $act['url'] }}" class="db-activity-item" style="--accent: {{ $act['color'] }};">
-                        <div class="db-activity-marker">{{ $act['icon'] }}</div>
+                        <div class="db-activity-marker">{!! $act['icon'] !!}</div>
                         <div class="db-activity-content">
                             <div class="db-activity-title">{{ $act['title'] }}</div>
                             <div class="db-activity-desc">{{ $act['desc'] }}</div>

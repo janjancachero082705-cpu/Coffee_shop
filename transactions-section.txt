@@ -1,0 +1,150 @@
+﻿                'activities' => $activities,
+                'total_amount' => $activities->sum('amount'),
+                'count' => $activities->count(),
+            ]);
+        }
+    }
+
+    // Sort stores by latest activity
+    $storeActivities = $storeActivities->sortByDesc(function ($item) {
+        return $item['activities']->first()['time'];
+    })->values();
+
+    $allStores = Store::orderBy('store_name')->get();
+@endphp
+
+{{-- â•â•â•â•â•â•â• HERO â•â•â•â•â•â•â• --}}
+<div class="tx-hero">
+    <div class="tx-hero-left">
+        <div class="tx-hero-eyebrow">
+            <span class="tx-pulse"></span>
+            LIVE ACTIVITY FEED
+        </div>
+        <h1 class="tx-hero-title">Transactions</h1>
+        <p class="tx-hero-desc">Tanang events â€” orders, deliveries, payments, reports â€” group by store</p>
+    </div>
+    <div class="tx-hero-stats">
+        <div class="tx-hero-stat">
+            <div class="tx-hero-stat-label">Today</div>
+            <div class="tx-hero-stat-value">{{ $todayPayments }}</div>
+        </div>
+        <div class="tx-hero-stat-divider"></div>
+        <div class="tx-hero-stat">
+            <div class="tx-hero-stat-label">This Week</div>
+            <div class="tx-hero-stat-value">{{ $weekPayments }}</div>
+        </div>
+        <div class="tx-hero-stat-divider"></div>
+        <div class="tx-hero-stat">
+            <div class="tx-hero-stat-label">Paid Today</div>
+            <div class="tx-hero-stat-value gold">â‚±{{ number_format($todayPaid, 0) }}</div>
+        </div>
+    </div>
+</div>
+
+{{-- â•â•â•â•â•â•â• FILTERS â•â•â•â•â•â•â• --}}
+<form method="GET" class="tx-filters">
+    <div class="tx-search-wrap">
+        <svg class="tx-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" name="search" class="tx-search" placeholder="Search store name or code..." value="{{ $search }}" autocomplete="off">
+    </div>
+
+    <select name="store" class="tx-select">
+        <option value="">All Stores</option>
+        @foreach($allStores as $s)
+            <option value="{{ $s->id }}" {{ $storeId == $s->id ? 'selected' : '' }}>{{ $s->store_name }}</option>
+        @endforeach
+    </select>
+
+    <input type="date" name="from" class="tx-select" value="{{ $dateFrom }}" placeholder="From">
+    <input type="date" name="to" class="tx-select" value="{{ $dateTo }}" placeholder="To">
+
+    <button type="submit" class="tx-filter-btn">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+        Filter
+    </button>
+
+    @if($search || $storeId || $dateFrom || $dateTo)
+        <a href="{{ route('transactions.index') }}" class="tx-clear-btn">Clear</a>
+    @endif
+</form>
+
+{{-- â•â•â•â•â•â•â• STORE CARDS â•â•â•â•â•â•â• --}}
+@if($storeActivities->isEmpty())
+    <div class="tx-empty">
+        <div class="tx-empty-icon">
+            <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/>
+            </svg>
+        </div>
+        <div class="tx-empty-title">Walay Transactions</div>
+        <div class="tx-empty-desc">
+            @if($search || $storeId)
+                Walay activity nga match sa imong filter
+            @else
+                Wala pay activity sa mga store
+            @endif
+        </div>
+    </div>
+@else
+    <div class="tx-stores">
+        @foreach($storeActivities as $item)
+            @php
+                $store = $item['store'];
+                $activities = $item['activities'];
+                $latestTime = $activities->first()['time'];
+                $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
+            @endphp
+
+            <div class="tx-store-card" data-store="{{ $store->id }}">
+                {{-- STORE HEADER --}}
+                <div class="tx-store-head">
+                    <div class="tx-store-avatar">
+                        @if($store->logo_url)
+                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </div>
+
+                    <div class="tx-store-info">
+                        <div class="tx-store-name">{{ $store->store_name }}</div>
+                        <div class="tx-store-meta">
+                            <span class="tx-store-code">{{ $store->code ?? '' }}</span>
+                            <span class="tx-store-dot">Â·</span>
+                            <span class="tx-store-count">{{ $item['count'] }} event{{ $item['count'] !== 1 ? 's' : '' }}</span>
+                            <span class="tx-store-dot">Â·</span>
+                            <span class="tx-store-time">{{ $latestTime->diffForHumans() }}</span>
+                        </div>
+                    </div>
+
+                    <div class="tx-store-summary">
+                        <div class="tx-store-summary-label">Recent Total</div>
+                        <div class="tx-store-summary-value">â‚±{{ number_format($item['total_amount'], 2) }}</div>
+                    </div>
+
+                    <button type="button" class="tx-store-toggle" onclick="txToggleStore({{ $store->id }}, this)">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- ACTIVITY LIST (COLLAPSED BY DEFAULT) --}}
+                <div class="tx-store-body" id="tx-store-body-{{ $store->id }}">
+                    <div class="tx-timeline">
+                        @foreach($activities as $act)
+                            <a href="{{ $act['url'] }}" class="tx-item" style="--accent: {{ $act['color'] }};">
+                                <div class="tx-item-marker">
+                                    @if($act['icon'] === 'shopping-cart')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                                    @elseif($act['icon'] === 'truck')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                    @elseif($act['icon'] === 'cash')
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                                    @else
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>

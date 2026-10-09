@@ -1,8 +1,10 @@
 @extends('layouts.admin')
 
+
+@php use Illuminate\Support\Facades\Storage; @endphp
 @php
-    $isEdit = $isEdit ?? false;
     $productModel = $product ?? new \App\Models\Product();
+    $isEdit = isset($product) && $product->exists;
 @endphp
 
 @section('title', $isEdit ? 'Edit Product' : 'New Product')
@@ -341,7 +343,7 @@
                             </button>
                         </div>
 
-                        @if($isEdit && $productModel->image_url ?? null)
+                        @if($isEdit && !empty($productModel->getRawOriginal('image')))
                             <div class="pf-image-current">
                                 <div class="pf-image-current-lbl">Current image</div>
                                 <img src="{{ $productModel->image_url }}" alt="Current" class="pf-image-current-thumb">
@@ -396,7 +398,7 @@
                 </div>
 
                 <div class="pf-preview-image" id="pfPreviewImage">
-                    @if($isEdit && $productModel->image_url ?? null)
+                    @if($isEdit && !empty($productModel->getRawOriginal('image')))
                         <img src="{{ $productModel->image_url }}" alt="Preview">
                     @else
                         <div class="pf-preview-placeholder">

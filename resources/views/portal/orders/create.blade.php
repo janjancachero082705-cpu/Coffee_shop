@@ -23,13 +23,16 @@
             <div class="order-head-title">Browse Products</div>
         </div>
     </div>
-    <button type="button" class="order-cart-badge" onclick="openCart()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="9" cy="21" r="1"/>
-            <circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-        <span id="headerCartCount" style="display:none;">0</span>
+
+    <button type="button" class="cart-fab" id="cartFab" onclick="openCart()" aria-label="Open cart">
+        <div class="cart-fab-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span class="cart-fab-count" id="cartFabCount">0</span>
+        </div>
     </button>
 </div>
 
@@ -102,7 +105,7 @@
                     <div class="product-price">
                         <span class="price-currency">&#8369;</span>{{ number_format($product->price, 2) }}
                     </div>
-                    <button type="button" class="product-add-btn" onclick="event.stopPropagation(); quickAdd({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }}, {{ $stockLeft }})">
+                    <button type="button" class="product-add-btn" onclick="event.stopPropagation(); quickAdd({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }}, {{ $stockLeft }}, this)">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path d="M12 5v14M5 12h14"/>
                         </svg>
@@ -136,19 +139,6 @@
 </div>
 
 {{-- ===== CART FAB ===== --}}
-<button type="button" class="cart-fab" id="cartFab" onclick="openCart()">
-    <div class="cart-fab-icon">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <circle cx="9" cy="21" r="1"/>
-            <circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-        <span class="cart-fab-count" id="cartFabCount">0</span>
-    </div>
-    <div class="cart-fab-info">
-        <div class="cart-fab-label">Cart</div>
-        <div class="cart-fab-total" id="cartFabTotal">&#8369;0.00</div>
-    </div>
 </button>
 
 {{-- ===== CART DRAWER ===== --}}
@@ -794,7 +784,173 @@
         .order-back-btn:active {
             transform: scale(0.94);
         }
-    </style>
+    
+    /* ═══ FIX: Duplicate cart buttons ═══ */
+    /* Mobile: hide header badge, show FAB only */
+    @media (max-width: 768px) {
+        .order-cart-badge { display: none !important; }
+    }
+    /* Desktop: hide FAB, show header badge only */
+    @media (min-width: 769px) {
+        .cart-fab { display: none !important; }
+    }
+
+    /* Make sure header cart is always visible + sticky-friendly */
+    .order-cart-badge {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 50;
+    }
+    .order-cart-badge span {
+        display: inline-flex !important;
+    }
+
+    
+    
+    
+    /* Hide the top header cart button */
+    .order-cart-badge {
+        display: none !important;
+    }
+    /* Ensure the bottom FAB is visible */
+    .cart-fab {
+        display: inline-flex !important;
+    }
+    .cart-fab.visible {
+        display: inline-flex !important;
+    }
+    #headerCartCount {
+        display: none !important;
+    }
+
+    
+    /* ═══ CART — TOP RIGHT HEADER (clean, final) ═══ */
+    .order-head {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        margin-bottom: 16px !important;
+    }
+    .order-head-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    /* FAB — becomes top-right header button */
+    .cart-fab {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        background: linear-gradient(135deg, #c9a961, #b8944d) !important;
+        border: none !important;
+        color: #0f0f14 !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 4px 14px -4px rgba(201, 169, 97, 0.55) !important;
+        margin: 0 !important;
+        z-index: 1 !important;
+    }
+    .cart-fab.visible,
+    .cart-fab[style*="display:none"],
+    .cart-fab[style*="display: none"] {
+        display: inline-flex !important;
+    }
+    .cart-fab-icon {
+        position: relative !important;
+        width: 22px !important;
+        height: 22px !important;
+        display: grid !important;
+        place-items: center !important;
+    }
+    .cart-fab-icon svg {
+        width: 20px !important;
+        height: 20px !important;
+        display: block !important;
+    }
+    .cart-fab-count {
+        position: absolute !important;
+        top: -10px !important;
+        right: -10px !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        padding: 0 5px !important;
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        color: #fff !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        border-radius: 100px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5) !important;
+        border: 2px solid rgba(30, 26, 22, 0.95) !important;
+        z-index: 2 !important;
+    }
+    /* Hide old cart info text */
+    .cart-fab-info {
+        display: none !important;
+    }
+
+    
+    /* Sparkle trail */
+    .fly-sparkle {
+        position: fixed;
+        width: 8px; height: 8px;
+        background: radial-gradient(circle, #c9a961, transparent);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99998;
+        animation: sparkleFade 0.6s ease-out forwards;
+    }
+    @keyframes sparkleFade {
+        0%   { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(0); }
+    }
+
+    /* ═══ FLY TO CART ═══ */
+    .fly-clone {
+        position: fixed;
+        z-index: 99999;
+        pointer-events: none;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 12px 40px -8px rgba(201, 169, 97, 0.7);
+        border: 2px solid #c9a961;
+        transition: all 0.9s cubic-bezier(0.55, -0.15, 0.65, 1.15);
+    }
+    .cart-pulse {
+        animation: cartPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes cartPulse {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.35); }
+        70%  { transform: scale(0.9); }
+        100% { transform: scale(1); }
+    }
+    .cart-fab-count.bump {
+        animation: countBump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes countBump {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.4); }
+        100% { transform: scale(1); }
+    }
+</style>
 @endpush
 
 @push('scripts')
@@ -817,7 +973,11 @@
         document.body.classList.remove('no-scroll');
     }
 
-    function quickAdd(id, name, price, stock) {
+    function quickAdd(id, name, price, stock, btnEl) {
+        // Fly-to-cart animation — pass button mismo
+        if (btnEl && typeof window.flyToCart === 'function') {
+            window.flyToCart(btnEl);
+        }
         if (stock <= 0) { showToast('Out of stock'); return; }
         price = parseFloat(price);
 
@@ -1046,5 +1206,139 @@
             }
         });
     });
-</script>
+
+    // ═══ FLY TO CART ANIMATION ═══
+    window.flyToCart = function(sourceEl) {
+        var cart = document.getElementById('cartFab');
+        if (!cart || !sourceEl) return;
+
+        var srcRect = sourceEl.getBoundingClientRect();
+        var cartRect = cart.getBoundingClientRect();
+
+        // Get source image (kung image element, gamita; kung dili, i-clone ang tanang)
+        var clone;
+        if (sourceEl.tagName === 'IMG') {
+            clone = document.createElement('img');
+            clone.src = sourceEl.src;
+        } else {
+            // Kung naay background image, i-create ang img
+            var bg = window.getComputedStyle(sourceEl).backgroundImage;
+            clone = document.createElement('img');
+            if (bg && bg !== 'none') {
+                clone.src = bg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+            } else {
+                clone.src = sourceEl.querySelector('img')?.src || '';
+            }
+        }
+        clone.className = 'fly-clone';
+        clone.style.left = srcRect.left + 'px';
+        clone.style.top = srcRect.top + 'px';
+        clone.style.width = srcRect.width + 'px';
+        clone.style.height = srcRect.height + 'px';
+        clone.style.opacity = '1';
+        document.body.appendChild(clone);
+
+        // Sparkles along the path
+        for (var i = 0; i < 6; i++) {
+            (function(idx) {
+                setTimeout(function() {
+                    var sparkle = document.createElement('div');
+                    sparkle.className = 'fly-sparkle';
+                    var t = idx / 6;
+                    sparkle.style.left = (srcRect.left + (cartRect.left - srcRect.left) * t + srcRect.width / 2) + 'px';
+                    sparkle.style.top = (srcRect.top + (cartRect.top - srcRect.top) * t + srcRect.height / 2) + 'px';
+                    document.body.appendChild(sparkle);
+                    setTimeout(function() { sparkle.remove(); }, 700);
+                }, idx * 80);
+            })(i);
+        }
+
+        // Force reflow
+        clone.offsetHeight;
+
+        // Animate to cart (curved path simulated by scale + rotate)
+        setTimeout(function() {
+            var cartCx = cartRect.left + cartRect.width / 2 - 20;
+            var cartCy = cartRect.top + cartRect.height / 2 - 20;
+            clone.style.left = cartCx + 'px';
+            clone.style.top = cartCy + 'px';
+            clone.style.width = '40px';
+            clone.style.height = '40px';
+            clone.style.opacity = '0.2';
+            clone.style.transform = 'rotate(360deg) scale(0.4)';
+            clone.style.borderRadius = '50%';
+        }, 20);
+
+        // Cleanup + cart pulse
+        setTimeout(function() {
+            clone.remove();
+            cart.classList.add('cart-pulse');
+            var countBadge = document.getElementById('cartFabCount');
+            if (countBadge) countBadge.classList.add('bump');
+            setTimeout(function() {
+                cart.classList.remove('cart-pulse');
+                if (countBadge) countBadge.classList.remove('bump');
+            }, 500);
+        }, 950);
+    };
+
+    // ═══ FLY TO CART — from button ═══
+    window.flyToCart = function(btnEl) {
+        try {
+            if (!btnEl) return;
+            var cart = document.getElementById('cartFab');
+            if (!cart) return;
+
+            // Pangitaa ang image — walk up max 6 levels
+            var img = null;
+            var el = btnEl;
+            for (var i = 0; i < 6; i++) {
+                el = el.parentElement;
+                if (!el) break;
+                var found = el.querySelector('img');
+                if (found && found.src) { img = found; break; }
+            }
+            if (!img) { console.warn('Walay image makita'); return; }
+
+            var srcRect = img.getBoundingClientRect();
+            var cartRect = cart.getBoundingClientRect();
+            if (!srcRect.width || !cartRect.width) return;
+
+            var clone = document.createElement('img');
+            clone.src = img.src;
+            clone.className = 'fly-clone';
+            clone.style.left = srcRect.left + 'px';
+            clone.style.top = srcRect.top + 'px';
+            clone.style.width = srcRect.width + 'px';
+            clone.style.height = srcRect.height + 'px';
+            document.body.appendChild(clone);
+
+            clone.offsetHeight;
+
+            setTimeout(function() {
+                var cartCx = cartRect.left + cartRect.width / 2 - 25;
+                var cartCy = cartRect.top + cartRect.height / 2 - 25;
+                clone.style.left = cartCx + 'px';
+                clone.style.top = cartCy + 'px';
+                clone.style.width = '50px';
+                clone.style.height = '50px';
+                clone.style.opacity = '0';
+                clone.style.transform = 'rotate(720deg) scale(0.3)';
+                clone.style.borderRadius = '50%';
+            }, 30);
+
+            setTimeout(function() {
+                if (clone.parentNode) clone.parentNode.removeChild(clone);
+                cart.classList.add('cart-pulse');
+                var badge = document.getElementById('cartFabCount');
+                if (badge) badge.classList.add('bump');
+                setTimeout(function() {
+                    cart.classList.remove('cart-pulse');
+                    if (badge) badge.classList.remove('bump');
+                }, 500);
+            }, 1000);
+        } catch(e) {
+            console.warn('flyToCart error:', e);
+        }
+    };</script>
 @endpush

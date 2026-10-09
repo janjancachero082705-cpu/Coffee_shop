@@ -306,4 +306,59 @@ class TransactionController extends Controller
 
         return view('transactions.index', compact('paginator', 'activities', 'stats', 'stores', 'type', 'storeId', 'search', 'dateFrom', 'dateTo'));
     }
+
+    public function storeTransactions(\App\Models\Store $store)
+    {
+        $activities = collect();
+
+        \App\Models\ReorderRequest::where('store_id', $store->id)->latest()->limit(50)->get()
+            ->each(function ($o) use ($activities) {
+                $activities->push([
+                    'type' => 'order', 'icon' => 'cart', 'color' => '#3b82f6',
+                    'title' => 'Order ' . ($o->request_number ?? $o->id),
+                    'description' => 'Status: ' . ucfirst($o->status ?? 'pending'),
+                    'amount' => (float) ($o->total_amount ?? 0),
+                    'time' => $o->created_at, 'url' => '#',
+                ]);
+            });
+
+        \App\Models\DeliveryReceipt::where('store_id', $store->id)->latest()->limit(50)->get()
+            ->each(function ($d) use ($activities) {
+                $activities->push([
+                    'type' => 'delivery', 'icon' => 'truck', 'color' => '#f59e0b',
+                    'title' => 'Delivery ' . ($d->receipt_number ?? $d->id),
+                    'description' => 'Status: ' . ucfirst($d->status ?? 'pending'),
+                    'amount' => 0, 'time' => $d->created_at, 'url' => '#',
+                ]);
+            });
+
+        \App\Models\ConsignmentPayment::where('store_id', $store->id)->verified()->latest()->limit(50)->get()
+            ->each(function ($p) use ($activities) {
+                $activities->push([
+                    'type' => 'payment', 'icon' => 'cash', 'color' => '#22c55e',
+                    'title' => 'Payment ' . ($p->payment_number ?? $p->id),
+                    'description' => ucfirst($p->method ?? 'cash'),
+                    'amount' => (float) ($p->amount ?? 0),
+                    'time' => $p->payment_date ?? $p->created_at, 'url' => '#',
+                ]);
+            });
+
+        \App\Models\SalesReport::where('store_id', $store->id)->latest()->limit(50)->get()
+            ->each(function ($r) use ($activities) {
+                $activities->push([
+                    'type' => 'report', 'icon' => 'file', 'color' => '#c9a961',
+                    'title' => 'Report ' . ($r->report_number ?? $r->id),
+                    'description' => 'Total: P' . number_format($r->total_sales ?? 0, 2),
+                    'amount' => (float) ($r->total_sales ?? 0),
+                    'time' => $r->created_at,
+                    'url' => route('consignment.reports.show', $r->id),
+                ]);
+            });
+
+        $activities = $activities->sortByDesc('time')->values();
+        $totalAmount = $activities->sum('amount');
+        $totalEvents = $activities->count();
+
+        return view('transactions.store', compact('store', 'activities', 'totalAmount', 'totalEvents'));
+    }
 }

@@ -122,6 +122,11 @@ class ProductController extends Controller
         $data['category_id'] = $data['category_id'] ?? null;
         $data['stock'] = $data['stock'] ?? 0;
 
+
+        // ⚠️ Kung walay bag-o nga image, ayaw hilabti ang existing
+        if (!$request->hasFile('image')) {
+            unset($data['image']);
+        }
         if ($request->hasFile('image')) {
             // Delete old image
             if ($product->image && !str_starts_with($product->image, 'http')) {

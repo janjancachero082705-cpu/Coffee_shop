@@ -74,11 +74,7 @@
     <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm"><- Back to Products</a>
     <div style="display:flex;gap:8px;">
         <a href="{{ route('products.edit', $product) }}" class="btn btn-primary btn-sm">Edit Product</a>
-        <form method="POST" action="{{ route('products.destroy', $product) }}"
-              onsubmit="return confirm('Delete {{ addslashes($product->name) }}?')">
-            @csrf @method('DELETE')
-            <button class="btn btn-danger btn-sm">Delete</button>
-        </form>
+        
     </div>
 </div>
 

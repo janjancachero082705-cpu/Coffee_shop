@@ -15,7 +15,7 @@ class Product extends Model
         'variety', 'origin', 'roast_level', 'process_method',
         'altitude', 'harvest_year', 'cupping_notes',
         'unit_type', 'base_unit', 'weight_grams',
-        'price', 'cost_price', 'wholesale_price',
+        'price', 'wholesale_price', 'cost_price', 'cost_notes',
         'stock', 'reorder_level',
         'is_active', 'is_featured',
     ];
@@ -125,5 +125,27 @@ class Product extends Model
     public function getStockValueAtSellingAttribute(): float
     {
         return ((float) ($this->price ?? 0)) * (int) ($this->stock ?? 0);
+    }
+
+    /**
+     * Profit margin percentage (nullable kung walay cost).
+     */
+    public function getMarginAttribute(): ?float
+    {
+        $cost = (float) ($this->cost_price ?? 0);
+        $price = (float) ($this->price ?? 0);
+        if ($cost <= 0 || $price <= 0) return null;
+        return round((($price - $cost) / $price) * 100, 1);
+    }
+
+    /**
+     * Profit per unit (nullable kung walay cost).
+     */
+    public function getProfitAttribute(): ?float
+    {
+        $cost = (float) ($this->cost_price ?? 0);
+        $price = (float) ($this->price ?? 0);
+        if ($cost <= 0) return null;
+        return round($price - $cost, 2);
     }
 }

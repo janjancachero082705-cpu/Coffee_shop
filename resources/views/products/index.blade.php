@@ -317,12 +317,7 @@
                                 </svg>
                                 Edit
                             </a>
-                            <button type="button" class="pl-menu-item danger" onclick="plDeleteProduct({{ $product->id }}, '{{ addslashes($product->name) }}')">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                                </svg>
-                                Delete
-                            </button>
+                            
                         </div>
                     </div>
                 </div>
@@ -339,10 +334,7 @@
 @endif
 
 {{-- DELETE FORM --}}
-<form id="plDeleteForm" method="POST" style="display:none;">
-    @csrf
-    @method('DELETE')
-</form>
+
 
 @endsection
 
@@ -1120,12 +1112,7 @@
         if (menu) menu.classList.toggle('open');
     }
 
-    function plDeleteProduct(id, name) {
-        if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
-        var form = document.getElementById('plDeleteForm');
-        form.action = '{{ route("products.index") }}/' + id;
-        form.submit();
-    }
+    
 
     document.addEventListener('click', function() {
         document.querySelectorAll('.pl-menu.open').forEach(function(m) {

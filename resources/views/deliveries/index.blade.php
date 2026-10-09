@@ -132,63 +132,136 @@
         </div>
     </div>
 @else
-    {{-- LIST VIEW (Card style) --}}
-    <div id="listView" class="view-content">
-        <div class="delivery-list">
-            @foreach($deliveries as $dr)
-                @php
-                    $isConfirmed = $dr->customer_confirmed ?? false;
-                    $isOut = !$isConfirmed && $dr->out_for_delivery_at;
-                    $statusColor = $isConfirmed ? '#22c55e' : ($isOut ? '#3b82f6' : '#f59e0b');
-                    $statusLabel = $isConfirmed ? 'Delivered' : ($isOut ? 'In Transit' : 'Pending');
-                @endphp
-                <div class="delivery-card" style="--status-color: {{ $statusColor }};">
-                    <a href="{{ route('deliveries.show', $dr) }}" class="delivery-card-body">
-                        <div class="delivery-card-head">
-                            <div class="delivery-card-left">
-                                <div class="delivery-status-dot" style="background:{{ $statusColor }};"></div>
-                                <div>
-                                    <div class="delivery-card-title">{{ $dr->dr_number }}</div>
-                                    <div class="delivery-card-sub">{{ $dr->store->store_name ?? '-' }} · {{ $dr->store->code ?? '' }}</div>
-                                </div>
-                            </div>
-                            <span class="status-badge" style="background:{{ $statusColor }}22; color:{{ $statusColor }}; border-color:{{ $statusColor }}55;">
-                                {{ $statusLabel }}
-                            </span>
-                        </div>
+    {{-- LIST VIEW (Grouped by Store) --}}
+@php
+    $grouped = $deliveries->groupBy('store_id');
+@endphp
 
-                        <div class="delivery-card-meta">
-                            <div class="meta-item">
-                                <div class="meta-label">Date</div>
-                                <div class="meta-value">{{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}</div>
-                            </div>
-                            <div class="meta-item">
-                                <div class="meta-label">Items</div>
-                                <div class="meta-value">{{ $dr->items->count() }}</div>
-                            </div>
-                            <div class="meta-item">
-                                <div class="meta-label">Total</div>
-                                <div class="meta-value gold">₱{{ number_format($dr->total_amount, 2) }}</div>
-                            </div>
-                            <div class="meta-item">
-                                <div class="meta-label">Balance</div>
-                                <div class="meta-value {{ $dr->balance > 0 ? 'amber' : 'green' }}">₱{{ number_format($dr->balance, 2) }}</div>
-                            </div>
-                        </div>
+<div id="listView" class="view-content">
+    <div class="store-groups">
+        @foreach($grouped as $storeId => $storeDeliveries)
+            @php
+                $store = $storeDeliveries->first()->store;
+                $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
+                $storeTotal = $storeDeliveries->sum('total_amount');
+                $storeBalance = $storeDeliveries->sum('balance');
+                $storePending = $storeDeliveries->filter(fn($d) => !($d->customer_confirmed ?? false))->count();
+                $storeDelivered = $storeDeliveries->filter(fn($d) => $d->customer_confirmed ?? false)->count();
+                $latest = $storeDeliveries->sortByDesc('created_at')->first();
+            @endphp
 
-                        <div class="delivery-card-foot">
-                            <div class="delivery-card-time">{{ $dr->created_at->diffForHumans() }}</div>
-                            <div class="delivery-card-arrow">
-                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                            </div>
+            <div class="store-group" id="sg-{{ $storeId }}" data-store="{{ $storeId }}">
+                {{-- STORE HEADER (clickable) --}}
+                <div class="store-group-head" data-toggle-group="{{ $storeId }}">
+                    <div class="store-avatar">
+                        @if($store->logo_url ?? null)
+                            <img src="{{ $store->logo_url }}" alt="">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </div>
+                    <div class="store-info">
+                        <div class="store-name">{{ $store->store_name ?? 'Unknown Store' }}</div>
+                        <div class="store-meta">
+                            <span class="store-code">{{ $store->code ?? '' }}</span>
+                            <span class="store-dot">·</span>
+                            <span class="store-count">{{ $storeDeliveries->count() }} deliveries</span>
+                            <span class="store-dot">·</span>
+                            <span class="store-time">{{ $latest->created_at->diffForHumans() }}</span>
                         </div>
-                    </a>
+                    </div>
+                    <div class="store-stats">
+                        <div class="store-stat">
+                            <div class="store-stat-lbl">Total</div>
+                            <div class="store-stat-val gold">&#8369;{{ number_format($storeTotal, 0) }}</div>
+                        </div>
+                        @if($storeBalance > 0)
+                            <div class="store-stat">
+                                <div class="store-stat-lbl">Balance</div>
+                                <div class="store-stat-val amber">&#8369;{{ number_format($storeBalance, 0) }}</div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="store-chevron">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </div>
                 </div>
-            @endforeach
-        </div>
-    </div>
 
-    {{-- TABLE VIEW (Compact) --}}
+                {{-- STORE BODY (deliveries list) --}}
+                <div class="store-group-body" id="sgb-{{ $storeId }}">
+                    {{-- Mini stats --}}
+                    <div class="store-body-stats">
+                        <div class="store-body-stat">
+                            <span class="store-body-stat-lbl">Delivered</span>
+                            <span class="store-body-stat-val green">{{ $storeDelivered }}</span>
+                        </div>
+                        <div class="store-body-stat">
+                            <span class="store-body-stat-lbl">Pending</span>
+                            <span class="store-body-stat-val amber">{{ $storePending }}</span>
+                        </div>
+                        <div class="store-body-stat">
+                            <span class="store-body-stat-lbl">Total</span>
+                            <span class="store-body-stat-val">{{ $storeDeliveries->count() }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Deliveries --}}
+                    <div class="delivery-list">
+                        @foreach($storeDeliveries as $dr)
+                            @php
+                                $isConfirmed = $dr->customer_confirmed ?? false;
+                                $isOut = !$isConfirmed && $dr->out_for_delivery_at;
+                                $statusColor = $isConfirmed ? '#22c55e' : ($isOut ? '#3b82f6' : '#f59e0b');
+                                $statusLabel = $isConfirmed ? 'Delivered' : ($isOut ? 'In Transit' : 'Pending');
+                            @endphp
+                            <div class="delivery-card" style="--status-color: {{ $statusColor }};">
+                                <a href="{{ route('deliveries.show', $dr) }}" class="delivery-card-body">
+                                    <div class="delivery-card-head">
+                                        <div class="delivery-card-left">
+                                            <div class="delivery-status-dot" style="background:{{ $statusColor }};"></div>
+                                            <div>
+                                                <div class="delivery-card-title">{{ $dr->dr_number }}</div>
+                                                <div class="delivery-card-sub">{{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}</div>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge" style="background:{{ $statusColor }}22; color:{{ $statusColor }}; border-color:{{ $statusColor }}55;">
+                                            {{ $statusLabel }}
+                                        </span>
+                                    </div>
+
+                                    <div class="delivery-card-meta">
+                                        <div class="meta-item">
+                                            <div class="meta-label">Items</div>
+                                            <div class="meta-value">{{ $dr->items->count() }}</div>
+                                        </div>
+                                        <div class="meta-item">
+                                            <div class="meta-label">Total</div>
+                                            <div class="meta-value gold">&#8369;{{ number_format($dr->total_amount, 2) }}</div>
+                                        </div>
+                                        <div class="meta-item">
+                                            <div class="meta-label">Balance</div>
+                                            <div class="meta-value {{ $dr->balance > 0 ? 'amber' : 'green' }}">&#8369;{{ number_format($dr->balance, 2) }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="delivery-card-foot">
+                                        <div class="delivery-card-time">{{ $dr->created_at->diffForHumans() }}</div>
+                                        <div class="delivery-card-arrow">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+{{-- TABLE VIEW (Compact) --}}
     <div id="tableView" class="view-content" style="display:none;">
         <div class="card" style="padding:0; overflow:hidden;">
             <div class="table-wrap">
@@ -524,6 +597,405 @@
         .delivery-card-meta { grid-template-columns:repeat(2, 1fr); gap:8px; }
         .meta-value { font-size:12px; }
     }
+
+    /* ═══ STORE GROUPS (accordion) ═══ */
+    .store-groups { display: flex; flex-direction: column; gap: 12px; }
+
+    .store-group {
+        background: linear-gradient(165deg, rgba(30,26,22,0.9), rgba(21,18,15,0.9));
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+    .store-group.expanded {
+        border-color: rgba(201,169,97,0.4);
+        box-shadow: 0 12px 32px -12px rgba(0,0,0,0.6);
+    }
+
+    .store-group-head {
+        display: grid;
+        grid-template-columns: 48px 1fr auto 24px;
+        gap: 14px;
+        align-items: center;
+        padding: 16px 18px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+    }
+    .store-group-head:hover { background: rgba(255,255,255,0.02); }
+
+    .store-avatar {
+        width: 48px; height: 48px; border-radius: 14px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        display: grid; place-items: center;
+        font-size: 15px; font-weight: 900;
+        flex-shrink: 0; overflow: hidden;
+        box-shadow: 0 4px 12px -4px rgba(201,169,97,0.5);
+    }
+    .store-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .store-info { min-width: 0; }
+    .store-name {
+        font-size: 15px; font-weight: 800; color: #fafafa;
+        margin-bottom: 4px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .store-meta {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11.5px; color: #71717a; flex-wrap: wrap;
+    }
+    .store-code { font-family: ui-monospace, monospace; color: #a1a1aa; }
+    .store-dot { color: #52525b; }
+    .store-count { color: #c9a961; font-weight: 800; }
+
+    .store-stats { display: flex; gap: 16px; flex-shrink: 0; }
+    .store-stat { text-align: right; }
+    .store-stat-lbl {
+        font-size: 9.5px; font-weight: 800; color: #71717a;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        margin-bottom: 3px;
+    }
+    .store-stat-val {
+        font-size: 14px; font-weight: 800; color: #fafafa;
+        font-variant-numeric: tabular-nums;
+    }
+    .store-stat-val.gold { color: #c9a961; }
+    .store-stat-val.amber { color: #f59e0b; }
+
+    .store-chevron {
+        color: #71717a;
+        transition: transform 0.25s;
+        flex-shrink: 0;
+    }
+    .store-group.expanded .store-chevron {
+        transform: rotate(180deg);
+        color: #c9a961;
+    }
+
+    .store-group-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(0,0,0,0.2);
+        border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .store-group.expanded .store-group-body { max-height: 5000px; }
+
+    .store-body-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 16px 18px 12px;
+    }
+    .store-body-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.04);
+        border-radius: 10px;
+    }
+    .store-body-stat-lbl {
+        font-size: 10.5px; font-weight: 700; color: #71717a;
+    }
+    .store-body-stat-val {
+        font-size: 14px; font-weight: 800; color: #fafafa;
+        font-variant-numeric: tabular-nums;
+    }
+    .store-body-stat-val.green { color: #22c55e; }
+    .store-body-stat-val.amber { color: #f59e0b; }
+
+    .store-group-body .delivery-list {
+        padding: 0 18px 18px;
+    }
+
+    @media (max-width: 700px) {
+        .store-group-head {
+            grid-template-columns: 42px 1fr 20px;
+            gap: 10px;
+            padding: 14px;
+        }
+        .store-stats { display: none; }
+        .store-avatar { width: 42px; height: 42px; font-size: 13px; }
+        .store-name { font-size: 14px; }
+        .store-body-stats { grid-template-columns: 1fr; padding: 12px 14px; }
+        .store-group-body .delivery-list { padding: 0 14px 14px; }
+    }
+
+    /* ═══ STORE HEAD clickable enhancement ═══ */
+    .store-group-head {
+        cursor: pointer !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .store-group-head:active {
+        background: rgba(255,255,255,0.04) !important;
+    }
+    .store-chevron { pointer-events: none; }
+
+    /* ═══ COMPACT delivery cards sulod sa store group ═══ */
+    .store-group-body .delivery-list {
+        padding: 0 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .store-group-body .delivery-card {
+        border-radius: 10px;
+    }
+    .store-group-body .delivery-card-body {
+        padding: 10px 12px !important;
+    }
+    .store-group-body .delivery-card-head {
+        margin-bottom: 6px !important;
+        padding-bottom: 6px !important;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .store-group-body .delivery-card-title {
+        font-size: 12px !important;
+        margin-bottom: 1px !important;
+    }
+    .store-group-body .delivery-card-sub {
+        font-size: 10px !important;
+    }
+    .store-group-body .status-badge {
+        font-size: 9.5px !important;
+        padding: 3px 8px !important;
+    }
+    .store-group-body .delivery-status-dot {
+        width: 7px !important;
+        height: 7px !important;
+    }
+    .store-group-body .delivery-card-meta {
+        gap: 8px !important;
+        padding: 6px 8px !important;
+        background: rgba(0,0,0,0.2);
+        border-radius: 7px;
+        margin-bottom: 6px !important;
+    }
+    .store-group-body .meta-item {
+        gap: 1px !important;
+    }
+    .store-group-body .meta-label {
+        font-size: 8.5px !important;
+        margin-bottom: 1px !important;
+    }
+    .store-group-body .meta-value {
+        font-size: 11px !important;
+    }
+    .store-group-body .delivery-card-foot {
+        padding-top: 4px !important;
+        font-size: 10px !important;
+    }
+    .store-group-body .delivery-card-time {
+        font-size: 10px !important;
+    }
+    .store-group-body .delivery-card-arrow svg {
+        width: 13px !important;
+        height: 13px !important;
+    }
+
+    /* Mobile — mas compact pa */
+    @media (max-width: 700px) {
+        .store-group-body .delivery-card-body { padding: 9px 10px !important; }
+        .store-group-body .delivery-card-title { font-size: 11.5px !important; }
+        .store-group-body .meta-value { font-size: 10.5px !important; }
+        .store-group-body .delivery-card-meta { gap: 6px !important; padding: 5px 6px !important; }
+        .store-group-body .meta-label { font-size: 8px !important; }
+    }
+
+    /* ═══ COMPACT FILTER BAR (Deliveries) ═══ */
+    .toolbar {
+        margin-bottom: 16px !important;
+    }
+    .toolbar-form {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 8px 10px !important;
+        background: linear-gradient(165deg, rgba(30,26,22,0.6), rgba(21,18,15,0.6)) !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+        border-radius: 12px !important;
+        align-items: center !important;
+    }
+
+    /* Search box — sakto lang */
+    .search-box {
+        position: relative !important;
+        flex: 1 1 180px !important;
+        min-width: 150px !important;
+        max-width: 240px !important;
+    }
+    .search-icon {
+        position: absolute !important;
+        left: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 13px !important;
+        height: 13px !important;
+        margin: 0 !important;
+        pointer-events: none !important;
+        color: #71717a !important;
+    }
+    .search-input {
+        width: 100% !important;
+        height: 32px !important;
+        padding: 0 10px 0 30px !important;
+        font-size: 12px !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 8px !important;
+        background: rgba(0,0,0,0.3) !important;
+        color: #fafafa !important;
+        box-sizing: border-box !important;
+    }
+    .search-input:focus {
+        outline: none !important;
+        border-color: #c9a961 !important;
+        box-shadow: 0 0 0 2px rgba(201,169,97,0.15) !important;
+    }
+    .search-input::placeholder { color: #52525b !important; }
+
+    /* Filter selects + dates — compact */
+    .filter-select {
+        height: 32px !important;
+        padding: 0 26px 0 10px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 8px !important;
+        background-color: rgba(0,0,0,0.3) !important;
+        color: #fafafa !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 8px center !important;
+        background-size: 10px !important;
+        flex: 0 0 auto !important;
+    }
+    select.filter-select {
+        min-width: 100px !important;
+        max-width: 140px !important;
+    }
+    input[type="date"].filter-select {
+        min-width: 120px !important;
+        max-width: 130px !important;
+        padding-right: 8px !important;
+        background-image: none !important;
+    }
+    input[type="date"].filter-select::-webkit-calendar-picker-indicator {
+        filter: invert(0.5) !important;
+        cursor: pointer !important;
+    }
+    .filter-select:focus {
+        outline: none !important;
+        border-color: #c9a961 !important;
+        box-shadow: 0 0 0 2px rgba(201,169,97,0.15) !important;
+    }
+
+    /* Filter button */
+    .btn-filter {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        height: 32px !important;
+        padding: 0 12px !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        border: none !important;
+        border-radius: 8px !important;
+        background: linear-gradient(135deg, #c9a961, #b8944d) !important;
+        color: #0f0f14 !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+    .btn-filter svg { width: 11px !important; height: 11px !important; }
+    .btn-filter:hover {
+        transform: none !important;
+        box-shadow: 0 4px 12px -4px rgba(201,169,97,0.5) !important;
+    }
+
+    /* Clear button */
+    .btn-clear {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        background: rgba(255,255,255,0.04) !important;
+        color: #d4d4d8 !important;
+        text-decoration: none !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+    }
+    .btn-clear:hover {
+        background: rgba(239,68,68,0.15) !important;
+        border-color: rgba(239,68,68,0.3) !important;
+        color: #ef4444 !important;
+    }
+
+    /* View toggle */
+    .view-toggle {
+        display: inline-flex !important;
+        gap: 4px !important;
+        padding: 3px !important;
+        background: rgba(0,0,0,0.3) !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        border-radius: 9px !important;
+        margin-left: auto !important;
+        height: 32px !important;
+        box-sizing: border-box !important;
+    }
+    .view-btn {
+        width: 26px !important;
+        height: 26px !important;
+        border-radius: 6px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        color: #71717a !important;
+        cursor: pointer !important;
+        transition: all 0.15s !important;
+    }
+    .view-btn:hover { background: rgba(255,255,255,0.05) !important; color: #d4d4d8 !important; }
+    .view-btn.active {
+        background: linear-gradient(135deg, #c9a961, #b8944d) !important;
+        color: #0f0f14 !important;
+    }
+    .view-btn svg { width: 12px !important; height: 12px !important; }
+
+    /* Responsive — wrap on mobile */
+    @media (max-width: 768px) {
+        .toolbar-form {
+            flex-wrap: wrap !important;
+        }
+        .search-box {
+            flex: 1 1 100% !important;
+            max-width: 100% !important;
+        }
+        select.filter-select,
+        input[type="date"].filter-select {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+        .view-toggle {
+            margin-left: 0 !important;
+        }
+    }
 </style>
 @endpush
 
@@ -566,5 +1038,19 @@
     } catch(e) {}
 
 })();
-</script>
+
+    // ═══ STORE GROUP ACCORDION (event delegation) ═══
+    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('click', function(e) {
+            var head = e.target.closest('[data-toggle-group]');
+            if (!head) return;
+            e.preventDefault();
+            var storeId = head.getAttribute('data-toggle-group');
+            var group = document.getElementById('sg-' + storeId);
+            if (group) {
+                group.classList.toggle('expanded');
+                console.log('Toggled group:', storeId, 'expanded:', group.classList.contains('expanded'));
+            }
+        });
+    });</script>
 @endpush
