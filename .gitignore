@@ -78,3 +78,22 @@ tinker_*.php
 temp_*.php
 tmp_*.php
 _*.php
+
+# Laravel storage
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+!/storage/framework/cache/data/.gitignore
+!/storage/framework/sessions/.gitignore
+!/storage/framework/views/.gitignore
+!/storage/logs/.gitignore
+
+# Bootstrap cache
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# Env files
+.env
+.env.*
+!.env.example
