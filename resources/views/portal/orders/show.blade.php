@@ -289,10 +289,10 @@
         align-items: center;
         gap: 6px;
         padding: 8px 12px 8px 10px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--t-border);
+        border: 1px solid var(--t-border);
         border-radius: 10px;
-        color: var(--text-secondary);
+        color: var(--t-text-2);
         font-size: 12px;
         font-weight: 700;
         text-decoration: none;
@@ -301,8 +301,8 @@
         -webkit-tap-highlight-color: transparent;
     }
     .po-back:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: var(--text-primary);
+        background: var(--t-border-2);
+        color: var(--t-text);
     }
     .po-back:active { transform: scale(0.97); }
 
@@ -314,8 +314,8 @@
         gap: 16px;
         padding: 20px;
         margin-bottom: 14px;
-        background: linear-gradient(135deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.95));
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--t-card);
+        border: 1px solid var(--t-border);
         border-left: 3px solid var(--status-color);
         border-radius: 16px;
         overflow: hidden;
@@ -334,7 +334,7 @@
         border-radius: 14px;
         display: grid; place-items: center;
         flex-shrink: 0;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--t-border-2);
         position: relative; z-index: 1;
     }
     .po-hero-content { flex: 1; min-width: 0; position: relative; z-index: 1; }
@@ -348,7 +348,7 @@
     .po-hero-title {
         font-size: 19px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--t-text);
         letter-spacing: -0.02em;
         font-family: ui-monospace, monospace;
         line-height: 1.1;
@@ -359,7 +359,7 @@
         align-items: center;
         gap: 5px;
         font-size: 11.5px;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         font-weight: 600;
     }
 
@@ -398,13 +398,13 @@
     .po-info-title {
         font-size: 13px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--t-text);
         margin-bottom: 3px;
         letter-spacing: -0.01em;
     }
     .po-info-text {
         font-size: 11.5px;
-        color: var(--text-secondary);
+        color: var(--t-text-2);
         line-height: 1.5;
     }
 
@@ -417,15 +417,15 @@
     }
     .po-chip {
         padding: 12px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--t-card);
+        border: 1px solid var(--t-border);
         border-radius: 12px;
         text-align: center;
     }
     .po-chip-label {
         font-size: 9.5px;
         font-weight: 800;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 5px;
@@ -433,17 +433,17 @@
     .po-chip-value {
         font-size: 17px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--t-text);
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
     }
-    .po-chip-value.gold { color: #c9a961; }
+    .po-chip-value.gold { color: var(--t-accent); }
 
     /* CARD */
     .po-card {
         padding: 16px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--t-card);
+        border: 1px solid var(--t-border);
         border-radius: 16px;
         margin-bottom: 14px;
     }
@@ -453,13 +453,13 @@
         gap: 12px;
         padding-bottom: 12px;
         margin-bottom: 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid var(--t-border);
     }
     .po-card-head-icon {
         width: 34px; height: 34px;
         border-radius: 10px;
-        background: rgba(201, 169, 97, 0.12);
-        color: #c9a961;
+        background: rgba(var(--t-accent-rgb), 0.12);
+        color: var(--t-accent);
         display: grid; place-items: center;
         flex-shrink: 0;
     }
@@ -470,12 +470,12 @@
     .po-card-head-title {
         font-size: 13.5px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--t-text);
         letter-spacing: -0.01em;
     }
     .po-card-head-sub {
         font-size: 10.5px;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         margin-top: 2px;
     }
 
@@ -486,16 +486,16 @@
         align-items: center;
         gap: 12px;
         padding: 10px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid var(--t-border);
     }
     .po-item:last-child { border-bottom: none; }
     .po-item-thumb {
         width: 44px; height: 44px;
         border-radius: 11px;
-        background: rgba(201, 169, 97, 0.08);
-        border: 1px solid rgba(201, 169, 97, 0.15);
+        background: rgba(var(--t-accent-rgb), 0.08);
+        border: 1px solid rgba(var(--t-accent-rgb), 0.15);
         display: grid; place-items: center;
-        color: rgba(201, 169, 97, 0.5);
+        color: rgba(var(--t-accent-rgb), 0.5);
         overflow: hidden;
         flex-shrink: 0;
     }
@@ -504,7 +504,7 @@
     .po-item-name {
         font-size: 13px;
         font-weight: 700;
-        color: var(--text-primary);
+        color: var(--t-text);
         margin-bottom: 3px;
         white-space: nowrap;
         overflow: hidden;
@@ -512,13 +512,13 @@
     }
     .po-item-meta {
         font-size: 11px;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         font-weight: 600;
     }
     .po-item-total {
         font-size: 14px;
         font-weight: 800;
-        color: #c9a961;
+        color: var(--t-accent);
         font-variant-numeric: tabular-nums;
         flex-shrink: 0;
     }
@@ -530,19 +530,19 @@
         align-items: center;
         padding-top: 14px;
         margin-top: 6px;
-        border-top: 2px solid rgba(201, 169, 97, 0.25);
+        border-top: 2px solid rgba(var(--t-accent-rgb), 0.25);
     }
     .po-total-label {
         font-size: 12px;
         font-weight: 800;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
     .po-total-value {
         font-size: 22px;
         font-weight: 800;
-        color: #c9a961;
+        color: var(--t-accent);
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
     }
@@ -550,7 +550,7 @@
     /* NOTES */
     .po-notes {
         font-size: 12.5px;
-        color: var(--text-secondary);
+        color: var(--t-text-2);
         line-height: 1.6;
     }
 
@@ -610,8 +610,8 @@
     }
 
     .po-modal {
-        background: linear-gradient(165deg, #1e1a16, #15120f);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--t-card-solid);
+        border: 1px solid var(--t-border-2);
         border-radius: 22px 22px 0 0;
         width: 100%;
         max-width: 480px;
@@ -654,7 +654,7 @@
         align-items: center;
         gap: 14px;
         padding: 20px 22px 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid var(--t-border);
     }
     .po-modal-icon {
         width: 48px; height: 48px;
@@ -669,13 +669,13 @@
     .po-modal-title {
         font-size: 16px;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--t-text);
         letter-spacing: -0.02em;
         margin-bottom: 3px;
     }
     .po-modal-sub {
         font-size: 11px;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         font-family: ui-monospace, monospace;
     }
 
@@ -713,22 +713,22 @@
         font-size: 12px;
     }
     .po-modal-summary-row + .po-modal-summary-row {
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        border-top: 1px solid var(--t-border);
     }
-    .po-modal-summary-row span { color: var(--text-muted); font-weight: 600; }
+    .po-modal-summary-row span { color: var(--t-text-3); font-weight: 600; }
     .po-modal-summary-row strong {
-        color: var(--text-primary);
+        color: var(--t-text);
         font-weight: 800;
         font-family: ui-monospace, monospace;
     }
-    .po-modal-summary-row strong.gold { color: #c9a961; }
+    .po-modal-summary-row strong.gold { color: var(--t-accent); }
 
     .po-modal-field { margin-top: 4px; }
     .po-modal-label {
         display: block;
         font-size: 10.5px;
         font-weight: 800;
-        color: var(--text-muted);
+        color: var(--t-text-3);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 8px;
@@ -744,9 +744,9 @@
         width: 100%;
         padding: 11px 14px;
         background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--t-border-2);
         border-radius: 11px;
-        color: var(--text-primary);
+        color: var(--t-text);
         font-size: 13px;
         font-family: inherit;
         resize: vertical;
@@ -765,7 +765,7 @@
         display: flex;
         gap: 10px;
         padding: 16px 22px 22px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--t-border);
     }
     .po-modal-btn {
         display: inline-flex;
@@ -785,13 +785,13 @@
     }
     .po-modal-btn-ghost {
         flex: 1;
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.1);
-        color: var(--text-secondary);
+        background: var(--t-border);
+        border-color: var(--t-border-2);
+        color: var(--t-text-2);
     }
     .po-modal-btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: var(--text-primary);
+        background: var(--t-border-2);
+        color: var(--t-text);
     }
     .po-modal-btn-ghost:active { transform: scale(0.97); }
     .po-modal-btn-danger {
@@ -805,5 +805,232 @@
         box-shadow: 0 10px 24px -8px rgba(239, 68, 68, 0.7);
     }
     .po-modal-btn-danger:active { transform: scale(0.98); }
-</style>
+
+    /* ════════════════════════════════════════════════════════
+       LIGHT MODE — EMERALD GREEN FORCE OVERRIDE
+       Bisag unsang gold hardcoded → emerald
+       ════════════════════════════════════════════════════════ */
+
+    html[data-theme="light"] .p-main *[style*="#c9a961"],
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97"],
+    html[data-theme="light"] .p-main *[style*="rgba(169, 120, 74"],
+    html[data-theme="light"] .p-main *[style*="#8a5f36"],
+    html[data-theme="light"] .p-main *[style*="#b8944d"] {
+        color: #059669 !important;
+    }
+
+    /* Force emerald sa tanan accent colors sa light theme */
+    html[data-theme="light"] .p-main *[style*="color: #c9a961"] {
+        color: #10b981 !important;
+    }
+
+    /* Kill any gold shadows */
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.7)"],
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.5)"],
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.6)"] {
+        box-shadow: 0 8px 20px -8px rgba(16, 185, 129, 0.5) !important;
+    }
+
+    /* Override gold gradient backgrounds */
+    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #c9a961"] {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+    }
+
+    /* Force all spans/divs inside cards dark */
+    html[data-theme="light"] .p-main,
+    html[data-theme="light"] .p-main *:not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="text-"]) {
+        /* Fallback */
+    }
+
+    /* Headings */
+    html[data-theme="light"] .p-main h1,
+    html[data-theme="light"] .p-main h2,
+    html[data-theme="light"] .p-main h3,
+    html[data-theme="light"] .p-main h4 {
+        color: #0f1e17 !important;
+    }
+
+    /* All text classes */
+    html[data-theme="light"] .p-main [class*="title"],
+    html[data-theme="light"] .p-main [class*="value"]:not([class*="badge"]),
+    html[data-theme="light"] .p-main [class*="label"]:not([class*="badge"]),
+    html[data-theme="light"] .p-main [class*="name"],
+    html[data-theme="light"] .p-main strong,
+    html[data-theme="light"] .p-main b {
+        color: #0f1e17 !important;
+    }
+
+    html[data-theme="light"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
+    html[data-theme="light"] .p-main [class*="meta"],
+    html[data-theme="light"] .p-main [class*="desc"],
+    html[data-theme="light"] .p-main [class*="hint"] {
+        color: #6b7f75 !important;
+    }
+
+    /* Inline hardcoded white → dark */
+    html[data-theme="light"] .p-main *[style*="color: #fafafa"],
+    html[data-theme="light"] .p-main *[style*="color:#fafafa"],
+    html[data-theme="light"] .p-main *[style*="color: #f5f3f0"],
+    html[data-theme="light"] .p-main *[style*="color:#f5f3f0"],
+    html[data-theme="light"] .p-main *[style*="color: white"],
+    html[data-theme="light"] .p-main *[style*="color:#fff"],
+    html[data-theme="light"] .p-main *[style*="color: #fff"],
+    html[data-theme="light"] .p-main *[style*="color:#ffffff"],
+    html[data-theme="light"] .p-main *[style*="color: #ffffff"] {
+        color: #0f1e17 !important;
+    }
+
+    /* Dark backgrounds → white */
+    html[data-theme="light"] .p-main *[style*="background: #1e1a16"],
+    html[data-theme="light"] .p-main *[style*="background:#1e1a16"],
+    html[data-theme="light"] .p-main *[style*="background: #0f0f14"],
+    html[data-theme="light"] .p-main *[style*="background:#0f0f14"],
+    html[data-theme="light"] .p-main *[style*="background: #15120f"],
+    html[data-theme="light"] .p-main *[style*="background:#15120f"] {
+        background: #ffffff !important;
+    }
+    /* ════════════════════════════════════════════════════════
+       LIGHT MODE — PURE SLATE FORCE OVERRIDE
+       ════════════════════════════════════════════════════════ */
+
+    /* Gold/green/brown hardcoded colors → slate */
+    html[data-theme="light"] .p-main *[style*="#c9a961"],
+    html[data-theme="light"] .p-main *[style*="#10b981"],
+    html[data-theme="light"] .p-main *[style*="#059669"],
+    html[data-theme="light"] .p-main *[style*="#a9784a"],
+    html[data-theme="light"] .p-main *[style*="#8a5f36"],
+    html[data-theme="light"] .p-main *[style*="#b8944d"] {
+        color: #475569 !important;
+    }
+
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97"],
+    html[data-theme="light"] .p-main *[style*="rgba(16, 185, 129"],
+    html[data-theme="light"] .p-main *[style*="rgba(169, 120, 74"] {
+        color: #475569 !important;
+    }
+
+    /* Gradient override */
+    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #c9a961"],
+    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #10b981"] {
+        background: linear-gradient(135deg, #475569, #334155) !important;
+    }
+
+    /* Gold shadow → slate shadow */
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.7)"],
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.5)"],
+    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.6)"] {
+        box-shadow: 0 8px 20px -8px rgba(71, 85, 105, 0.4) !important;
+    }
+
+    /* All text — dark */
+    html[data-theme="light"] .p-main h1,
+    html[data-theme="light"] .p-main h2,
+    html[data-theme="light"] .p-main h3,
+    html[data-theme="light"] .p-main h4 {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .p-main [class*="title"],
+    html[data-theme="light"] .p-main [class*="value"]:not([class*="badge"]),
+    html[data-theme="light"] .p-main [class*="label"]:not([class*="badge"]),
+    html[data-theme="light"] .p-main [class*="name"],
+    html[data-theme="light"] .p-main strong,
+    html[data-theme="light"] .p-main b {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
+    html[data-theme="light"] .p-main [class*="meta"],
+    html[data-theme="light"] .p-main [class*="desc"],
+    html[data-theme="light"] .p-main [class*="hint"] {
+        color: #64748b !important;
+    }
+
+    /* Hardcoded white text → dark */
+    html[data-theme="light"] .p-main *[style*="color: #fafafa"],
+    html[data-theme="light"] .p-main *[style*="color:#fafafa"],
+    html[data-theme="light"] .p-main *[style*="color: #f5f3f0"],
+    html[data-theme="light"] .p-main *[style*="color:#f5f3f0"],
+    html[data-theme="light"] .p-main *[style*="color: white"],
+    html[data-theme="light"] .p-main *[style*="color:#fff"],
+    html[data-theme="light"] .p-main *[style*="color: #fff"],
+    html[data-theme="light"] .p-main *[style*="color:#ffffff"],
+    html[data-theme="light"] .p-main *[style*="color: #ffffff"] {
+        color: #0f172a !important;
+    }
+
+    /* Dark backgrounds → white */
+    html[data-theme="light"] .p-main *[style*="background: #1e1a16"],
+    html[data-theme="light"] .p-main *[style*="background:#1e1a16"],
+    html[data-theme="light"] .p-main *[style*="background: #0f0f14"],
+    html[data-theme="light"] .p-main *[style*="background:#0f0f14"],
+    html[data-theme="light"] .p-main *[style*="background: #15120f"],
+    html[data-theme="light"] .p-main *[style*="background:#15120f"] {
+        background: #ffffff !important;
+    }
+    /* ════════════════════════════════════════════════════════
+       DARK MODE — PURE BLACK FORCE OVERRIDE
+       ════════════════════════════════════════════════════════ */
+
+    /* Kill all gold/emerald/purple accents sa dark mode */
+    html[data-theme="dark"] .p-main *[style*="#c9a961"],
+    html[data-theme="dark"] .p-main *[style*="#10b981"],
+    html[data-theme="dark"] .p-main *[style*="#8b5cf6"],
+    html[data-theme="dark"] .p-main *[style*="#a9784a"],
+    html[data-theme="dark"] .p-main *[style*="#8a5f36"],
+    html[data-theme="dark"] .p-main *[style*="#b8944d"],
+    html[data-theme="dark"] .p-main *[style*="#ec4899"] {
+        color: #ffffff !important;
+    }
+
+    /* Gradient → white */
+    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #c9a961"],
+    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #10b981"],
+    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #8b5cf6"] {
+        background: linear-gradient(135deg, #ffffff, #e5e5e5) !important;
+    }
+
+    /* All text light */
+    html[data-theme="dark"] .p-main h1,
+    html[data-theme="dark"] .p-main h2,
+    html[data-theme="dark"] .p-main h3,
+    html[data-theme="dark"] .p-main h4 {
+        color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] .p-main [class*="title"],
+    html[data-theme="dark"] .p-main [class*="value"]:not([class*="badge"]),
+    html[data-theme="dark"] .p-main [class*="label"]:not([class*="badge"]),
+    html[data-theme="dark"] .p-main [class*="name"],
+    html[data-theme="dark"] .p-main strong,
+    html[data-theme="dark"] .p-main b {
+        color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
+    html[data-theme="dark"] .p-main [class*="meta"],
+    html[data-theme="dark"] .p-main [class*="desc"],
+    html[data-theme="dark"] .p-main [class*="hint"] {
+        color: #a3a3a3 !important;
+    }
+
+    /* Any hardcoded dark text → white */
+    html[data-theme="dark"] .p-main *[style*="color: #0f172a"],
+    html[data-theme="dark"] .p-main *[style*="color:#0f172a"],
+    html[data-theme="dark"] .p-main *[style*="color: #1a1a1f"],
+    html[data-theme="dark"] .p-main *[style*="color: #000"],
+    html[data-theme="dark"] .p-main *[style*="color:#000"],
+    html[data-theme="dark"] .p-main *[style*="color: black"],
+    html[data-theme="dark"] .p-main *[style*="color:black"] {
+        color: #ffffff !important;
+    }
+
+    /* Any hardcoded light bg → dark */
+    html[data-theme="dark"] .p-main *[style*="background: #ffffff"],
+    html[data-theme="dark"] .p-main *[style*="background:#ffffff"],
+    html[data-theme="dark"] .p-main *[style*="background: white"],
+    html[data-theme="dark"] .p-main *[style*="background: #f8fafc"],
+    html[data-theme="dark"] .p-main *[style*="background: #f1f5f9"] {
+        background: #0a0a0a !important;
+    }</style>
 @endpush

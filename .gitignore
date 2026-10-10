@@ -76,3 +76,9 @@ tinker_*.php
 tinker.php
 temp_*.php
 tmp_*.php
+
+# Backup files
+*.bak
+*.bak_*
+*.bak-*
+*.backup

@@ -10,21 +10,24 @@
     $totalDeliveries = \App\Models\DeliveryReceipt::where('store_id', $store->id)->count();
     $totalPaid = (float) \App\Models\ConsignmentPayment::verified()->where('store_id', $store->id)->sum('amount');
     $memberSince = $store->created_at;
+    $initials = strtoupper(substr($store->store_name ?? 'ST', 0, 2));
+    $isActive = ($store->status ?? 'inactive') === 'active';
 @endphp
 
-{{-- ===== HERO PROFILE ===== --}}
+{{-- ═══ PROFILE HERO ═══ --}}
 <div class="profile-hero">
     <div class="profile-hero-glow"></div>
+    <div class="profile-hero-mesh"></div>
 
     <div class="profile-avatar-wrap">
         <div class="profile-avatar">
             @if($store->logo_url)
                 <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
             @else
-                {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
+                {{ $initials }}
             @endif
         </div>
-        @if($store->status === 'active')
+        @if($isActive)
             <div class="profile-status-dot"></div>
         @endif
     </div>
@@ -35,7 +38,10 @@
     <div class="profile-badges">
         <span class="p-badge p-badge-{{ $store->status }}">{{ ucfirst($store->status) }}</span>
         @if($store->portal_enabled)
-            <span class="p-badge p-badge-approved">Portal Active</span>
+            <span class="p-badge p-badge-approved">
+                <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                Portal Active
+            </span>
         @endif
         @if($store->payment_terms)
             <span class="p-badge p-badge-partial">{{ ucfirst(str_replace('_', ' ', $store->payment_terms)) }}</span>
@@ -78,7 +84,7 @@
     </div>
 </div>
 
-{{-- ===== STORE INFORMATION ===== --}}
+{{-- ═══ STORE INFORMATION ═══ --}}
 <div class="p-card">
     <div class="p-card-head">
         <div class="p-card-icon">
@@ -164,7 +170,7 @@
     </div>
 </div>
 
-{{-- ===== ACCOUNT SUMMARY ===== --}}
+{{-- ═══ ACCOUNT SUMMARY ═══ --}}
 <div class="p-card">
     <div class="p-card-head">
         <div class="p-card-icon green">
@@ -202,7 +208,7 @@
     </div>
 </div>
 
-{{-- ===== LOGOUT SECTION ===== --}}
+{{-- ═══ LOGOUT SECTION ═══ --}}
 <div class="logout-card">
     <div class="logout-icon">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -225,4 +231,3 @@
 </div>
 
 @endsection
-

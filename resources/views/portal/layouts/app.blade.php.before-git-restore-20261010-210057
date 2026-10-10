@@ -2433,6 +2433,178 @@ html.theme-loading body {
 
 
 
+<style id="LOGOUT-KILL-FILL">
+/* ════════════════════════════════════════════════════════════
+   LOGOUT — NUCLEAR KILL
+   Remove tanan: background fill, gradient, shadow, outline
+   Keep: red text, red icon, transparent red bg
+   ════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   MAX SPECIFICITY — override ALL 4 themes
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme] body .portal-wrap aside.p-sidebar .p-sidebar-foot form button.p-sidebar-foot-link.danger,
+html[data-theme] body .portal-wrap aside.p-sidebar .p-sidebar-foot form button[type="submit"],
+html[data-theme] body .portal-wrap aside.p-sidebar .p-sidebar-foot button.p-sidebar-foot-link.danger,
+html[data-theme] body .p-sidebar .p-sidebar-foot-link.danger,
+html[data-theme] body .p-sidebar form button[type="submit"],
+html[data-theme] .p-sidebar-foot-link.danger,
+html[data-theme] button.p-sidebar-foot-link.danger,
+html[data-theme] .p-sidebar-foot form button[type="submit"] {
+
+    /* ═══ KILL ALL FILLS ═══ */
+    background: rgba(239, 68, 68, 0.08) !important;
+    background-color: rgba(239, 68, 68, 0.08) !important;
+    background-image: none !important;
+    background-repeat: no-repeat !important;
+    background-position: initial !important;
+    background-size: initial !important;
+    background-attachment: initial !important;
+    background-origin: initial !important;
+    background-clip: initial !important;
+
+    /* ═══ KILL ALL SHADOWS / OUTLINE ═══ */
+    box-shadow: none !important;
+    text-shadow: none !important;
+    outline: none !important;
+    outline-offset: 0 !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    /* ═══ BORDER — pure red ═══ */
+    border: 1.5px solid #ef4444 !important;
+    border-color: #ef4444 !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+    border-radius: 10px !important;
+
+    /* ═══ TEXT — pure red ═══ */
+    color: #ef4444 !important;
+    fill: #ef4444 !important;
+    -webkit-text-fill-color: #ef4444 !important;
+    text-decoration: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   KILL ALL CHILDREN FILLS
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme] .p-sidebar-foot-link.danger *,
+html[data-theme] button.p-sidebar-foot-link.danger *,
+html[data-theme] .p-sidebar-foot form button[type="submit"] * {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    color: #ef4444 !important;
+    fill: #ef4444 !important;
+    -webkit-text-fill-color: #ef4444 !important;
+}
+
+/* ═══ SVG — stroke + fill red ═══ */
+html[data-theme] .p-sidebar-foot-link.danger svg,
+html[data-theme] button.p-sidebar-foot-link.danger svg,
+html[data-theme] .p-sidebar-foot form button[type="submit"] svg {
+    color: #ef4444 !important;
+    stroke: #ef4444 !important;
+    stroke-width: 2 !important;
+    fill: none !important;
+    filter: none !important;
+}
+html[data-theme] .p-sidebar-foot-link.danger svg *,
+html[data-theme] button.p-sidebar-foot-link.danger svg *,
+html[data-theme] .p-sidebar-foot form button[type="submit"] svg * {
+    stroke: #ef4444 !important;
+    fill: none !important;
+}
+
+/* ═══ SPAN text ═══ */
+html[data-theme] .p-sidebar-foot-link.danger span,
+html[data-theme] button.p-sidebar-foot-link.danger span,
+html[data-theme] .p-sidebar-foot form button[type="submit"] span {
+    color: #ef4444 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    -webkit-text-fill-color: #ef4444 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOVER — slightly brighter red
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme] .p-sidebar-foot-link.danger:hover,
+html[data-theme] button.p-sidebar-foot-link.danger:hover,
+html[data-theme] .p-sidebar-foot form button[type="submit"]:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    background-image: none !important;
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transform: none !important;
+}
+html[data-theme] .p-sidebar-foot-link.danger:hover *,
+html[data-theme] button.p-sidebar-foot-link.danger:hover *,
+html[data-theme] .p-sidebar-foot form button[type="submit"]:hover * {
+    color: #ef4444 !important;
+    stroke: #ef4444 !important;
+    fill: none !important;
+    background: transparent !important;
+}
+
+/* ═══ ACTIVE ═══ */
+html[data-theme] .p-sidebar-foot-link.danger:active,
+html[data-theme] button.p-sidebar-foot-link.danger:active,
+html[data-theme] .p-sidebar-foot form button[type="submit"]:active {
+    background: rgba(239, 68, 68, 0.2) !important;
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    background-image: none !important;
+    border-color: #ef4444 !important;
+    transform: scale(0.98) !important;
+    box-shadow: none !important;
+}
+
+/* ═══ FOCUS ═══ */
+html[data-theme] .p-sidebar-foot-link.danger:focus,
+html[data-theme] button.p-sidebar-foot-link.danger:focus,
+html[data-theme] .p-sidebar-foot form button[type="submit"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3) !important;
+    border-color: #ef4444 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FORM WRAPPER — clean
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme] .p-sidebar-foot form {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FINAL SAFETY — kill any residual outline/border on button
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme] button.p-sidebar-foot-link.danger::before,
+html[data-theme] button.p-sidebar-foot-link.danger::after,
+html[data-theme] .p-sidebar-foot form button[type="submit"]::before,
+html[data-theme] .p-sidebar-foot form button[type="submit"]::after {
+    display: none !important;
+    content: none !important;
+}
+</style>
 </head>
 <body>
 
@@ -11148,5 +11320,84 @@ html.theme-loading body {
 })();
 </script>
 
+<script id="LOGOUT-FORCE-JS">
+(function() {
+    'use strict';
+
+    function killFill(btn) {
+        if (!btn) return;
+
+        // Button itself
+        btn.style.setProperty('background', 'rgba(239, 68, 68, 0.08)', 'important');
+        btn.style.setProperty('background-color', 'rgba(239, 68, 68, 0.08)', 'important');
+        btn.style.setProperty('background-image', 'none', 'important');
+        btn.style.setProperty('box-shadow', 'none', 'important');
+        btn.style.setProperty('text-shadow', 'none', 'important');
+        btn.style.setProperty('outline', 'none', 'important');
+        btn.style.setProperty('filter', 'none', 'important');
+        btn.style.setProperty('border', '1.5px solid #ef4444', 'important');
+        btn.style.setProperty('border-color', '#ef4444', 'important');
+        btn.style.setProperty('border-radius', '10px', 'important');
+        btn.style.setProperty('color', '#ef4444', 'important');
+        btn.style.setProperty('-webkit-text-fill-color', '#ef4444', 'important');
+
+        // All children
+        btn.querySelectorAll('*').forEach(function(el) {
+            el.style.setProperty('background', 'transparent', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+            el.style.setProperty('text-shadow', 'none', 'important');
+            el.style.setProperty('filter', 'none', 'important');
+            el.style.setProperty('color', '#ef4444', 'important');
+            el.style.setProperty('-webkit-text-fill-color', '#ef4444', 'important');
+            if (el.tagName === 'svg' || el.tagName === 'SVG') {
+                el.style.setProperty('stroke', '#ef4444', 'important');
+                el.style.setProperty('fill', 'none', 'important');
+            }
+            if (el.tagName === 'path' || el.tagName === 'circle' || el.tagName === 'line' ||
+                el.tagName === 'rect' || el.tagName === 'polyline' || el.tagName === 'polygon') {
+                el.style.setProperty('stroke', '#ef4444', 'important');
+                el.style.setProperty('fill', 'none', 'important');
+            }
+        });
+    }
+
+    function findAndKill() {
+        // Find all possible logout buttons
+        document.querySelectorAll(
+            '.p-sidebar-foot-link.danger, ' +
+            '.p-sidebar-foot form button[type="submit"], ' +
+            '.p-sidebar form button[type="submit"], ' +
+            'button[class*="danger"]'
+        ).forEach(killFill);
+    }
+
+    // Run multiple times to be sure
+    findAndKill();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', findAndKill);
+    }
+    window.addEventListener('load', findAndKill);
+    window.addEventListener('pageshow', findAndKill);
+    setTimeout(findAndKill, 300);
+    setTimeout(findAndKill, 1000);
+
+    // Watch for changes
+    var observer = new MutationObserver(function() {
+        findAndKill();
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+    // Theme change
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-theme-btn]')) {
+            setTimeout(findAndKill, 50);
+            setTimeout(findAndKill, 300);
+            setTimeout(findAndKill, 800);
+        }
+    });
+})();
+</script>
 </body>
 </html>
