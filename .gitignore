@@ -1,85 +1,24 @@
-﻿*.log
-.DS_Store
-.env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
+﻿# ═══════════════════════════════════════════════════
+# Laravel .gitignore
+# ═══════════════════════════════════════════════════
+
+# === Dependencies ===
+/vendor
 /node_modules
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
-Thumbs.db
 
-# Env files
+# === Environment ===
+.env
 .env.*
 !.env.example
+.env.backup
+.env.production
 
-# Backup files
-*.bak
-*.bak_*
-*.broken-backup
-*.current_*
-*.old
-*.orig
-# ============================================================
-# Backup & temp files (from automated scripts)
-# ============================================================
-*.bak
-*.bak_*
-*.broken
-*.broken_*
-*.guba
-*.guba_*
-*.old
-*~
-
-# Tinker / temp scripts
-tinker_*.php
-tinker.php
-temp_*.php
-tmp_*.php
-
-# PowerShell mishap garbage files
-= @(
-s = @'
-t OK:*
-t INFO:*
-: 100px
-ourcesviews*
-*remember(*
-
-# Editor & OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# AUTO-GENERATED BACKUPS — ayaw commit
-*.bak
-*.bak_*
-*.bak-*
-*.orig
-*.old
-*~
-tinker_*.php
-temp_*.php
-tmp_*.php
-_*.php
-
-# Laravel storage
+# === Storage ===
+/storage/*.key
+/storage/pail
 /storage/framework/cache/data/*
 /storage/framework/sessions/*
 /storage/framework/views/*
@@ -89,11 +28,51 @@ _*.php
 !/storage/framework/views/.gitignore
 !/storage/logs/.gitignore
 
-# Bootstrap cache
+# === Bootstrap ===
 /bootstrap/cache/*
 !/bootstrap/cache/.gitignore
 
-# Env files
-.env
-.env.*
-!.env.example
+# === IDE ===
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+/.phpactor.json
+/.phpunit.cache
+*.swp
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# === Testing ===
+.phpunit.result.cache
+/auth.json
+Homestead.json
+Homestead.yaml
+
+# === Backup files ===
+*.bak
+*.bak_*
+*.bak-*
+*.old
+*.orig
+*.broken
+*.broken_*
+*.guba
+*.guba_*
+*.current_*
+*.broken-backup
+
+# === Temp scripts ===
+tinker_*.php
+tinker.php
+temp_*.php
+tmp_*.php
