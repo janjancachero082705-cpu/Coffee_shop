@@ -1,291 +1,401 @@
-@extends('portal.layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'My Inventory')
+@section('title', $store->store_name . ' — Transactions')
+@section('subtitle', 'Activity log for ' . $store->store_name)
 
 @section('content')
 
-{{-- ===== HERO STATS ===== --}}
-<div class="inv-hero">
-    <div class="inv-hero-item">
-        <div class="inv-hero-icon gold">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-        </div>
-        <div class="inv-hero-info">
-            <div class="inv-hero-lbl">Total Delivered</div>
-            <div class="inv-hero-val">{{ number_format($totalDelivered) }}</div>
-        </div>
-    </div>
+@php
+    $initials = strtoupper(substr($store->store_name ?? 'S', 0, 2));
+@endphp
 
-    <div class="inv-hero-item">
-        <div class="inv-hero-icon green">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M5 12l5 5L20 7"/>
-            </svg>
-        </div>
-        <div class="inv-hero-info">
-            <div class="inv-hero-lbl">On Hand</div>
-            <div class="inv-hero-val green">{{ number_format($totalOnHand) }}</div>
-        </div>
-    </div>
+<a href="{{ route('transactions.index') }}" class="tx-back">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to All Transactions
+</a>
 
-    <div class="inv-hero-item">
-        <div class="inv-hero-icon blue">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="9" cy="21" r="1"/>
-                <circle cx="20" cy="21" r="1"/>
-                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
-            </svg>
-        </div>
-        <div class="inv-hero-info">
-            <div class="inv-hero-lbl">Total Sold</div>
-            <div class="inv-hero-val blue">{{ number_format($totalSold) }}</div>
+<div class="tx-hero">
+    <div class="tx-hero-avatar">{{ $initials }}</div>
+    <div class="tx-hero-info">
+        <div class="tx-hero-name">{{ $store->store_name }}</div>
+        <div class="tx-hero-meta">
+            <span class="tx-hero-code">{{ $store->code }}</span>
+            <span class="tx-hero-dot">·</span>
+            <span>{{ $totalEvents }} event(s)</span>
         </div>
     </div>
 </div>
 
-{{-- ===== DELIVERED PRODUCTS LIST ===== --}}
-@if($inventories->isEmpty())
-    <div class="inv-empty">
-        <div class="inv-empty-icon">
-            <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+<div class="tx-filter-bar">
+    <form method="GET" class="tx-filter-form">
+        <div class="tx-filter-group">
+            <label class="tx-filter-lbl">From</label>
+            <input type="date" name="from" value="{{ $dateFrom }}" class="tx-filter-input">
+        </div>
+        <div class="tx-filter-group">
+            <label class="tx-filter-lbl">To</label>
+            <input type="date" name="to" value="{{ $dateTo }}" class="tx-filter-input">
+        </div>
+        <button type="submit" class="tx-filter-btn">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+            Filter
+        </button>
+        @if($dateFrom || $dateTo)
+            <a href="{{ route('transactions.store-transactions', $store->id) }}" class="tx-filter-clear">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                Clear
+            </a>
+        @endif
+    </form>
+</div>
+<div class="tx-stats">
+    <div class="tx-stat tx-stat-primary">
+        <div class="tx-stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 8v4l3 3M12 22a10 10 0 100-20 10 10 0 000 20z"/>
             </svg>
         </div>
-        <div class="inv-empty-title">Wala pay deliveries</div>
-        <div class="inv-empty-text">Kung naay ma-deliver nga products, makita na nimo dinhi.</div>
+        <div class="tx-stat-body">
+            <div class="tx-stat-lbl">Total Events</div>
+            <div class="tx-stat-val">{{ $totalEvents }}</div>
+        </div>
     </div>
-@else
-    <div class="inv-list">
-        @foreach($inventories as $inv)
-            @php
-                $product = $inv->product;
-                $initials = strtoupper(substr($product->name ?? 'P', 0, 2));
-                $delivered = (int) $inv->quantity_delivered;
-                $sold      = (int) $inv->quantity_sold;
-                $onHand    = (int) $inv->quantity_on_hand;
-                $returned  = (int) $inv->quantity_returned;
-
-                // Progress: pila ka % ang nahalin
-                $soldPct = $delivered > 0 ? min(100, ($sold / $delivered) * 100) : 0;
-            @endphp
-
-            <div class="inv-card">
-                {{-- Header --}}
-                <div class="inv-card-head">
-                    <div class="inv-card-avatar">
-                        @if($product && $product->image_url)
-                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}">
-                        @else
-                            {{ $initials }}
-                        @endif
-                    </div>
-                    <div class="inv-card-info">
-                        <div class="inv-card-name">{{ $product->name ?? 'Unknown Product' }}</div>
-                        <div class="inv-card-sku">{{ $product->sku ?? '—' }}</div>
-                    </div>
-                </div>
-
-                {{-- Stats grid --}}
-                <div class="inv-card-stats">
-                    <div class="inv-stat">
-                        <div class="inv-stat-lbl">Delivered</div>
-                        <div class="inv-stat-val">{{ number_format($delivered) }}</div>
-                    </div>
-                    <div class="inv-stat">
-                        <div class="inv-stat-lbl">Sold</div>
-                        <div class="inv-stat-val blue">{{ number_format($sold) }}</div>
-                    </div>
-                    <div class="inv-stat">
-                        <div class="inv-stat-lbl">On Hand</div>
-                        <div class="inv-stat-val {{ $onHand > 0 ? 'green' : '' }}">{{ number_format($onHand) }}</div>
-                    </div>
-                    @if($returned > 0)
-                        <div class="inv-stat">
-                            <div class="inv-stat-lbl">Returned</div>
-                            <div class="inv-stat-val amber">{{ number_format($returned) }}</div>
-                        </div>
-                    @endif
-                </div>
-
-                {{-- Progress bar --}}
-                @if($delivered > 0)
-                    <div class="inv-progress">
-                        <div class="inv-progress-info">
-                            <span>{{ number_format($soldPct, 0) }}% sold</span>
-                            <span>{{ number_format($sold) }} / {{ number_format($delivered) }}</span>
-                        </div>
-                        <div class="inv-progress-track">
-                            <div class="inv-progress-fill" style="width: {{ $soldPct }}%;"></div>
-                        </div>
-                    </div>
+    <div class="tx-stat tx-stat-green">
+        <div class="tx-stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+        </div>
+        <div class="tx-stat-body">
+            <div class="tx-stat-lbl">Total Amount</div>
+            <div class="tx-stat-val green">&#8369;{{ number_format($totalAmount, 2) }}</div>
+        </div>
+    </div>
+    <div class="tx-stat tx-stat-amber">
+        <div class="tx-stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+        </div>
+        <div class="tx-stat-body">
+            <div class="tx-stat-lbl">Latest Activity</div>
+            <div class="tx-stat-val amber">
+                @if($activities->first() && $activities->first()['time'])
+                    {{ \Carbon\Carbon::parse($activities->first()['time'])->diffForHumans() }}
+                @else
+                    —
                 @endif
             </div>
-        @endforeach
+        </div>
     </div>
-@endif
+</div>
+
+<div class="tx-list-card">
+    <div class="tx-list-head">
+        <div class="tx-list-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 8v4l3 3M12 22a10 10 0 100-20 10 10 0 000 20z"/>
+            </svg>
+            Activity Timeline
+        </div>
+        <div class="tx-list-count">{{ $totalEvents }} total</div>
+    </div>
+
+    @forelse($activities as $act)
+        <a href="{{ $act['url'] }}" class="tx-item" style="--accent: {{ $act['color'] }};">
+            <div class="tx-item-marker">
+                @if($act['icon'] === 'cart')
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                @elseif($act['icon'] === 'truck')
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                @elseif($act['icon'] === 'cash')
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                @else
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                @endif
+            </div>
+            <div class="tx-item-info">
+                <div class="tx-item-title">{{ $act['title'] }}</div>
+                <div class="tx-item-desc">{{ $act['description'] ?? $act['desc'] ?? '' }}</div>
+            </div>
+            <div class="tx-item-time">
+                <div class="tx-item-time-val">{{ \Carbon\Carbon::parse($act['time'])->format('M d, Y') }}</div>
+                <div class="tx-item-time-ago">{{ \Carbon\Carbon::parse($act['time'])->diffForHumans() }}</div>
+            </div>
+            @if(($act['amount'] ?? 0) > 0)
+                <div class="tx-item-amount">&#8369;{{ number_format($act['amount'], 2) }}</div>
+            @endif
+        </a>
+    @empty
+        <div class="tx-empty">Walay transactions pa.</div>
+    @endforelse
+</div>
 
 @endsection
 
 @push('styles')
 <style>
-    /* HERO STATS */
-    .inv-hero {
+    .tx-back {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 14px; margin-bottom: 16px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        color: #d4d4d8; text-decoration: none;
+        font-size: 12px; font-weight: 700;
+        transition: all 0.15s;
+    }
+    .tx-back:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(201,169,97,0.3);
+        color: #c9a961;
+    }
+    .tx-hero {
+        display: flex; align-items: center; gap: 16px;
+        padding: 22px 24px;
+        background: linear-gradient(135deg, rgba(30,26,22,0.85), rgba(21,18,15,0.9));
+        border: 1px solid rgba(255,255,255,0.06);
+        border-left: 3px solid #c9a961;
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+    .tx-hero-avatar {
+        width: 60px; height: 60px; border-radius: 16px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        display: grid; place-items: center;
+        font-weight: 800; font-size: 20px;
+        flex-shrink: 0;
+    }
+    .tx-hero-info { flex: 1; min-width: 0; }
+    .tx-hero-name {
+        font-size: 22px; font-weight: 800;
+        color: #fafafa; letter-spacing: -0.02em;
+        margin-bottom: 6px;
+    }
+    .tx-hero-meta {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 12px; color: #71717a;
+    }
+    .tx-hero-code { font-family: ui-monospace, monospace; color: #a1a1aa; }
+    .tx-hero-dot { color: #52525b; }
+
+    .tx-stats {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 18px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
     }
-    .inv-hero-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
+    .tx-stat {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 18px;
+        background: linear-gradient(165deg, rgba(30,26,22,0.9), rgba(21,18,15,0.9));
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 14px;
+        position: relative; overflow: hidden;
+        transition: all 0.2s;
     }
-    .inv-hero-icon {
-        width: 36px; height: 36px; border-radius: 10px;
+    .tx-stat::before {
+        content: ''; position: absolute;
+        top: 0; left: 0; right: 0; height: 2px;
+    }
+    .tx-stat-primary::before { background: linear-gradient(90deg, #c9a961, transparent); }
+    .tx-stat-green::before   { background: linear-gradient(90deg, #22c55e, transparent); }
+    .tx-stat-amber::before   { background: linear-gradient(90deg, #f59e0b, transparent); }
+    .tx-stat:hover { transform: translateY(-2px); border-color: rgba(201,169,97,0.2); }
+    .tx-stat-icon {
+        width: 38px; height: 38px; border-radius: 11px;
         display: grid; place-items: center; flex-shrink: 0;
     }
-    .inv-hero-icon.gold  { background: rgba(201, 169, 97, 0.15); color: #c9a961; }
-    .inv-hero-icon.green { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
-    .inv-hero-icon.blue  { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-    .inv-hero-info { min-width: 0; }
-    .inv-hero-lbl {
-        font-size: 9.5px; font-weight: 800; color: #71717a;
-        text-transform: uppercase; letter-spacing: 0.06em;
-        margin-bottom: 3px;
-    }
-    .inv-hero-val {
-        font-size: 18px; font-weight: 800; color: #fafafa;
-        font-variant-numeric: tabular-nums;
-        line-height: 1;
-    }
-    .inv-hero-val.green { color: #22c55e; }
-    .inv-hero-val.blue  { color: #3b82f6; }
-
-    /* LIST */
-    .inv-list { display: flex; flex-direction: column; gap: 10px; }
-    .inv-card {
-        padding: 14px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        transition: all 0.18s;
-    }
-    .inv-card:hover {
-        border-color: rgba(201, 169, 97, 0.3);
-        transform: translateY(-2px);
-    }
-
-    .inv-card-head {
-        display: flex; align-items: center; gap: 12px;
-        padding-bottom: 12px; margin-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .inv-card-avatar {
-        width: 44px; height: 44px; border-radius: 12px;
-        background: linear-gradient(135deg, rgba(201, 169, 97, 0.25), rgba(201, 169, 97, 0.08));
-        color: #c9a961;
-        display: grid; place-items: center;
-        font-weight: 800; font-size: 14px;
-        border: 1px solid rgba(201, 169, 97, 0.3);
-        flex-shrink: 0; overflow: hidden;
-    }
-    .inv-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .inv-card-info { min-width: 0; flex: 1; }
-    .inv-card-name {
-        font-size: 14px; font-weight: 800; color: #fafafa;
-        margin-bottom: 3px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .inv-card-sku {
-        font-size: 11px; color: #71717a;
-        font-family: ui-monospace, monospace;
-    }
-
-    .inv-card-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-    .inv-stat {
-        padding: 10px 8px;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        border-radius: 10px;
-        text-align: center;
-    }
-    .inv-stat-lbl {
-        font-size: 9px; font-weight: 800; color: #71717a;
-        text-transform: uppercase; letter-spacing: 0.06em;
+    .tx-stat-primary .tx-stat-icon { background: rgba(201,169,97,0.15); color: #c9a961; }
+    .tx-stat-green   .tx-stat-icon { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .tx-stat-amber   .tx-stat-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .tx-stat-body { flex: 1; min-width: 0; }
+    .tx-stat-lbl {
+        font-size: 10px; font-weight: 800; color: #71717a;
+        text-transform: uppercase; letter-spacing: 0.08em;
         margin-bottom: 4px;
     }
-    .inv-stat-val {
-        font-size: 16px; font-weight: 800; color: #fafafa;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.02em;
+    .tx-stat-val {
+        font-size: 20px; font-weight: 800; color: #fafafa;
+        letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
     }
-    .inv-stat-val.green { color: #22c55e; }
-    .inv-stat-val.blue  { color: #3b82f6; }
-    .inv-stat-val.amber { color: #f59e0b; }
+    .tx-stat-val.green { color: #22c55e; }
+    .tx-stat-val.amber { color: #f59e0b; }
 
-    .inv-progress { padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.04); }
-    .inv-progress-info {
-        display: flex; justify-content: space-between;
-        font-size: 10.5px; font-weight: 700; color: #71717a;
-        margin-bottom: 6px;
-    }
-    .inv-progress-info span:first-child { color: #c9a961; }
-    .inv-progress-track {
-        height: 6px; border-radius: 3px;
-        background: rgba(255, 255, 255, 0.05);
-        overflow: hidden;
-    }
-    .inv-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #c9a961, #d4b673);
-        border-radius: 3px;
-        min-width: 3px;
-        transition: width 0.4s;
-    }
-
-    /* EMPTY */
-    .inv-empty {
-        text-align: center;
-        padding: 50px 20px 40px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
+    .tx-list-card {
+        padding: 18px;
+        background: linear-gradient(165deg, rgba(30,26,22,0.9), rgba(21,18,15,0.9));
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 16px;
     }
-    .inv-empty-icon {
-        width: 72px; height: 72px; margin: 0 auto 16px;
-        border-radius: 20px;
-        background: rgba(201, 169, 97, 0.1);
-        color: rgba(201, 169, 97, 0.6);
+    .tx-list-head {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: 14px; margin-bottom: 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .tx-list-title {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13px; font-weight: 800;
+        color: #fafafa; text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .tx-list-title svg { color: #c9a961; }
+    .tx-list-count { font-size: 11px; font-weight: 700; color: #71717a; }
+
+    .tx-item {
+        display: grid;
+        grid-template-columns: 40px 1fr auto auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.15s;
+    }
+    .tx-item:hover {
+        background: rgba(255,255,255,0.05);
+        border-color: var(--accent);
+        transform: translateX(3px);
+    }
+    .tx-item-marker {
+        width: 40px; height: 40px; border-radius: 11px;
+        background: color-mix(in srgb, var(--accent) 15%, transparent);
+        color: var(--accent);
         display: grid; place-items: center;
-        border: 1px solid rgba(201, 169, 97, 0.15);
+        flex-shrink: 0;
     }
-    .inv-empty-title {
-        font-size: 17px; font-weight: 800; color: var(--text-primary);
-        margin-bottom: 6px;
+    .tx-item-info { min-width: 0; }
+    .tx-item-title {
+        font-size: 13px; font-weight: 800;
+        color: #fafafa; margin-bottom: 3px;
+        font-family: ui-monospace, monospace;
     }
-    .inv-empty-text {
-        font-size: 12.5px; color: var(--text-muted);
-        max-width: 280px; margin: 0 auto;
-        line-height: 1.5;
+    .tx-item-desc { font-size: 11px; color: #71717a; }
+    .tx-item-time { text-align: right; }
+    .tx-item-time-val { font-size: 11px; font-weight: 700; color: #a1a1aa; }
+    .tx-item-time-ago { font-size: 10px; color: #71717a; margin-top: 2px; }
+    .tx-item-amount {
+        font-size: 14px; font-weight: 800;
+        color: #22c55e; font-variant-numeric: tabular-nums;
+        padding-left: 14px;
+        border-left: 1px solid rgba(255,255,255,0.06);
+    }
+    .tx-empty {
+        text-align: center; padding: 40px 20px;
+        color: #71717a; font-size: 13px;
     }
 
-    @media (max-width: 480px) {
-        .inv-hero { grid-template-columns: 1fr; }
-        .inv-hero-item { padding: 10px; }
-        .inv-card-stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        .inv-stat { padding: 8px 4px; }
-        .inv-stat-val { font-size: 14px; }
+    @media (max-width: 800px) {
+        .tx-stats { grid-template-columns: 1fr; }
+        .tx-item { grid-template-columns: 40px 1fr auto; gap: 10px; }
+        .tx-item-time { display: none; }
+    }
+
+    /* ═══ DATE FILTER BAR ═══ */
+    .tx-filter-bar {
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        background: linear-gradient(165deg, rgba(30,26,22,0.6), rgba(21,18,15,0.6));
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+    }
+    .tx-filter-form {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .tx-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .tx-filter-lbl {
+        font-size: 9px;
+        font-weight: 800;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .tx-filter-input {
+        height: 32px;
+        padding: 0 10px;
+        font-size: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 8px;
+        background: rgba(0,0,0,0.3);
+        color: #fafafa;
+        box-sizing: border-box;
+        min-width: 130px;
+    }
+    .tx-filter-input:focus {
+        outline: none;
+        border-color: #c9a961;
+        box-shadow: 0 0 0 2px rgba(201,169,97,0.15);
+    }
+    .tx-filter-input::-webkit-calendar-picker-indicator {
+        filter: invert(0.5);
+        cursor: pointer;
+    }
+    .tx-filter-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        height: 32px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #c9a961, #b8944d);
+        color: #0f0f14;
+        cursor: pointer;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+    .tx-filter-btn:hover {
+        box-shadow: 0 4px 12px -4px rgba(201,169,97,0.5);
+    }
+    .tx-filter-clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 32px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.04);
+        color: #d4d4d8;
+        text-decoration: none;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+    .tx-filter-clear:hover {
+        background: rgba(239,68,68,0.15);
+        border-color: rgba(239,68,68,0.3);
+        color: #ef4444;
+    }
+
+    @media (max-width: 700px) {
+        .tx-filter-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .tx-filter-input {
+            width: 100%;
+        }
     }
 </style>
 @endpush

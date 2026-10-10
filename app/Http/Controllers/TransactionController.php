@@ -309,9 +309,15 @@ class TransactionController extends Controller
 
     public function storeTransactions(\App\Models\Store $store)
     {
+        $dateFrom = request('from');
+        $dateTo   = request('to');
+
         $activities = collect();
 
-        \App\Models\ReorderRequest::where('store_id', $store->id)->latest()->limit(50)->get()
+        \App\Models\ReorderRequest::where('store_id', $store->id)
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->latest()->limit(50)->get()
             ->each(function ($o) use ($activities) {
                 $activities->push([
                     'type' => 'order', 'icon' => 'cart', 'color' => '#3b82f6',
@@ -322,7 +328,10 @@ class TransactionController extends Controller
                 ]);
             });
 
-        \App\Models\DeliveryReceipt::where('store_id', $store->id)->latest()->limit(50)->get()
+        \App\Models\DeliveryReceipt::where('store_id', $store->id)
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->latest()->limit(50)->get()
             ->each(function ($d) use ($activities) {
                 $activities->push([
                     'type' => 'delivery', 'icon' => 'truck', 'color' => '#f59e0b',
@@ -332,7 +341,10 @@ class TransactionController extends Controller
                 ]);
             });
 
-        \App\Models\ConsignmentPayment::where('store_id', $store->id)->verified()->latest()->limit(50)->get()
+        \App\Models\ConsignmentPayment::where('store_id', $store->id)->verified()
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->latest()->limit(50)->get()
             ->each(function ($p) use ($activities) {
                 $activities->push([
                     'type' => 'payment', 'icon' => 'cash', 'color' => '#22c55e',
@@ -343,7 +355,10 @@ class TransactionController extends Controller
                 ]);
             });
 
-        \App\Models\SalesReport::where('store_id', $store->id)->latest()->limit(50)->get()
+        \App\Models\SalesReport::where('store_id', $store->id)
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->latest()->limit(50)->get()
             ->each(function ($r) use ($activities) {
                 $activities->push([
                     'type' => 'report', 'icon' => 'file', 'color' => '#c9a961',
@@ -359,6 +374,6 @@ class TransactionController extends Controller
         $totalAmount = $activities->sum('amount');
         $totalEvents = $activities->count();
 
-        return view('transactions.store', compact('store', 'activities', 'totalAmount', 'totalEvents'));
+        return view('transactions.store', compact('store', 'activities', 'totalAmount', 'totalEvents', 'dateFrom', 'dateTo'));
     }
 }

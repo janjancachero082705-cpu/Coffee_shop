@@ -221,12 +221,45 @@ class ConsignmentPaymentController extends Controller
 
         // Notify store
         try {
+            // Compute payment status + balance
+            $balance = 0;
+            $total = 0;
+            $paid = 0;
+
+            if ($payment->sales_report_id) {
+                $sr = \App\Models\SalesReport::find($payment->sales_report_id);
+                if ($sr) {
+                    $balance = (float) $sr->balance;
+                    $total = (float) $sr->total_sales;
+                    $paid = (float) $sr->amount_paid;
+                }
+            } elseif ($payment->delivery_receipt_id) {
+                $dr = \App\Models\DeliveryReceipt::find($payment->delivery_receipt_id);
+                if ($dr) {
+                    $balance = (float) $dr->balance;
+                    $total = (float) $dr->total_amount;
+                    $paid = (float) $dr->amount_paid;
+                }
+            }
+
+            $status = $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
+            $statusLabel = $balance <= 0
+                ? '✅ Fully Paid'
+                : '⚠️ Balance: ₱' . number_format($balance, 2);
+
             $this->notifyStore(
                 $payment->store_id,
                 'payment_verified',
                 'Payment Verified',
-                "Ang imong bayad {$payment->payment_number} (₱" . number_format($payment->amount, 2) . ") gi-approve na sa admin.",
-                ['payment_id' => $payment->id]
+                "Bayad {$payment->payment_number} (₱" . number_format($payment->amount, 2) . ") approved — {$statusLabel}",
+                [
+                    'payment_id' => $payment->id,
+                    'status' => $status,
+                    'balance' => $balance,
+                    'total' => $total,
+                    'paid' => $paid,
+                    'amount' => (float) $payment->amount,
+                ]
             );
         } catch (\Throwable $e) {
             \Log::warning('Notification failed: ' . $e->getMessage());

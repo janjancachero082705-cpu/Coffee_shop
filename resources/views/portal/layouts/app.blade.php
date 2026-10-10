@@ -2019,7 +2019,172 @@
             .pp-card-amount { font-size: 18px; }
             .pp-section { padding: 16px; }
         }
-    </style>
+    
+    /* ═══ NOTIFICATION BADGE — PAYMENT STATUS ═══ */
+    .pn-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 8px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 800;
+        margin-left: 6px;
+        vertical-align: middle;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+    }
+    .pn-badge-paid {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .pn-badge-partial {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .pn-badge-unpaid {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* ═══ STATIC STORE (walay click) ═══ */
+    .p-store-static {
+        cursor: default !important;
+        pointer-events: none !important;
+    }
+    .p-store-static:hover {
+        background: transparent !important;
+    }
+    .p-store-static:active {
+        transform: none !important;
+    }
+    /* Hide arrow kung naa pa */
+    .p-store-static .p-store-arrow,
+    .p-store-static svg.p-store-arrow {
+        display: none !important;
+    }
+
+    /* ═══ TOPBAR STORE NAME (text only) ═══ */
+    .p-topbar-store-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+        flex: 1;
+        margin-left: 4px;
+    }
+    .p-topbar-store-name {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #f5f3f0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+    .p-topbar-store-code {
+        font-size: 10px;
+        color: #c9a961;
+        font-family: ui-monospace, monospace;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    
+    body.p-sidebar-open .p-hamburger { opacity: 0; pointer-events: none; transform: scale(0.5); }
+
+    
+
+    /* ══════════════════════════════════════════
+       FLOATING BUTTONS — HAMBURGER + REFRESH
+       Fixed position, walay animation, walay scroll
+       ══════════════════════════════════════════ */
+
+    .p-float-btn {
+        position: fixed !important;
+        z-index: 9997 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        border: none !important;
+        background: linear-gradient(135deg, #c9a961, #8a5f36) !important;
+        color: #fff !important;
+        cursor: pointer !important;
+        box-shadow:
+            0 10px 28px -6px rgba(201, 169, 97, 0.6),
+            0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        -webkit-tap-highlight-color: transparent !important;
+        animation: none !important;
+    }
+    .p-float-btn:hover {
+        transform: scale(1.08) !important;
+        box-shadow:
+            0 14px 36px -6px rgba(201, 169, 97, 0.8),
+            0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+    .p-float-btn:active {
+        transform: scale(0.95) !important;
+    }
+    .p-float-btn svg {
+        display: block !important;
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* Hamburger — TOP LEFT */
+    .p-float-hamburger {
+        top: 14px !important;
+        left: 14px !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+    .p-float-hamburger svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    
+    .p-float-refresh svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    /* Hide hamburger kung sidebar open */
+    body.p-sidebar-open .p-float-hamburger {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0.5) !important;
+    }
+
+    /* Topbar — give space for floating buttons */
+    .p-topbar {
+        padding-left: 68px !important;
+        padding-right: 68px !important;
+    }
+
+    /* Mobile — topbar */
+    @media (max-width: 480px) {
+        .p-float-btn {
+            width: 42px !important;
+            height: 42px !important;
+            border-radius: 13px !important;
+        }
+        .p-float-hamburger svg { width: 20px !important; height: 20px !important; }
+        .p-float-refresh svg { width: 17px !important; height: 17px !important; }
+        .p-topbar {
+            padding-left: 62px !important;
+            padding-right: 62px !important;
+        }
+    }</style>
     @stack('styles')
 
 <!-- Mobile refresh — touch-friendly -->
@@ -2051,6 +2216,120 @@
             display: block !important;
         }
     }
+
+
+
+
+
+
+
+
+
+
+</style>
+    <style>
+    /* ════════════════════════════════════════════════════
+       FLOATING HAMBURGER — CLEAN, CLICKABLE
+       ════════════════════════════════════════════════════ */
+    #pHamburger,
+    button#pHamburger,
+    button.p-float-hamburger,
+    .p-float-hamburger {
+        position: fixed !important;
+        top: 14px !important;
+        left: 14px !important;
+        right: auto !important;
+        bottom: auto !important;
+        z-index: 10000 !important;
+
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+
+        background: rgba(15, 15, 20, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+
+        color: #ffffff !important;
+        cursor: pointer !important;
+
+        pointer-events: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+        transition: all 0.15s ease !important;
+
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        outline: none !important;
+    }
+
+    #pHamburger:hover,
+    button#pHamburger:hover,
+    .p-float-hamburger:hover {
+        background: rgba(201, 169, 97, 0.9) !important;
+        border-color: rgba(201, 169, 97, 0.9) !important;
+        transform: scale(1.05) !important;
+    }
+
+    #pHamburger:active,
+    button#pHamburger:active,
+    .p-float-hamburger:active {
+        transform: scale(0.95) !important;
+    }
+
+    #pHamburger svg,
+    button#pHamburger svg,
+    .p-float-hamburger svg {
+        display: block !important;
+        width: 24px !important;
+        height: 24px !important;
+        pointer-events: none !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Mobile — gamay */
+    @media (max-width: 480px) {
+        #pHamburger,
+        button#pHamburger,
+        .p-float-hamburger {
+            top: 12px !important;
+            left: 12px !important;
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 11px !important;
+        }
+        #pHamburger svg,
+        button#pHamburger svg,
+        .p-float-hamburger svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+    }
+
+    /* Topbar padding */
+    .p-topbar {
+        padding-left: 66px !important;
+    }
+    @media (max-width: 480px) {
+        .p-topbar {
+            padding-left: 60px !important;
+        }
+    }
+
+    /* Hide hamburger when sidebar open */
+    body.p-sidebar-open #pHamburger,
+    body.p-sidebar-open .p-float-hamburger {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 </style>
 </head>
 <body>
@@ -2060,35 +2339,23 @@
     {{-- ===== TOPBAR ===== --}}
     <header class="p-topbar">
         <div class="p-topbar-inner">
-            <a href="{{ route('portal.profile') }}" class="p-store-link" id="profileTrigger">
-                <div class="p-store-avatar">
-                    @if(Auth::guard('store')->user() && Auth::guard('store')->user()->logo_url)
-                        <img src="{{ Auth::guard('store')->user()->logo_url }}" alt="">
-                    @else
-                        {{ strtoupper(substr(Auth::guard('store')->user()->store_name ?? 'ST', 0, 2)) }}
-                    @endif
-                </div>
-                <div class="p-store-info">
-                    <div class="p-store-name">{{ Auth::guard('store')->user()->store_name ?? 'Store Portal' }}</div>
-                    <div class="p-store-code">{{ Auth::guard('store')->user()->code ?? '' }}</div>
-                </div>
-                <svg class="p-store-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
-            </a>
-
-            <div class="p-topbar-actions">
-                <button type="button" class="p-icon-btn" id="pRefreshBtn" title="Refresh" onclick="pRefresh()">
-                    <svg id="pRefreshIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M23 4v6h-6M1 20v-6h6"/>
-                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                    </svg>
-                </button>
-
-
+            <div class="p-topbar-store-text">
+                <div class="p-topbar-store-name">{{ Auth::guard('store')->user()->store_name ?? 'Store Portal' }}</div>
+                <div class="p-topbar-store-code">{{ Auth::guard('store')->user()->code ?? '' }}</div>
             </div>
         </div>
     </header>
+
+    {{-- ═══ FLOATING HAMBURGER — SINGLE CLEAN BUTTON ═══ --}}
+    <button type="button" class="p-float-hamburger" id="pHamburger" aria-label="Open menu">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+    </button>
+
+    
+
+    
 
     {{-- ===== NAV TABS ===== --}}
     <nav class="p-nav">
@@ -2478,11 +2745,7 @@
         } catch (e) {}
 
         // ===== TRIGGERS =====
-        var profileTrigger = document.getElementById('profileTrigger');
-        if (profileTrigger) {
-            profileTrigger.addEventListener('click', function(e) {
-                e.preventDefault();
-                openPortalModal("{{ route('portal.profile') }}", {
+        ", {
                     title: 'My Account',
                     subtitle: 'Manage your store profile',
                     cacheKey: 'profile'
@@ -2967,6 +3230,16 @@
         .pn-panel { bottom: 82px; right: 16px; left: 16px; width: auto; max-width: none; }
         .pn-popups { top: 12px; right: 12px; left: 12px; width: auto; max-width: none; }
     }
+
+
+
+
+
+
+
+
+
+
 </style>
 
 <script>
@@ -3060,10 +3333,21 @@
             const item = document.createElement('div');
             item.className = 'pn-item unread';
             item.dataset.id = n.id;
+
+            // Build payment status badge
+            let badge = '';
+            if (n.status === 'paid') {
+                badge = '<span class="pn-badge pn-badge-paid">✅ Paid</span>';
+            } else if (n.status === 'partial') {
+                badge = '<span class="pn-badge pn-badge-partial">⚠️ ₱' + Number(n.balance).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span>';
+            } else if (n.status === 'unpaid') {
+                badge = '<span class="pn-badge pn-badge-unpaid">❌ ₱' + Number(n.balance).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span>';
+            }
+
             item.innerHTML = `
                 <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
                 <div class="pn-content">
-                    <div class="pn-title">${esc(n.title)}</div>
+                    <div class="pn-title">${esc(n.title)} ${badge}</div>
                     <div class="pn-message">${esc(n.message)}</div>
                     <div class="pn-time">${esc(n.created_at)}</div>
                 </div>
@@ -3086,10 +3370,21 @@
     function showPopup(n) {
         const el = document.createElement('div');
         el.className = 'pn-popup';
+
+        // Build payment status badge
+        let badge = '';
+        if (n.status === 'paid') {
+            badge = '<span class="pn-badge pn-badge-paid">✅ Paid</span>';
+        } else if (n.status === 'partial') {
+            badge = '<span class="pn-badge pn-badge-partial">⚠️ ₱' + Number(n.balance).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span>';
+        } else if (n.status === 'unpaid') {
+            badge = '<span class="pn-badge pn-badge-unpaid">❌ ₱' + Number(n.balance).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span>';
+        }
+
         el.innerHTML = `
             <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
             <div class="pn-content">
-                <div class="pn-title">${esc(n.title)}</div>
+                <div class="pn-title">${esc(n.title)} ${badge}</div>
                 <div class="pn-message">${esc(n.message)}</div>
             </div>
         `;
@@ -3286,7 +3581,17 @@
                 font-size: 7px !important;
             }
         }
-    </style>
+    
+
+
+
+
+
+
+
+
+
+</style>
 
 <script>
 (function() {
@@ -3397,18 +3702,8 @@
         }, 250);
     };
 
-    // Backup: attach click listener (para kung onclick attribute wala mo-work)
-    document.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('pRefreshBtn');
-        if (btn && !btn._refreshAttached) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.pRefresh();
-            });
-            btn._refreshAttached = true;
-            console.log('[Refresh] Listener attached to button');
-        }
-    });
+    
+            
 
     // Re-attach kung naay dynamic na button (after page swap sa instant nav)
     document.addEventListener('click', function(e) {
@@ -3501,6 +3796,1036 @@
 
     console.log('[Portal] portalMobileRefresh ready');
 })();
+</script>
+
+{{-- ═══ SIDEBAR DRAWER (mobile) ═══ --}}
+@auth('store')
+<div class="p-sidebar-overlay" id="pSidebarOverlay" onclick="pToggleSidebar(false)"></div>
+
+<aside class="p-sidebar" id="pSidebar">
+    <div class="p-sidebar-head">
+        <div class="p-sidebar-brand">
+            <div class="p-sidebar-logo">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                    <path d="M6 1v3M10 1v3M14 1v3"/>
+                </svg>
+            </div>
+            <div>
+                <div class="p-sidebar-title">Coffee Beans</div>
+                <div class="p-sidebar-sub">Store Portal</div>
+            </div>
+        </div>
+        <button type="button" class="p-sidebar-close" onclick="pToggleSidebar(false)" aria-label="Close menu">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <nav class="p-sidebar-nav">
+        <div class="p-sidebar-section">
+            <div class="p-sidebar-section-title">Main</div>
+            <a href="{{ route('portal.dashboard') }}" class="p-sidebar-link {{ request()->routeIs('portal.dashboard') ? 'active' : '' }}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+        </div>
+
+        <div class="p-sidebar-section">
+            <div class="p-sidebar-section-title">Consignment</div>
+            <a href="{{ route('portal.orders.index') }}" class="p-sidebar-link {{ request()->routeIs('portal.orders.*') ? 'active' : '' }}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                </svg>
+                <span>Orders</span>
+            </a>
+            <a href="{{ route('portal.deliveries.index') }}" class="p-sidebar-link {{ request()->routeIs('portal.deliveries.*') ? 'active' : '' }}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                    <path d="M16 8h4l3 3v5h-7V8z"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+                <span>Deliveries</span>
+            </a>
+            <a href="{{ route('portal.inventory.index') }}" class="p-sidebar-link p-hide-mobile {{ request()->routeIs('portal.inventory.*') ? 'active' : '' }}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                <span>Inventory</span>
+            </a>
+        </div>
+
+        <div class="p-sidebar-section">
+            <div class="p-sidebar-section-title">Finance</div>
+            <a href="{{ route('portal.reports.index') }}" class="p-sidebar-link {{ request()->routeIs('portal.reports.*') || request()->routeIs('portal.payments.*') ? 'active' : '' }}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                </svg>
+                <span>Finance</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="p-sidebar-foot">
+        <div class="p-sidebar-user">
+            <div class="p-sidebar-user-avatar">
+                @if(Auth::guard('store')->user() && Auth::guard('store')->user()->logo_url)
+                    <img src="{{ Auth::guard('store')->user()->logo_url }}" alt="">
+                @else
+                    {{ strtoupper(substr(Auth::guard('store')->user()->store_name ?? 'ST', 0, 2)) }}
+                @endif
+            </div>
+            <div class="p-sidebar-user-info">
+                <div class="p-sidebar-user-name">{{ Auth::guard('store')->user()->store_name ?? 'Store' }}</div>
+                <div class="p-sidebar-user-email">{{ Auth::guard('store')->user()->email ?? '' }}</div>
+            </div>
+        </div>
+
+        <a href="{{ route('portal.profile') }}" class="p-sidebar-foot-link" id="pSidebarProfile" onclick="event.preventDefault(); pToggleSidebar(false); if (typeof openPortalModal === 'function') { openPortalModal('{{ route('portal.profile') }}', { title: 'My Account', cacheKey: 'profile' }); }">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/>
+            </svg>
+            <span>Profile</span>
+        </a>
+
+        <form method="POST" action="{{ route('portal.logout') }}">
+            @csrf
+            <button type="submit" class="p-sidebar-foot-link danger">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <path d="M16 17l5-5-5-5M21 12H9"/>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </form>
+    </div>
+</aside>
+@endauth
+
+<style>
+
+
+    /* ═══ SIDEBAR OVERLAY ═══ */
+    .p-sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(5, 5, 8, 0.75);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+    }
+    .p-sidebar-overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* ═══ SIDEBAR DRAWER ═══ */
+    .p-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 84%;
+        max-width: 320px;
+        background: linear-gradient(180deg, #17141a 0%, #0f0d12 100%);
+        border-right: 1px solid rgba(201, 169, 97, 0.18);
+        z-index: 9999;
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 12px 0 60px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
+    }
+    .p-sidebar.open { transform: translateX(0); }
+
+    /* HEAD */
+    .p-sidebar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+    }
+    .p-sidebar-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .p-sidebar-logo {
+        width: 40px; height: 40px; border-radius: 12px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+        box-shadow: 0 6px 16px -6px rgba(201, 169, 97, 0.6);
+    }
+    .p-sidebar-title {
+        font-size: 14px; font-weight: 800; color: #f5f3f0;
+        letter-spacing: -0.01em;
+    }
+    .p-sidebar-sub {
+        font-size: 10.5px; color: #8a8378; font-weight: 600;
+        letter-spacing: 0.04em; margin-top: 1px;
+    }
+    .p-sidebar-close {
+        width: 32px; height: 32px; border-radius: 9px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #a8a5a0;
+        display: grid; place-items: center;
+        cursor: pointer; flex-shrink: 0;
+        transition: all 0.15s;
+        padding: 0;
+    }
+    .p-sidebar-close:hover, .p-sidebar-close:active {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #ef4444;
+    }
+
+    /* NAV — compact, walay scroll */
+    .p-sidebar-nav {
+        flex: 1;
+        overflow: hidden;
+        padding: 10px 10px 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .p-sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .p-sidebar-section:last-child { margin-bottom: 0; }
+    .p-sidebar-section-title {
+        font-size: 9px; font-weight: 800;
+        color: #8a8378; text-transform: uppercase;
+        letter-spacing: 0.14em;
+        padding: 4px 10px 2px;
+    }
+
+    .p-sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 9px 11px;
+        border-radius: 10px;
+        color: #a8a5a0;
+        font-size: 12.5px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 40px;
+    }
+    .p-sidebar-link svg { width: 16px; height: 16px; flex-shrink: 0; color: #8a8378; transition: color 0.15s; }
+    .p-sidebar-link:hover, .p-sidebar-link:active {
+        background: rgba(169, 120, 74, 0.1);
+        color: #f5f3f0;
+    }
+    .p-sidebar-link:hover svg { color: #c9a961; }
+    .p-sidebar-link.active {
+        background: linear-gradient(135deg, rgba(201, 169, 97, 0.2), rgba(138, 95, 54, 0.15));
+        color: #c9a961;
+        font-weight: 700;
+        box-shadow: inset 0 0 0 1px rgba(201, 169, 97, 0.25);
+    }
+    .p-sidebar-link.active svg { color: #c9a961; }
+
+    /* FOOT */
+    .p-sidebar-foot {
+        padding: 10px 10px 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .p-sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 10px;
+        background: rgba(169, 120, 74, 0.08);
+        border: 1px solid rgba(169, 120, 74, 0.18);
+        border-radius: 10px;
+        margin-bottom: 6px;
+    }
+    .p-sidebar-user-avatar {
+        width: 38px; height: 38px; border-radius: 10px;
+        background: linear-gradient(135deg, #c9a961, #8a5f36);
+        color: #fff;
+        display: grid; place-items: center;
+        font-weight: 800; font-size: 13px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .p-sidebar-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .p-sidebar-user-info { min-width: 0; flex: 1; }
+    .p-sidebar-user-name {
+        font-size: 12.5px; font-weight: 800; color: #f5f3f0;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .p-sidebar-user-email {
+        font-size: 10.5px; color: #8a8378;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        margin-top: 1px;
+    }
+
+    .p-sidebar-foot-link {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        color: #a8a5a0;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+        width: 100%;
+        background: none;
+        border: none;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 38px;
+    }
+    .p-sidebar-foot-link svg { width: 16px; height: 16px; }
+    .p-sidebar-foot-link svg { color: #8a8378; flex-shrink: 0; }
+    .p-sidebar-foot-link:hover, .p-sidebar-foot-link:active {
+        background: rgba(169, 120, 74, 0.1);
+        color: #f5f3f0;
+    }
+    .p-sidebar-foot-link:hover svg { color: #c9a961; }
+    .p-sidebar-foot-link.danger:hover, .p-sidebar-foot-link.danger:active {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+    .p-sidebar-foot-link.danger:hover svg { color: #ef4444; }
+
+    /* Prevent body scroll when sidebar open */
+    body.p-sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    /* ══════════════════════════════════════════
+       MOBILE LAYOUT FIX (max-width: 768px)
+       ══════════════════════════════════════════ */
+
+    @media (max-width: 768px) {
+
+        /* --- Portal wrap: full width, walay side gap --- */
+        .portal-wrap {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* --- Topbar: compact, full width --- */
+        .p-topbar {
+            padding: 10px 16px !important;
+            padding-left: 68px !important;
+            padding-right: 68px !important;
+            min-height: 56px !important;
+        }
+        .p-topbar-inner {
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        /* --- Store text: center, compact --- */
+        .p-topbar-store-text {
+            text-align: center !important;
+            align-items: center !important;
+            flex: 1 !important;
+            min-width: 0 !important;
+        }
+        .p-topbar-store-name {
+            font-size: 13px !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+        .p-topbar-store-code {
+            font-size: 9.5px !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+
+        /* --- Refresh button: keep floating --- */
+
+        /* --- Horizontal nav: HIDE sa mobile --- */
+        .p-nav {
+            display: none !important;
+        }
+
+        /* --- Main content: full width, sakto padding --- */
+        .p-main {
+            padding: 16px 14px 100px !important;  /* bottom space para dili matabunan sa bell */
+        }
+
+        /* --- Page head: stack vertically on mobile --- */
+        .p-page-head {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            margin-bottom: 16px !important;
+        }
+        .p-page-title {
+            font-size: 22px !important;
+        }
+
+        /* --- Stats: 2 columns on mobile --- */
+        .pp-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+        }
+        .pp-stats.stats-3col {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+        .pp-stat {
+            padding: 12px !important;
+        }
+        .pp-stat-value {
+            font-size: 20px !important;
+        }
+
+        /* --- Cards: compact --- */
+        .p-card, .pp-card, .pp-section {
+            padding: 14px !important;
+            border-radius: 14px !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* --- Floating buttons: smaller para dili mag-overlap --- */
+        .p-float-btn {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 12px !important;
+        }
+        .p-float-hamburger svg { width: 18px !important; height: 18px !important; }
+        .p-float-refresh svg { width: 16px !important; height: 16px !important; }
+
+        /* --- Bell: smaller + reposition --- */
+        .pn-bell {
+            width: 48px !important;
+            height: 48px !important;
+            bottom: 16px !important;
+            right: 16px !important;
+        }
+        .pn-bell svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        /* --- Sidebar: full width mobile --- */
+        .p-sidebar {
+            width: 88% !important;
+            max-width: 320px !important;
+        }
+
+        /* --- Alerts compact --- */
+        .p-alert {
+            padding: 11px 14px !important;
+            font-size: 12px !important;
+        }
+
+        /* --- Form inputs: sakto height --- */
+        .p-input, .p-select, .p-textarea {
+            font-size: 14px !important;  /* 16px para dili mo-zoom iOS */
+        }
+    }
+
+    /* --- Very small phones (< 420px) --- */
+    @media (max-width: 420px) {
+        .p-topbar {
+            padding-left: 62px !important;
+            padding-right: 62px !important;
+        }
+        .p-main {
+            padding: 14px 12px 100px !important;
+        }
+        .p-float-btn {
+            width: 38px !important;
+            height: 38px !important;
+        }
+        .pp-stat-value {
+            font-size: 18px !important;
+        }
+        .pp-stat-label {
+            font-size: 9px !important;
+        }
+    }
+
+    /* --- Desktop: portal wrap centered --- */
+    @media (min-width: 769px) {
+        .portal-wrap {
+            max-width: 640px !important;
+            margin: 0 auto !important;
+        }
+        .p-float-btn {
+            /* Desktop: floating gihapon pero naa sa kilid */
+            position: fixed !important;
+        }
+    }
+    /* ═══ FLOATING REFRESH — guaranteed visible ═══ */
+    .p-float-refresh,
+    #pRefreshBtn.p-float-btn,
+    button#pRefreshBtn {
+        position: fixed !important;
+        top: 14px !important;
+        right: 14px !important;
+        left: auto !important;
+        bottom: auto !important;
+        z-index: 9997 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        border: none !important;
+        background: linear-gradient(135deg, #c9a961, #8a5f36) !important;
+        color: #fff !important;
+        cursor: pointer !important;
+        box-shadow:
+            0 10px 28px -6px rgba(201, 169, 97, 0.6),
+            0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    .p-float-refresh svg,
+    #pRefreshBtn svg {
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        pointer-events: none !important;
+    }
+    .p-float-refresh:active,
+    #pRefreshBtn:active {
+        transform: scale(0.95) !important;
+    }
+
+    @media (max-width: 480px) {
+        .p-float-refresh,
+        #pRefreshBtn.p-float-btn,
+        button#pRefreshBtn {
+            top: 12px !important;
+            right: 12px !important;
+            width: 42px !important;
+            height: 42px !important;
+            border-radius: 13px !important;
+        }
+        .p-float-refresh svg,
+        #pRefreshBtn svg {
+            width: 17px !important;
+            height: 17px !important;
+        }
+    }
+    
+    
+    /* ════════════════════════════════════════════════════════
+       RESPONSIVE FLOATING BUTTONS — AUTO-ADJUST ANY DEVICE
+       Uses clamp() for fluid sizing
+       ════════════════════════════════════════════════════════ */
+
+    :root {
+        /* Fluid sizing — mo-auto adjust base sa viewport */
+        --float-btn-size: clamp(30px, 5vw, 44px);
+        --float-icon-size: clamp(14px, 2.2vw, 22px);
+        --float-offset: clamp(8px, 1.5vw, 16px);
+        --float-radius: clamp(8px, 1.5vw, 14px);
+    }
+
+    .p-float-btn {
+        position: fixed !important;
+        z-index: 9997 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: var(--float-btn-size) !important;
+        height: var(--float-btn-size) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: var(--float-radius) !important;
+        border: none !important;
+        background: linear-gradient(135deg, #c9a961, #8a5f36) !important;
+        color: #fff !important;
+        cursor: pointer !important;
+        box-shadow:
+            0 10px 28px -6px rgba(201, 169, 97, 0.6),
+            0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        -webkit-tap-highlight-color: transparent !important;
+        animation: none !important;
+    }
+    .p-float-btn:hover {
+        transform: scale(1.08) !important;
+        box-shadow:
+            0 14px 36px -6px rgba(201, 169, 97, 0.8),
+            0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+    .p-float-btn:active {
+        transform: scale(0.95) !important;
+    }
+    .p-float-btn svg,
+    .p-float-btn svg * {
+        display: block !important;
+        width: var(--float-icon-size) !important;
+        height: var(--float-icon-size) !important;
+        pointer-events: none !important;
+    }
+
+    /* Hamburger — TOP LEFT */
+    .p-float-hamburger,
+    #pHamburger {
+        top: var(--float-offset) !important;
+        left: var(--float-offset) !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+
+    
+
+    /* Hide hamburger when sidebar open */
+    body.p-sidebar-open .p-float-hamburger {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0.5) !important;
+    }
+
+    /* Topbar padding — i-match ang button size + offset */
+    .p-topbar {
+        padding-left: calc(var(--float-btn-size) + var(--float-offset) + 8px) !important;
+        padding-right: calc(var(--float-btn-size) + var(--float-offset) + 8px) !important;
+        padding-top: clamp(6px, 1.2vw, 14px) !important;
+        padding-bottom: clamp(6px, 1.2vw, 14px) !important;
+    }
+
+    /* ═══ DEVICE-SPECIFIC FINE-TUNING ═══ */
+
+    /* Small phones (iPhone SE, etc.) */
+    @media (max-width: 360px) {
+        :root {
+            --float-btn-size: 28px;
+            --float-icon-size: 13px;
+            --float-offset: 8px;
+            --float-radius: 8px;
+        }
+    }
+
+    /* Regular phones */
+    @media (min-width: 361px) and (max-width: 480px) {
+        :root {
+            --float-btn-size: 32px;
+            --float-icon-size: 15px;
+            --float-offset: 9px;
+            --float-radius: 9px;
+        }
+    }
+
+    /* Large phones / small tablets */
+    @media (min-width: 481px) and (max-width: 768px) {
+        :root {
+            --float-btn-size: 38px;
+            --float-icon-size: 18px;
+            --float-offset: 12px;
+            --float-radius: 11px;
+        }
+    }
+
+    /* Tablets */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        :root {
+            --float-btn-size: 42px;
+            --float-icon-size: 20px;
+            --float-offset: 14px;
+            --float-radius: 13px;
+        }
+    }
+
+    /* Desktop */
+    @media (min-width: 1025px) {
+        :root {
+            --float-btn-size: 44px;
+            --float-icon-size: 22px;
+            --float-offset: 16px;
+            --float-radius: 14px;
+        }
+    }
+
+    /* Landscape phones — gamayon kay limitado ang height */
+    @media (max-height: 500px) and (orientation: landscape) {
+        :root {
+            --float-btn-size: 30px;
+            --float-icon-size: 14px;
+            --float-offset: 8px;
+        }
+    }
+    /* ════════════════════════════════════════════════════════
+       FLOATING BUTTONS — FORCE EXPLICIT SIZES
+       (Walay variables, walay clamp, direct override)
+       ════════════════════════════════════════════════════════ */
+
+    /* Default (desktop) */
+    
+    html body #pHamburger {
+        top: 16px !important;
+        left: 16px !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+    
+
+    /* ═══ MOBILE PHONES (< 600px) — FORCE SMALL ═══ */
+    @media screen and (max-width: 600px) {
+        
+    }
+
+    /* ═══ VERY SMALL PHONES (< 400px) — FORCE SMALLEST ═══ */
+    @media screen and (max-width: 400px) {
+        
+    }
+
+    /* Topbar padding — auto-match */
+    html body .p-topbar {
+        padding-left: 60px !important;
+        padding-right: 60px !important;
+    }
+    @media screen and (max-width: 600px) {
+        html body .p-topbar {
+            padding-left: 46px !important;
+            padding-right: 46px !important;
+        }
+    }
+    @media screen and (max-width: 400px) {
+        html body .p-topbar {
+            padding-left: 40px !important;
+            padding-right: 40px !important;
+        }
+    }
+    /* ════════════════════════════════════════════════════════
+       HAMBURGER — TRANSPARENT, ICON FIXED POSITION
+       ════════════════════════════════════════════════════════ */
+
+    /* Override tanan existing hamburger styles */
+    html body #pHamburger,
+    html body button#pHamburger,
+    html body .p-float-hamburger,
+    html body .p-hamburger {
+        position: fixed !important;
+        top: 14px !important;
+        left: 14px !important;
+        right: auto !important;
+        bottom: auto !important;
+        z-index: 9999 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+
+        /* TRANSPARENT BACKGROUND — walay box */
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+
+        /* Icon color */
+        color: #ffffff !important;
+
+        cursor: pointer !important;
+        -webkit-tap-highlight-color: transparent !important;
+        transition: transform 0.15s ease, opacity 0.15s ease !important;
+        animation: none !important;
+    }
+
+    /* Hover — gamay scale lang, walay background */
+    html body #pHamburger:hover,
+    html body .p-float-hamburger:hover {
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        transform: scale(1.1) !important;
+        opacity: 0.9 !important;
+    }
+
+    html body #pHamburger:active,
+    html body .p-float-hamburger:active {
+        transform: scale(0.92) !important;
+        opacity: 0.7 !important;
+    }
+
+    /* Icon size — fixed position */
+    html body #pHamburger svg,
+    html body .p-float-hamburger svg {
+        display: block !important;
+        width: 26px !important;
+        height: 26px !important;
+        pointer-events: none !important;
+        flex-shrink: 0 !important;
+
+        /* Icon stroke color */
+        stroke: #ffffff !important;
+        stroke-width: 2.5 !important;
+
+        /* Shadow para visible bisan asa background */
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+    }
+
+    /* Sidebar open — hide hamburger */
+    body.p-sidebar-open #pHamburger,
+    body.p-sidebar-open .p-float-hamburger {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0.5) !important;
+    }
+
+    /* Topbar padding — walay refresh na sa right */
+    html body .p-topbar {
+        padding-left: 56px !important;
+        padding-right: 16px !important;
+    }
+
+    /* ═══ MOBILE — adjust size ═══ */
+    @media screen and (max-width: 600px) {
+        html body #pHamburger,
+        html body .p-float-hamburger {
+            top: 12px !important;
+            left: 12px !important;
+            width: 36px !important;
+            height: 36px !important;
+        }
+        html body #pHamburger svg,
+        html body .p-float-hamburger svg {
+            width: 24px !important;
+            height: 24px !important;
+        }
+        html body .p-topbar {
+            padding-left: 52px !important;
+            padding-right: 14px !important;
+        }
+    }
+
+    @media screen and (max-width: 400px) {
+        html body #pHamburger,
+        html body .p-float-hamburger {
+            top: 10px !important;
+            left: 10px !important;
+            width: 32px !important;
+            height: 32px !important;
+        }
+        html body #pHamburger svg,
+        html body .p-float-hamburger svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+        html body .p-topbar {
+            padding-left: 48px !important;
+            padding-right: 12px !important;
+        }
+    }
+    /* ════════════════════════════════════════════════════════
+       CRITICAL FIX — Hamburger pointer-events + size
+       (Override sa broken CSS rule nga nag-set ug
+        pointer-events: none sa #pHamburger)
+       ════════════════════════════════════════════════════════ */
+    #pHamburger,
+    button#pHamburger,
+    .p-float-hamburger,
+    html body #pHamburger,
+    html body button#pHamburger,
+    html body .p-float-hamburger {
+        pointer-events: auto !important;
+        display: inline-flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 44px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        z-index: 10000 !important;
+    }
+    #pHamburger svg,
+    button#pHamburger svg,
+    .p-float-hamburger svg,
+    html body #pHamburger svg,
+    html body button#pHamburger svg,
+    html body .p-float-hamburger svg {
+        pointer-events: none !important;
+        width: 24px !important;
+        height: 24px !important;
+    }
+    @media (max-width: 600px) {
+        #pHamburger,
+        button#pHamburger,
+        .p-float-hamburger,
+        html body #pHamburger,
+        html body button#pHamburger,
+        html body .p-float-hamburger {
+            width: 40px !important;
+            height: 40px !important;
+        }
+        #pHamburger svg,
+        .p-float-hamburger svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+    }
+    @media (max-width: 400px) {
+        #pHamburger,
+        .p-float-hamburger {
+            width: 36px !important;
+            height: 36px !important;
+        }
+        #pHamburger svg,
+        .p-float-hamburger svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+    }
+    /* ════════════════════════════════════════════════════════
+       HIDE INVENTORY ON MOBILE
+       (Sidebar link ra — desktop intact)
+       ════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+        .p-sidebar-link.p-hide-mobile,
+        .p-hide-mobile {
+            display: none !important;
+        }
+    }</style>
+
+<script>
+    window.pToggleSidebar = function(open) {
+        var sidebar = document.getElementById('pSidebar');
+        var overlay = document.getElementById('pSidebarOverlay');
+        if (!sidebar || !overlay) return;
+
+        if (open) {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            document.body.classList.add('p-sidebar-open');
+        } else {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.classList.remove('p-sidebar-open');
+        }
+    };
+
+    // Close on ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.pToggleSidebar(false);
+        }
+    });
+</script>
+
+
+
+<script>
+    // ═══ HAMBURGER CLICK HANDLER — GUARANTEED ═══
+    (function() {
+        'use strict';
+
+        function openSidebar() {
+            var sidebar = document.getElementById('pSidebar');
+            var overlay = document.getElementById('pSidebarOverlay');
+            if (!sidebar || !overlay) {
+                console.warn('[Sidebar] Elements not found');
+                return;
+            }
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            document.body.classList.add('p-sidebar-open');
+        }
+
+        function closeSidebar() {
+            var sidebar = document.getElementById('pSidebar');
+            var overlay = document.getElementById('pSidebarOverlay');
+            if (!sidebar || !overlay) return;
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.classList.remove('p-sidebar-open');
+        }
+
+        // Expose globally
+        window.pToggleSidebar = function(open) {
+            open ? openSidebar() : closeSidebar();
+        };
+
+        // Attach click handlers to hamburger
+        function attachHamburger() {
+            var btn = document.getElementById('pHamburger');
+            if (!btn) return;
+            if (btn._clickAttached) return;
+
+            // Remove ALL existing onclick para walay conflict
+            btn.removeAttribute('onclick');
+
+            // Add click handler
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openSidebar();
+            }, true);
+
+            // Mobile touch fallback
+            btn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openSidebar();
+            }, { passive: false, capture: true });
+
+            btn._clickAttached = true;
+            console.log('[Sidebar] Hamburger click attached');
+        }
+
+        // Attach on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachHamburger);
+        } else {
+            attachHamburger();
+        }
+
+        // Re-attach on page show (para sa bfcache)
+        window.addEventListener('pageshow', attachHamburger);
+
+        // ESC to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
+    })();
 </script>
 </body>
 </html>

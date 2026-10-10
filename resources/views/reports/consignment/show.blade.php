@@ -8,15 +8,15 @@
 @php
     $statusRaw = strtolower($report->status ?? 'pending');
     $statusMap = [
-        'paid'    => ['label' => 'Paid',    'color' => '#22c55e', 'bg' => 'rgba(34,197,94,0.12)',  'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>'],
-        'partial' => ['label' => 'Partial', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,0.12)', 'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'],
-        'pending' => ['label' => 'Pending', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,0.12)', 'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'],
+        'paid'    => ['label' => 'Paid',    'color' => '#22c55e', 'bg' => 'rgba(34,197,94,0.12)',  'icon' => '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>'],
+        'partial' => ['label' => 'Partial', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,0.12)', 'icon' => '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'],
+        'pending' => ['label' => 'Pending', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,0.12)', 'icon' => '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'],
     ];
     $statusConfig = $statusMap[$statusRaw] ?? [
         'label' => ucfirst($statusRaw),
         'color' => '#71717a',
         'bg'    => 'rgba(113,113,122,0.12)',
-        'icon'  => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
+        'icon'  => '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
     ];
 
     $totalSales = (float) ($report->total_sales ?? 0);
@@ -32,8 +32,10 @@
     $periodEnd   = $report->period_end   ?? $report->end_date   ?? null;
 @endphp
 
-{{-- ========== HERO ========== --}}
+{{-- ═══ HERO ═══ --}}
 <div class="sr-hero" style="--status-color: {{ $statusConfig['color'] }};">
+    <div class="sr-hero-glow"></div>
+
     <div class="sr-hero-icon" style="background: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }};">
         {!! $statusConfig['icon'] !!}
     </div>
@@ -79,12 +81,9 @@
     </div>
 </div>
 
-{{-- ========== GRID ========== --}}
+{{-- ═══ GRID ═══ --}}
 <div class="sr-grid">
-
-    {{-- LEFT: Products + Payments --}}
     <div>
-        {{-- PRODUCTS SOLD --}}
         <div class="sr-card">
             <div class="sr-card-head">
                 <div class="sr-card-icon">
@@ -92,9 +91,9 @@
                         <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
                 </div>
-                <div>
+                <div style="flex:1;">
                     <div class="sr-card-title">Products Sold</div>
-                    <div class="sr-card-sub">{{ $items->count() }} product(s)</div>
+                    <div class="sr-card-sub">{{ $items->count() }} product(s) · {{ $qtySold }} total qty</div>
                 </div>
             </div>
 
@@ -127,7 +126,6 @@
             @endif
         </div>
 
-        {{-- PAYMENT HISTORY --}}
         <div class="sr-card">
             <div class="sr-card-head">
                 <div class="sr-card-icon green">
@@ -185,10 +183,8 @@
         </div>
     </div>
 
-    {{-- RIGHT: Summary + Details + Actions --}}
     <div>
-        {{-- SUMMARY --}}
-        <div class="sr-card">
+        <div class="sr-card sr-card-summary">
             <div class="sr-card-head">
                 <div class="sr-card-icon">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -222,7 +218,7 @@
                     <span class="sr-progress-count">{{ $payments->count() }} payment(s)</span>
                 </div>
                 <div class="sr-progress-track">
-                    <div class="sr-progress-fill" style="width: {{ $paidPct }}%;"></div>
+                    <div class="sr-progress-fill {{ $paidPct >= 100 ? 'complete' : '' }}" style="width: {{ $paidPct }}%;"></div>
                 </div>
             </div>
 
@@ -240,7 +236,6 @@
             @endif
         </div>
 
-        {{-- DETAILS --}}
         <div class="sr-card">
             <div class="sr-card-head">
                 <div class="sr-card-icon">
@@ -274,18 +269,12 @@
             </div>
         </div>
     </div>
-
 </div>
 
 @endsection
 
 @push('styles')
 <style>
-    /* ============================================================
-       SALES REPORT SHOW — PROFESSIONAL REDESIGN
-       ============================================================ */
-
-    /* ========== HERO ========== */
     .sr-hero {
         position: relative;
         display: flex;
@@ -293,31 +282,39 @@
         gap: 20px;
         padding: 22px 26px;
         margin-bottom: 18px;
-        background: linear-gradient(135deg, rgba(30, 26, 22, 0.85) 0%, rgba(21, 18, 15, 0.9) 100%);
+        background:
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--status-color) 12%, transparent) 0%, transparent 55%),
+            linear-gradient(135deg, rgba(30, 26, 22, 0.9) 0%, rgba(21, 18, 15, 0.95) 100%);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-left: 3px solid var(--status-color);
         border-radius: 18px;
         overflow: hidden;
     }
-    .sr-hero::before {
-        content: '';
+    .sr-hero-glow {
         position: absolute;
-        top: -80px; right: -80px;
-        width: 260px; height: 260px;
+        top: -100px; right: -100px;
+        width: 280px; height: 280px;
         background: radial-gradient(circle, var(--status-color), transparent 70%);
-        opacity: 0.12;
+        opacity: 0.15;
         pointer-events: none;
+        animation: srGlow 6s ease-in-out infinite;
+    }
+    @keyframes srGlow {
+        0%, 100% { opacity: 0.12; transform: scale(1); }
+        50%      { opacity: 0.2;  transform: scale(1.08); }
     }
     .sr-hero-icon {
-        width: 56px; height: 56px;
+        width: 58px; height: 58px;
         border-radius: 16px;
         display: grid; place-items: center;
         flex-shrink: 0;
         border: 1px solid rgba(255, 255, 255, 0.08);
         position: relative; z-index: 1;
+        box-shadow:
+            0 8px 20px -8px color-mix(in srgb, var(--status-color) 50%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
     .sr-hero-icon svg { width: 26px; height: 26px; }
-
     .sr-hero-content { flex: 1; min-width: 0; position: relative; z-index: 1; }
     .sr-hero-label {
         font-size: 10px; font-weight: 800;
@@ -356,6 +353,11 @@
     .sr-status-dot {
         width: 6px; height: 6px; border-radius: 50%;
         flex-shrink: 0;
+        animation: srDotPulse 2s ease-in-out infinite;
+    }
+    @keyframes srDotPulse {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.4; }
     }
     .sr-hero-period {
         display: inline-flex; align-items: center; gap: 6px;
@@ -368,7 +370,6 @@
     }
     .sr-hero-period svg { color: #71717a; }
     .sr-hero-period-sep { color: #52525b; }
-
     .sr-hero-stats {
         display: flex; align-items: center; gap: 16px;
         position: relative; z-index: 1; flex-shrink: 0;
@@ -390,15 +391,11 @@
         width: 1px; height: 32px;
         background: rgba(255, 255, 255, 0.06);
     }
-
-    /* ========== GRID ========== */
     .sr-grid {
         display: grid;
         grid-template-columns: 1fr 340px;
         gap: 16px;
     }
-
-    /* ========== CARD ========== */
     .sr-card {
         background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
         backdrop-filter: blur(20px);
@@ -406,9 +403,10 @@
         border-radius: 16px;
         padding: 18px;
         margin-bottom: 14px;
+        transition: border-color 0.25s;
     }
+    .sr-card:hover { border-color: rgba(201, 169, 97, 0.15); }
     .sr-card:last-child { margin-bottom: 0; }
-
     .sr-card-head {
         display: flex; align-items: center; gap: 12px;
         padding-bottom: 12px; margin-bottom: 14px;
@@ -431,8 +429,6 @@
     .sr-card-sub {
         font-size: 10.5px; color: #71717a; margin-top: 2px;
     }
-
-    /* ========== TABLE ========== */
     .sr-table { display: flex; flex-direction: column; }
     .sr-table-head {
         display: grid;
@@ -449,10 +445,11 @@
         gap: 12px; padding: 12px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         align-items: center;
+        transition: background 0.15s;
     }
+    .sr-table-row:hover { background: rgba(201, 169, 97, 0.03); }
     .sr-table-row:last-of-type { border-bottom: none; }
     .ta-r { text-align: right; }
-
     .sr-prod-name {
         font-size: 12.5px; font-weight: 700; color: #fafafa;
         margin-bottom: 2px;
@@ -466,7 +463,6 @@
         font-variant-numeric: tabular-nums;
     }
     .sr-bold { color: #c9a961; font-weight: 800; }
-
     .sr-table-total {
         display: flex; justify-content: space-between; align-items: center;
         padding-top: 14px;
@@ -482,8 +478,6 @@
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
     }
-
-    /* ========== PAYMENTS ========== */
     .sr-add-btn {
         display: inline-flex; align-items: center; gap: 6px;
         padding: 6px 12px;
@@ -498,8 +492,8 @@
     .sr-add-btn:hover {
         background: rgba(201, 169, 97, 0.2);
         border-color: rgba(201, 169, 97, 0.5);
+        transform: translateY(-1px);
     }
-
     .sr-payments { display: flex; flex-direction: column; gap: 8px; }
     .sr-payment-item {
         display: flex; align-items: center; gap: 12px;
@@ -512,6 +506,7 @@
     .sr-payment-item:hover {
         background: rgba(255, 255, 255, 0.04);
         border-color: rgba(255, 255, 255, 0.08);
+        transform: translateX(2px);
     }
     .sr-payment-icon {
         width: 34px; height: 34px; border-radius: 10px;
@@ -532,8 +527,6 @@
         font-variant-numeric: tabular-nums;
         flex-shrink: 0;
     }
-
-    /* ========== SUMMARY ========== */
     .sr-summary-rows { display: flex; flex-direction: column; }
     .sr-summary-row {
         display: flex; justify-content: space-between; align-items: center;
@@ -553,8 +546,6 @@
         border-top: 1px solid rgba(201, 169, 97, 0.25) !important;
     }
     .sr-summary-row-total .sr-summary-value { font-size: 16px; }
-
-    /* ========== PROGRESS ========== */
     .sr-progress { margin-top: 16px; }
     .sr-progress-info {
         display: flex; justify-content: space-between;
@@ -570,11 +561,29 @@
     .sr-progress-fill {
         height: 100%; border-radius: 4px;
         background: linear-gradient(90deg, #c9a961, #d4b673);
-        transition: width 0.4s;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         min-width: 4px;
+        position: relative;
+        overflow: hidden;
     }
-
-    /* ========== BUTTONS ========== */
+    .sr-progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.35) 50%,
+            transparent 100%);
+        animation: srShimmer 2s ease-in-out infinite;
+    }
+    @keyframes srShimmer {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .sr-progress-fill.complete {
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+    }
+    .sr-progress-fill.complete::after { animation: none; opacity: 0; }
     .sr-btn {
         display: flex; align-items: center; justify-content: center;
         gap: 7px; width: 100%; padding: 11px 16px;
@@ -592,7 +601,7 @@
     .sr-btn-primary:hover {
         background: linear-gradient(135deg, #d4b672, #c9a961);
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px -4px rgba(201, 169, 97, 0.6);
+        box-shadow: 0 8px 20px -6px rgba(201, 169, 97, 0.7);
     }
     .sr-paid-badge {
         display: flex; align-items: center; justify-content: center;
@@ -602,9 +611,12 @@
         border-radius: 10px; color: #22c55e;
         font-weight: 800; font-size: 12.5px;
         text-transform: uppercase; letter-spacing: 0.05em;
+        animation: srPaidPulse 2.5s ease-in-out infinite;
     }
-
-    /* ========== DETAILS ========== */
+    @keyframes srPaidPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+        50%      { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
     .sr-detail-rows { display: flex; flex-direction: column; }
     .sr-detail-row {
         display: flex; justify-content: space-between; align-items: center;
@@ -617,14 +629,10 @@
     .sr-detail-value {
         color: #fafafa; font-weight: 700; text-align: right;
     }
-
-    /* ========== EMPTY ========== */
     .sr-empty {
         text-align: center; padding: 24px 16px;
         color: #71717a; font-size: 12px;
     }
-
-    /* ========== RESPONSIVE ========== */
     @media (max-width: 1100px) {
         .sr-grid { grid-template-columns: 1fr; }
     }
@@ -641,6 +649,7 @@
         }
         .sr-hero-stat { text-align: left; }
         .sr-hero-title { font-size: 18px; }
+        .sr-hero-icon { width: 52px; height: 52px; }
         .sr-table-head,
         .sr-table-row {
             grid-template-columns: 1fr 40px 70px 80px;

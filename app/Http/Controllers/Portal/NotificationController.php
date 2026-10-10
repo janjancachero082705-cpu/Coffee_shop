@@ -34,6 +34,10 @@ class NotificationController extends Controller
                     'title' => $n->title,
                     'message' => $n->message,
                     'url' => $n->data['url'] ?? null,
+                    'status' => $n->data['status'] ?? null,
+                    'balance' => $n->data['balance'] ?? null,
+                    'paid' => $n->data['paid'] ?? null,
+                    'total' => $n->data['total'] ?? null,
                     'created_at' => $n->created_at->diffForHumans(),
                 ];
             }),
