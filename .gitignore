@@ -1,4 +1,4 @@
-﻿# ═══════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 # Laravel .gitignore
 # ═══════════════════════════════════════════════════
 
@@ -82,3 +82,13 @@ tmp_*.php
 *.bak_*
 *.bak-*
 *.backup
+
+
+# ═══ Backup files (auto-ignore) ═══
+*.before-git-restore-*
+*.bak-final
+*.bak-fix
+*.bak-fix2
+*.bak-scrollmaster
+*.bak-cleanslate-*
+*.bak-autofix-*
