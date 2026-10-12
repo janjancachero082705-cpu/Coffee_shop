@@ -20,7 +20,20 @@ class PortalPaymentController extends Controller
             'this_month' => (float) $store->consignmentPayments()->where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
         ];
 
-        return view('portal.payments.index', compact('store', 'payments', 'stats'));
+        // PENDING DELIVERIES (out for delivery + partial unpaid)
+        $pendingDeliveries = $store->deliveryReceipts()
+            ->whereRaw('total_amount > amount_paid')
+            ->orderByDesc('created_at')
+            ->get();
+
+        // SALES REPORTS — for merged Finance tab
+        $salesReports = \App\Models\SalesReport::where('store_id', $store->id)
+            ->latest()
+            ->paginate(15, ['*'], 'reports_page');
+        $reportCount = \App\Models\SalesReport::where('store_id', $store->id)->count();
+        $reportTotal = (float) \App\Models\SalesReport::where('store_id', $store->id)->sum('total_sales');
+
+        return view('portal.payments.index', compact('store', 'payments', 'stats', 'salesReports', 'reportCount', 'reportTotal', 'pendingDeliveries'));
     }
 
     public function show($id)
@@ -174,8 +187,11 @@ class PortalPaymentController extends Controller
 
     protected function syncSalesReport($dr): void
     {
+        // SYNC VIA DR LINK — use $dr->sales_report_id (not delivery_receipt_id column)
         try {
-            $sr = \App\Models\SalesReport::where('delivery_receipt_id', $dr->id)->first();
+            $sr = $dr->sales_report_id
+                ? \App\Models\SalesReport::find($dr->sales_report_id)
+                : null;
             if (!$sr) {
                 \Log::info('syncSalesReport: walay SalesReport para sa DR ' . $dr->id);
                 return;

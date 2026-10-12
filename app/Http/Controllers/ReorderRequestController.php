@@ -132,10 +132,7 @@ class ReorderRequestController extends Controller
                 }
             }
 
-            $srNumber = 'SR-' . now()->format('Ymd') . '-' . str_pad(
-                SalesReport::whereDate('created_at', today())->count() + 1,
-                4, '0', STR_PAD_LEFT
-            );
+            $srNumber = SalesReport::generateNumber();
 
             $sr = SalesReport::create([
                 'report_number'       => $srNumber,

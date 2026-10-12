@@ -57,10 +57,7 @@ class PortalDeliveryController extends Controller
         // Auto-generate Sales Report
         try {
             $salesReport = \App\Models\SalesReport::create([
-                'report_number'   => 'SR-' . now()->format('Ymd') . '-' . str_pad(
-                    \App\Models\SalesReport::whereDate('created_at', today())->count() + 1,
-                    4, '0', STR_PAD_LEFT
-                ),
+                'report_number' => \App\Models\SalesReport::generateNumber(),
                 'store_id'        => $store->id,
                 'period_from'     => $delivery->delivery_date,
                 'period_to'       => now()->toDateString(),
@@ -80,6 +77,8 @@ class PortalDeliveryController extends Controller
         } catch (\Throwable $e) {
             \Log::warning('Sales report auto-generation failed: ' . $e->getMessage());
         }
+
+
 
         // Fire real-time event
         try {

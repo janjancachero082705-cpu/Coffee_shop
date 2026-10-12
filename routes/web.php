@@ -59,8 +59,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('deliveries', DeliveryReceiptController::class);
     Route::post('deliveries/{id}/out-for-delivery', [\App\Http\Controllers\DeliveryReceiptController::class, 'markOutForDelivery'])->name('deliveries.out-for-delivery');
-
-    // Consignment
+// Consignment
     Route::prefix('consignment')->name('consignment.')->group(function () {
         Route::get('/reports', [SalesReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/create', [SalesReportController::class, 'create'])->name('reports.create');

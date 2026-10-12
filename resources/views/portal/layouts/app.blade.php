@@ -2493,7 +2493,7 @@ html.theme-loading body {
             </svg>
             Inventory
         </a>
-        <a href="{{ route('portal.reports.index') }}" class="p-nav-item {{ request()->routeIs('portal.reports.*') || request()->routeIs('portal.payments.*') ? 'active' : '' }}">
+        <a href="{{ route('portal.payments.index') }}" class="p-nav-item {{ request()->routeIs('portal.payments.*') || request()->routeIs('portal.reports.*') ? 'active' : '' }}">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
             </svg>
@@ -3345,7 +3345,10 @@ html.theme-loading body {
                 },
                 credentials: 'same-origin',
             });
-
+            fetchNotifications();
+        } catch (e) {
+            console.warn('Mark read error:', e);
+        }
     }
 
     async function markAllRead() {
@@ -3361,7 +3364,9 @@ html.theme-loading body {
                 credentials: 'same-origin',
             });
             fetchNotifications();
-
+        } catch (e) {
+            console.warn('Mark all read error:', e);
+        }
     }
 
     function esc(t) {
@@ -3787,7 +3792,7 @@ html.theme-loading body {
 
         <div class="p-sidebar-section">
             <div class="p-sidebar-section-title">Payment</div>
-            <a href="{{ route('portal.reports.index') }}" class="p-sidebar-link {{ request()->routeIs('portal.reports.*') || request()->routeIs('portal.payments.*') ? 'active' : '' }}">
+            <a href="{{ route('portal.payments.index') }}" class="p-sidebar-link {{ request()->routeIs('portal.payments.*') || request()->routeIs('portal.reports.*') ? 'active' : '' }}">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                 </svg>

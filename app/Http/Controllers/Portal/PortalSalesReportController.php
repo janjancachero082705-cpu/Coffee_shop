@@ -11,6 +11,8 @@ class PortalSalesReportController extends Controller
 {
     public function index(Request $request)
     {
+        // Merged into Payments page — redirect
+        return redirect()->route('portal.payments.index', ['tab' => 'reports']);
         $store = Auth::guard('store')->user();
         $query = $store->salesReports()->with(['items', 'deliveryReceipt']);
 

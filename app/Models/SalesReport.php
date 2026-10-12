@@ -87,4 +87,30 @@ class SalesReport extends Model
             ->orderBy('payment_date', 'desc')
             ->get();
     }
+
+    // ═══ GENERATE UNIQUE REPORT NUMBER (race-safe) ═══
+    public static function generateNumber(): string
+    {
+        $prefix = 'SR-' . now()->format('Ymd') . '-';
+
+        $last = static::where('report_number', 'like', $prefix . '%')
+            ->orderByDesc('report_number')
+            ->value('report_number');
+
+        $seq = 1;
+        if ($last && preg_match('/-(\d+)$/', $last, $m)) {
+            $seq = (int) $m[1] + 1;
+        }
+
+        // Retry hangtud wala'y existing (in case of race)
+        $attempts = 0;
+        do {
+            $number = $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+            $exists = static::where('report_number', $number)->exists();
+            $seq++;
+            $attempts++;
+        } while ($exists && $attempts < 100);
+
+        return $number;
+    }
 }

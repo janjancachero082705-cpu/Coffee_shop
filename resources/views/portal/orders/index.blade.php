@@ -18,6 +18,14 @@
     <div class="po-head-left">
         <h1 class="po-title">My Orders</h1>
         <p class="po-sub">Stock requests & status</p>
+        <div class="po-header-badges">
+            @if($pending > 0)
+                <span class="po-hbadge pending">{{ $pending }} pending</span>
+            @endif
+            @if($approved > 0)
+                <span class="po-hbadge approved">{{ $approved }} approved</span>
+            @endif
+        </div>
     </div>
     <a href="{{ route('portal.orders.create') }}" class="po-cta">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
@@ -161,6 +169,238 @@
     @endif
 @endif
 
+
+{{-- ═══ ORDERS THEME-AWARE PRO OVERRIDE ═══ --}}
+@push('styles')
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ORDERS — PRO THEME-AWARE OVERRIDE
+   Uses --t-* tokens from layout (works on all 4 themes)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══ FORCE THEME TOKENS ON ALL ORDERS COMPONENTS ═══ */
+[class^="po-"], [class*=" po-"],
+[class^="or-"], [class*=" or-"],
+[class^="order-"], [class*=" order-"] {
+    /* Reset any hardcoded colors */
+}
+
+/* ═══ CARDS ═══ */
+.po-card,
+.order-card,
+[class*="order-card"] {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+    border-radius: 18px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-decoration: none !important;
+    display: block !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+.po-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--t-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.po-card:hover::before { opacity: 1; }
+
+.po-card:hover,
+.order-card:hover {
+    border-color: rgba(var(--t-accent-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 28px -12px rgba(var(--t-accent-rgb), 0.3) !important;
+}
+.po-card:active,
+.order-card:active {
+    transform: scale(0.99) !important;
+}
+
+/* ═══ TITLES / TEXT ═══ */
+.po-title,
+.po-head .po-title {
+    color: var(--t-text) !important;
+}
+.po-sub {
+    color: var(--t-text-3) !important;
+}
+
+.po-card-num-text,
+[class*="order-num-text"] {
+    color: var(--t-text) !important;
+    font-family: ui-monospace, monospace !important;
+    font-weight: 800 !important;
+}
+
+.po-card-num-sub,
+.po-card-time {
+    color: var(--t-text-3) !important;
+}
+
+/* ═══ STAT CARDS ═══ */
+.po-stat {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.po-stat:hover {
+    background: rgba(var(--t-accent-rgb), 0.06) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.35) !important;
+    transform: translateY(-2px) !important;
+}
+.po-stat.active {
+    background: rgba(var(--t-accent-rgb), 0.12) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.45) !important;
+    box-shadow: 0 8px 20px -10px rgba(var(--t-accent-rgb), 0.4) !important;
+}
+.po-stat-icon {
+    background: rgba(var(--t-accent-rgb), 0.14) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.28) !important;
+    color: var(--t-accent) !important;
+}
+.po-stat-icon.amber { background: rgba(245, 158, 11, 0.14) !important; border-color: rgba(245, 158, 11, 0.3) !important; color: #f59e0b !important; }
+.po-stat-icon.green { background: rgba(34, 197, 94, 0.14) !important; border-color: rgba(34, 197, 94, 0.3) !important; color: #22c55e !important; }
+.po-stat-icon.red   { background: rgba(239, 68, 68, 0.14) !important; border-color: rgba(239, 68, 68, 0.3) !important; color: #ef4444 !important; }
+.po-stat-icon.blue  { background: rgba(59, 130, 246, 0.14) !important; border-color: rgba(59, 130, 246, 0.3) !important; color: #3b82f6 !important; }
+
+.po-stat-value {
+    color: var(--t-text) !important;
+}
+.po-stat-label {
+    color: var(--t-text-3) !important;
+}
+
+/* ═══ BADGES ═══ */
+.po-badge {
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+}
+.po-badge.pending  { background: rgba(245, 158, 11, 0.14) !important; color: #f59e0b !important; border-color: rgba(245, 158, 11, 0.3) !important; }
+.po-badge.approved { background: rgba(34, 197, 94, 0.14) !important; color: #22c55e !important; border-color: rgba(34, 197, 94, 0.3) !important; }
+.po-badge.rejected { background: rgba(239, 68, 68, 0.14) !important; color: #ef4444 !important; border-color: rgba(239, 68, 68, 0.3) !important; }
+
+/* ═══ CTA BUTTONS ═══ */
+.po-cta {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px -8px rgba(var(--t-accent-rgb), 0.6) !important;
+}
+.po-cta:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 12px 28px -8px rgba(var(--t-accent-rgb), 0.8) !important;
+}
+
+.po-empty-btn {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -6px rgba(var(--t-accent-rgb), 0.7) !important;
+}
+
+/* ═══ EMPTY STATE ═══ */
+.po-empty {
+    background: var(--t-card) !important;
+    border: 1px dashed var(--t-border-2) !important;
+    border-radius: 18px !important;
+}
+.po-empty-icon {
+    background: rgba(var(--t-accent-rgb), 0.1) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.28) !important;
+    color: var(--t-accent) !important;
+}
+.po-empty-title { color: var(--t-text) !important; }
+.po-empty-text { color: var(--t-text-3) !important; }
+
+/* ═══ METRICS (Items / Total) ═══ */
+.po-card-metric-label {
+    color: var(--t-text-3) !important;
+}
+.po-card-metric-value {
+    color: var(--t-text) !important;
+}
+.po-card-metric-value.gold,
+.po-card-metric-value.accent {
+    color: var(--t-accent) !important;
+}
+.po-card-metric-divider {
+    background: var(--t-border) !important;
+}
+
+/* ═══ ARROW (View) ═══ */
+.po-card-arrow {
+    color: var(--t-text-3) !important;
+    transition: all 0.25s !important;
+}
+.po-card:hover .po-card-arrow {
+    color: var(--t-accent) !important;
+    transform: translateX(3px) !important;
+}
+
+/* ═══ SECTION CONTAINER (kung naa) ═══ */
+.po-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+/* ═══ LIGHT THEME — FORCE DARK TEXT ═══ */
+html[data-theme="light"] .po-title,
+html[data-theme="light"] .po-card-num-text,
+html[data-theme="light"] .po-stat-value,
+html[data-theme="light"] .po-card-metric-value,
+html[data-theme="blue"] .po-title,
+html[data-theme="blue"] .po-card-num-text,
+html[data-theme="blue"] .po-stat-value,
+html[data-theme="blue"] .po-card-metric-value {
+    color: #0c1e3d !important;
+}
+
+html[data-theme="light"] .po-sub,
+html[data-theme="light"] .po-card-num-sub,
+html[data-theme="light"] .po-card-time,
+html[data-theme="light"] .po-stat-label,
+html[data-theme="light"] .po-card-metric-label,
+html[data-theme="blue"] .po-sub,
+html[data-theme="blue"] .po-card-num-sub,
+html[data-theme="blue"] .po-card-time,
+html[data-theme="blue"] .po-stat-label,
+html[data-theme="blue"] .po-card-metric-label {
+    color: #64748b !important;
+}
+
+/* ═══ DARK THEME — FORCE LIGHT TEXT ═══ */
+html[data-theme="dark"] .po-title,
+html[data-theme="dark"] .po-card-num-text,
+html[data-theme="dark"] .po-stat-value,
+html[data-theme="dark"] .po-card-metric-value {
+    color: #ffffff !important;
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes poSlideIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+.po-card, .po-stat, .po-empty {
+    animation: poSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.po-card:nth-child(1) { animation-delay: 0.02s; }
+.po-card:nth-child(2) { animation-delay: 0.06s; }
+.po-card:nth-child(3) { animation-delay: 0.10s; }
+.po-card:nth-child(4) { animation-delay: 0.14s; }
+.po-card:nth-child(5) { animation-delay: 0.18s; }
+.po-card:nth-child(6) { animation-delay: 0.22s; }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    .po-card { padding: 14px !important; }
+    .po-stats { gap: 8px !important; }
+}
+</style>
+@endpush
 @endsection
 
 @push('styles')
@@ -896,5 +1136,26 @@
     html[data-theme="dark"] .p-main *[style*="background: #f8fafc"],
     html[data-theme="dark"] .p-main *[style*="background: #f1f5f9"] {
         background: #0a0a0a !important;
-    }</style>
+    }
+/* ═══ HEADER BADGES ═══ */
+.po-header-badges {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.po-hbadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid;
+}
+.po-hbadge.pending  { background: rgba(245, 158, 11, 0.14); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.po-hbadge.approved { background: rgba(34, 197, 94, 0.14); color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+</style>
 @endpush

@@ -322,6 +322,612 @@
     </button>
 </form>
 
+
+{{-- ═══ REPORTS + PAYMENTS — PRO THEME OVERRIDE ═══ --}}
+@push('styles')
+<style>
+/* ═══════════════════════════════════════════════════════════
+   REPORTS & PAYMENTS — Full theme-aware override
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══ GENERIC PAGE ═══ */
+.page-title,
+.pp-title,
+.sr-title,
+.rr-title { color: var(--t-text) !important; }
+.page-sub,
+.pp-sub,
+.sr-subtitle,
+.rr-subtitle { color: var(--t-text-3) !important; }
+
+.back-btn {
+    background: var(--t-input) !important;
+    border: 1px solid var(--t-border) !important;
+    color: var(--t-text-2) !important;
+}
+.back-btn:hover {
+    background: var(--t-card) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.4) !important;
+    color: var(--t-accent) !important;
+}
+
+/* ═══ STAT CARDS ═══ */
+.pp-stat,
+.sr-kpi,
+.rr-stat,
+.pf-stat {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+    color: var(--t-text) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.pp-stat:hover,
+.sr-kpi:hover,
+.rr-stat:hover {
+    border-color: rgba(var(--t-accent-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px -10px rgba(var(--t-accent-rgb), 0.3) !important;
+}
+.pp-stat-value,
+.sr-kpi-value,
+.rr-stat-value {
+    color: var(--t-text) !important;
+    font-variant-numeric: tabular-nums !important;
+}
+.pp-stat-label,
+.sr-kpi-label,
+.rr-stat-label {
+    color: var(--t-text-3) !important;
+}
+
+/* ═══ STAT ICONS ═══ */
+.pp-stat-icon,
+.sr-kpi-icon,
+.rr-stat-icon {
+    background: rgba(var(--t-accent-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.25) !important;
+    color: var(--t-accent) !important;
+}
+.pp-stat-icon.green { background: rgba(34, 197, 94, 0.14) !important; border-color: rgba(34, 197, 94, 0.3) !important; color: #22c55e !important; }
+.pp-stat-icon.amber { background: rgba(245, 158, 11, 0.14) !important; border-color: rgba(245, 158, 11, 0.3) !important; color: #f59e0b !important; }
+.pp-stat-icon.red   { background: rgba(239, 68, 68, 0.14) !important; border-color: rgba(239, 68, 68, 0.3) !important; color: #ef4444 !important; }
+.pp-stat-icon.blue  { background: rgba(59, 130, 246, 0.14) !important; border-color: rgba(59, 130, 246, 0.3) !important; color: #3b82f6 !important; }
+
+/* ═══ CARDS ═══ */
+.pp-card,
+.pay-card,
+.sr-card,
+.rr-card {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+    color: var(--t-text) !important;
+    transition: all 0.25s !important;
+}
+.pp-card:hover,
+.pay-card:hover,
+.sr-card:hover {
+    border-color: rgba(var(--t-accent-rgb), 0.28) !important;
+    box-shadow: 0 8px 24px -12px rgba(var(--t-accent-rgb), 0.2) !important;
+}
+.pp-card-title,
+.pay-card-title {
+    color: var(--t-text) !important;
+}
+.pp-card-sub,
+.pay-card-sub {
+    color: var(--t-text-3) !important;
+}
+.pp-card-amount {
+    color: var(--t-accent) !important;
+}
+
+/* ═══ CARD HEAD ICONS ═══ */
+.pay-card-icon,
+.card-head-icon {
+    background: rgba(var(--t-accent-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.25) !important;
+    color: var(--t-accent) !important;
+}
+.pay-card-icon.green,
+.card-head-icon.green {
+    background: rgba(34, 197, 94, 0.12) !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
+    color: #22c55e !important;
+}
+.pay-card-icon.blue {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.25) !important;
+    color: #3b82f6 !important;
+}
+
+/* ═══ PAY ROWS ═══ */
+.pay-row,
+.balance-row {
+    border-color: var(--t-border) !important;
+    color: var(--t-text) !important;
+}
+.pay-row span,
+.balance-label {
+    color: var(--t-text-3) !important;
+}
+.pay-row strong,
+.balance-value {
+    color: var(--t-text) !important;
+}
+.balance-value.green { color: #22c55e !important; }
+.balance-value.accent { color: var(--t-accent) !important; }
+.balance-total {
+    border-top: 2px solid rgba(var(--t-accent-rgb), 0.28) !important;
+    padding-top: 12px !important;
+}
+
+/* ═══ PAY HERO ═══ */
+.pay-hero {
+    background: var(--t-card) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.3) !important;
+    border-radius: 18px !important;
+}
+.pay-hero-sub { color: var(--t-text-3) !important; }
+.pay-hero-amount-label { color: var(--t-text-3) !important; }
+.pay-hero-amount-value { color: var(--t-accent) !important; }
+
+/* ═══ METHOD BADGE ═══ */
+.pp-method-badge {
+    border-radius: 8px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.01em !important;
+    padding: 5px 10px !important;
+    background: rgba(var(--t-accent-rgb), 0.14) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.32) !important;
+    color: var(--t-accent) !important;
+}
+
+/* ═══ PENDING PAYMENTS ═══ */
+.pp-pending {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03)) !important;
+    border: 1px solid rgba(245, 158, 11, 0.32) !important;
+    border-radius: 18px !important;
+}
+.pp-pending-title { color: var(--t-text) !important; }
+.pp-pending-sub { color: var(--t-text-3) !important; }
+.pp-pending-count {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    color: #f59e0b !important;
+}
+.pp-pending-item {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+    border-radius: 12px !important;
+}
+.pp-pending-dr { color: var(--t-text) !important; }
+.pp-pending-meta { color: var(--t-text-3) !important; }
+.pp-pending-meta strong { color: #f59e0b !important; }
+.pp-pending-confirm {
+    background: rgba(34, 197, 94, 0.12) !important;
+    border: 1px solid rgba(34, 197, 94, 0.35) !important;
+    color: #22c55e !important;
+}
+.pp-pending-pay {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -6px rgba(var(--t-accent-rgb), 0.6) !important;
+}
+
+/* ═══ TABS ═══ */
+.pp-tabs {
+    background: var(--t-input) !important;
+    border: 1px solid var(--t-border) !important;
+}
+.pp-tab {
+    color: var(--t-text-2) !important;
+}
+.pp-tab:hover {
+    background: rgba(var(--t-accent-rgb), 0.08) !important;
+    color: var(--t-text) !important;
+}
+.pp-tab.active {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -6px rgba(var(--t-accent-rgb), 0.5) !important;
+}
+.pp-tab-count {
+    background: rgba(var(--t-accent-rgb), 0.15) !important;
+    color: var(--t-accent) !important;
+}
+.pp-tab.active .pp-tab-count {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* ═══ CTA BUTTONS ═══ */
+.pp-pay-btn,
+.pp-action,
+.pay-submit,
+.pay-cta {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px -8px rgba(var(--t-accent-rgb), 0.6) !important;
+}
+.pp-pay-btn:hover,
+.pp-action:hover,
+.pay-submit:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 12px 28px -8px rgba(var(--t-accent-rgb), 0.8) !important;
+}
+.pay-submit:disabled {
+    background: var(--t-input) !important;
+    color: var(--t-text-3) !important;
+    box-shadow: none !important;
+}
+
+/* ═══ EMPTY STATE ═══ */
+.pp-empty,
+.pay-empty,
+.sr-empty {
+    background: var(--t-card) !important;
+    border: 1px dashed var(--t-border-2) !important;
+    border-radius: 18px !important;
+}
+.pp-empty-icon,
+.pay-empty-icon,
+.sr-empty-icon {
+    background: rgba(var(--t-accent-rgb), 0.1) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.28) !important;
+    color: var(--t-accent) !important;
+}
+.pp-empty-title,
+.pay-empty-title,
+.sr-empty-title { color: var(--t-text) !important; }
+.pp-empty-text,
+.pay-empty-text,
+.sr-empty-text { color: var(--t-text-3) !important; }
+.pp-empty-btn,
+.pay-empty-btn {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -6px rgba(var(--t-accent-rgb), 0.7) !important;
+}
+
+/* ═══ FLASH ═══ */
+.pay-flash,
+.p-alert {
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+}
+.pay-flash,
+.p-alert-success {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
+    color: #22c55e !important;
+}
+.p-alert-error {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #fca5a5 !important;
+}
+
+/* ═══ CREATE PAYMENT FORM ═══ */
+.pay-header-title { color: var(--t-text) !important; }
+.pay-header-subtitle { color: var(--t-text-3) !important; }
+.pay-back-btn {
+    background: var(--t-input) !important;
+    border: 1px solid var(--t-border) !important;
+    color: var(--t-text-2) !important;
+}
+.pay-back-btn:hover {
+    background: var(--t-card) !important;
+    color: var(--t-accent) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.4) !important;
+}
+
+.pay-balance-card {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+}
+.pay-balance-icon {
+    background: rgba(var(--t-accent-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.2) !important;
+    color: var(--t-accent) !important;
+}
+.pay-balance-label { color: var(--t-text-3) !important; }
+.pay-balance-value { color: var(--t-text) !important; }
+.pay-balance-currency { color: var(--t-accent) !important; }
+.pay-balance-meta-label { color: var(--t-text-3) !important; }
+.pay-balance-meta-value { color: var(--t-text) !important; }
+
+.pay-section {
+    background: var(--t-card) !important;
+    border: 1px solid var(--t-border) !important;
+}
+.pay-section-title { color: var(--t-text) !important; }
+.pay-section-desc { color: var(--t-text-3) !important; }
+
+.pay-amount-field {
+    background: var(--t-input) !important;
+    border: 1.5px solid var(--t-border-2) !important;
+}
+.pay-amount-field:focus-within {
+    border-color: var(--t-accent) !important;
+    box-shadow: 0 0 0 4px rgba(var(--t-accent-rgb), 0.15) !important;
+}
+.pay-amount-currency { color: var(--t-accent) !important; }
+.pay-amount-input { color: var(--t-text) !important; }
+.pay-amount-input::placeholder { color: var(--t-text-3) !important; }
+
+.pay-chip {
+    background: var(--t-input) !important;
+    border: 1px solid var(--t-border-2) !important;
+    color: var(--t-text-2) !important;
+}
+.pay-chip:hover {
+    background: var(--t-card) !important;
+    color: var(--t-text) !important;
+    border-color: rgba(var(--t-accent-rgb), 0.3) !important;
+}
+.pay-chip-amount { color: var(--t-text) !important; }
+.pay-chip svg { color: var(--t-text-3) !important; }
+.pay-chip:hover svg { color: var(--t-accent) !important; }
+
+.pay-segmented {
+    background: var(--t-input) !important;
+    border: 1px solid var(--t-border) !important;
+}
+.pay-segment { color: var(--t-text-2) !important; }
+.pay-segment.active {
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent-2)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -4px rgba(var(--t-accent-rgb), 0.5) !important;
+}
+.pay-segment.active svg { stroke: #ffffff !important; }
+
+.pay-method-inner {
+    background: var(--t-input) !important;
+    border: 1.5px solid var(--t-border-2) !important;
+}
+.pay-method:hover .pay-method-inner {
+    background: var(--t-card) !important;
+}
+.pay-method input:checked + .pay-method-inner {
+    background: rgba(var(--t-accent-rgb), 0.1) !important;
+    border-color: var(--t-accent) !important;
+    box-shadow: 0 0 0 3px rgba(var(--t-accent-rgb), 0.15) !important;
+}
+.pay-method-name { color: var(--t-text) !important; }
+.pay-method-desc { color: var(--t-text-3) !important; }
+.pay-method-check {
+    background: var(--t-card) !important;
+    border-color: var(--t-border-2) !important;
+}
+.pay-method input:checked + .pay-method-inner .pay-method-check {
+    background: var(--t-accent) !important;
+    border-color: var(--t-accent) !important;
+    color: #ffffff !important;
+}
+
+.pay-input {
+    background: var(--t-input) !important;
+    border: 1.5px solid var(--t-border-2) !important;
+    color: var(--t-text) !important;
+}
+.pay-input::placeholder { color: var(--t-text-3) !important; }
+.pay-input:focus {
+    border-color: var(--t-accent) !important;
+    box-shadow: 0 0 0 4px rgba(var(--t-accent-rgb), 0.15) !important;
+}
+.pay-input-icon { color: var(--t-text-3) !important; }
+.pay-input-wrap:focus-within .pay-input-icon { color: var(--t-accent) !important; }
+
+/* ═══ VERIFICATION BANNER ═══ */
+.pvfy {
+    border-radius: 14px !important;
+}
+.pvfy-pending { background: rgba(245, 158, 11, 0.1) !important; border-color: rgba(245, 158, 11, 0.35) !important; }
+.pvfy-verified { background: rgba(34, 197, 94, 0.1) !important; border-color: rgba(34, 197, 94, 0.35) !important; }
+.pvfy-rejected { background: rgba(239, 68, 68, 0.1) !important; border-color: rgba(239, 68, 68, 0.35) !important; }
+.pvfy-pending .pvfy-title { color: #f59e0b !important; }
+.pvfy-verified .pvfy-title { color: #22c55e !important; }
+.pvfy-rejected .pvfy-title { color: #ef4444 !important; }
+.pvfy-pending .pvfy-desc { color: #fcd34d !important; }
+.pvfy-verified .pvfy-desc { color: #86efac !important; }
+.pvfy-rejected .pvfy-desc { color: #fca5a5 !important; }
+
+/* ═══ TIMELINE ═══ */
+.pay-timeline { color: var(--t-text) !important; }
+.pay-tl-dot {
+    background: rgba(var(--t-accent-rgb), 0.4) !important;
+}
+.pay-tl-label { color: var(--t-text) !important; }
+.pay-tl-time { color: var(--t-text-3) !important; }
+
+/* ═══ SR- (Sales Report) ═══ */
+.sr-hero {
+    background: linear-gradient(135deg, rgba(var(--t-accent-rgb), 0.12), var(--t-card)) !important;
+    border: 1px solid rgba(var(--t-accent-rgb), 0.3) !important;
+    border-radius: 18px !important;
+}
+.sr-hero-label,
+.sr-hero-code { color: var(--t-accent) !important; }
+.sr-hero-title { color: var(--t-text) !important; }
+.sr-hero-sub { color: var(--t-text-3) !important; }
+
+.sr-table thead th {
+    background: rgba(var(--t-accent-rgb), 0.06) !important;
+    color: var(--t-text-3) !important;
+    border-color: var(--t-border) !important;
+}
+.sr-table tbody td {
+    color: var(--t-text-2) !important;
+    border-color: var(--t-border) !important;
+}
+.sr-table tbody tr:hover {
+    background: rgba(var(--t-accent-rgb), 0.04) !important;
+}
+
+.sr-row {
+    border-color: var(--t-border) !important;
+}
+.sr-row-label { color: var(--t-text-3) !important; }
+.sr-row-value { color: var(--t-text) !important; }
+
+.sr-total {
+    border-top: 2px solid rgba(var(--t-accent-rgb), 0.3) !important;
+    padding-top: 14px !important;
+}
+.sr-total-label { color: var(--t-text) !important; }
+.sr-total-value { color: var(--t-accent) !important; font-size: 18px !important; }
+
+/* ═══ RR- (Reports list) ═══ */
+.rr-number {
+    color: var(--t-text) !important;
+    font-family: ui-monospace, monospace !important;
+}
+.rr-total {
+    color: var(--t-accent) !important;
+}
+.rr-store-name { color: var(--t-text) !important; }
+.rr-store-meta { color: var(--t-text-3) !important; }
+
+.rr-status {
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+}
+.rr-status.pending  { background: rgba(245, 158, 11, 0.14) !important; color: #f59e0b !important; border-color: rgba(245, 158, 11, 0.3) !important; }
+.rr-status.approved { background: rgba(34, 197, 94, 0.14) !important; color: #22c55e !important; border-color: rgba(34, 197, 94, 0.3) !important; }
+.rr-status.rejected { background: rgba(239, 68, 68, 0.14) !important; color: #ef4444 !important; border-color: rgba(239, 68, 68, 0.3) !important; }
+
+/* ═══ LIGHT THEME — FORCE DARK TEXT ═══ */
+html[data-theme="light"] .page-title,
+html[data-theme="light"] .pp-title,
+html[data-theme="light"] .pp-card-title,
+html[data-theme="light"] .pay-card-title,
+html[data-theme="light"] .pp-stat-value,
+html[data-theme="light"] .pay-hero-amount-value,
+html[data-theme="light"] .pay-balance-value,
+html[data-theme="light"] .pay-row strong,
+html[data-theme="light"] .balance-value,
+html[data-theme="light"] .pp-empty-title,
+html[data-theme="light"] .pay-header-title,
+html[data-theme="light"] .pay-section-title,
+html[data-theme="light"] .pay-method-name,
+html[data-theme="light"] .pay-chip-amount,
+html[data-theme="light"] .pp-pending-title,
+html[data-theme="light"] .pp-pending-dr,
+html[data-theme="light"] .sr-hero-title,
+html[data-theme="light"] .sr-row-value,
+html[data-theme="light"] .sr-total-value,
+html[data-theme="light"] .rr-number,
+html[data-theme="light"] .rr-store-name,
+html[data-theme="light"] .pay-tl-label,
+html[data-theme="blue"] .page-title,
+html[data-theme="blue"] .pp-title,
+html[data-theme="blue"] .pp-card-title,
+html[data-theme="blue"] .pay-card-title,
+html[data-theme="blue"] .pp-stat-value,
+html[data-theme="blue"] .pay-hero-amount-value,
+html[data-theme="blue"] .pay-balance-value,
+html[data-theme="blue"] .pay-row strong,
+html[data-theme="blue"] .balance-value,
+html[data-theme="blue"] .pp-empty-title,
+html[data-theme="blue"] .pay-header-title,
+html[data-theme="blue"] .pay-section-title,
+html[data-theme="blue"] .pay-method-name,
+html[data-theme="blue"] .pay-chip-amount,
+html[data-theme="blue"] .pp-pending-title,
+html[data-theme="blue"] .pp-pending-dr,
+html[data-theme="blue"] .sr-hero-title,
+html[data-theme="blue"] .sr-row-value,
+html[data-theme="blue"] .sr-total-value,
+html[data-theme="blue"] .rr-number,
+html[data-theme="blue"] .rr-store-name,
+html[data-theme="blue"] .pay-tl-label {
+    color: #0c1e3d !important;
+}
+
+html[data-theme="light"] .page-sub,
+html[data-theme="light"] .pp-sub,
+html[data-theme="light"] .pp-card-sub,
+html[data-theme="light"] .pay-card-sub,
+html[data-theme="light"] .pp-stat-label,
+html[data-theme="light"] .pay-hero-sub,
+html[data-theme="light"] .pay-hero-amount-label,
+html[data-theme="light"] .pay-row span,
+html[data-theme="light"] .balance-label,
+html[data-theme="light"] .pp-empty-text,
+html[data-theme="light"] .pay-header-subtitle,
+html[data-theme="light"] .pay-section-desc,
+html[data-theme="light"] .pay-method-desc,
+html[data-theme="light"] .pp-pending-sub,
+html[data-theme="light"] .pp-pending-meta,
+html[data-theme="light"] .sr-hero-sub,
+html[data-theme="light"] .sr-row-label,
+html[data-theme="light"] .rr-store-meta,
+html[data-theme="light"] .pay-tl-time,
+html[data-theme="blue"] .page-sub,
+html[data-theme="blue"] .pp-sub,
+html[data-theme="blue"] .pp-card-sub,
+html[data-theme="blue"] .pay-card-sub,
+html[data-theme="blue"] .pp-stat-label,
+html[data-theme="blue"] .pay-hero-sub,
+html[data-theme="blue"] .pay-hero-amount-label,
+html[data-theme="blue"] .pay-row span,
+html[data-theme="blue"] .balance-label,
+html[data-theme="blue"] .pp-empty-text,
+html[data-theme="blue"] .pay-header-subtitle,
+html[data-theme="blue"] .pay-section-desc,
+html[data-theme="blue"] .pay-method-desc,
+html[data-theme="blue"] .pp-pending-sub,
+html[data-theme="blue"] .pp-pending-meta,
+html[data-theme="blue"] .sr-hero-sub,
+html[data-theme="blue"] .sr-row-label,
+html[data-theme="blue"] .rr-store-meta,
+html[data-theme="blue"] .pay-tl-time {
+    color: #64748b !important;
+}
+
+/* ═══ DARK THEME — FORCE LIGHT TEXT ═══ */
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .pp-title,
+html[data-theme="dark"] .pp-card-title,
+html[data-theme="dark"] .pay-card-title,
+html[data-theme="dark"] .pp-stat-value,
+html[data-theme="dark"] .pay-hero-amount-value,
+html[data-theme="dark"] .pay-balance-value,
+html[data-theme="dark"] .pay-row strong,
+html[data-theme="dark"] .balance-value,
+html[data-theme="dark"] .pp-empty-title,
+html[data-theme="dark"] .pay-header-title,
+html[data-theme="dark"] .pay-section-title,
+html[data-theme="dark"] .pay-method-name,
+html[data-theme="dark"] .pay-chip-amount,
+html[data-theme="dark"] .pp-pending-title,
+html[data-theme="dark"] .pp-pending-dr,
+html[data-theme="dark"] .sr-hero-title,
+html[data-theme="dark"] .sr-row-value,
+html[data-theme="dark"] .sr-total-value,
+html[data-theme="dark"] .rr-number,
+html[data-theme="dark"] .rr-store-name,
+html[data-theme="dark"] .pay-tl-label {
+    color: #ffffff !important;
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    .pp-stat { padding: 12px !important; }
+    .pp-stat-value { font-size: 18px !important; }
+    .pp-card { padding: 14px !important; }
+    .pay-hero { padding: 16px !important; }
+    .pay-hero-amount-value { font-size: 18px !important; }
+    .pay-card { padding: 14px !important; }
+}
+</style>
+@endpush
 @endsection
 
 @push('styles')
