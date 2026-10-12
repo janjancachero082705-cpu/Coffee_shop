@@ -48,6 +48,77 @@
     $currentStore = $storeFilter ? \App\Models\Store::find($storeFilter) : null;
 @endphp
 
+{{-- ═══ VIEW TABS: Store / Order ═══ --}}
+<div class="rr-view-tabs">
+    <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['view' => 'store'])) }}"
+       class="rr-view-tab {{ ($viewMode ?? 'store') === 'store' ? 'active' : '' }}">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/>
+        </svg>
+        <div class="rr-view-tab-text">
+            <span class="rr-view-tab-title">By Store</span>
+            <span class="rr-view-tab-count">{{ $storeGroups->count() }} store{{ $storeGroups->count() !== 1 ? 's' : '' }}</span>
+        </div>
+    </a>
+    <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['view' => 'order'])) }}"
+       class="rr-view-tab {{ ($viewMode ?? 'store') === 'order' ? 'active' : '' }}">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+        </svg>
+        <div class="rr-view-tab-text">
+            <span class="rr-view-tab-title">By Order</span>
+            <span class="rr-view-tab-count">{{ $allRequests->count() }} order{{ $allRequests->count() !== 1 ? 's' : '' }}</span>
+        </div>
+    </a>
+</div>
+{{-- ═══ DATE FILTER + STORE FILTER ═══ --}}
+<div class="rr-date-bar">
+    <div class="rr-date-quick">
+        <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['date' => 'today'])) }}"
+           class="rr-date-btn {{ ($dateFilter ?? 'today') === 'today' ? 'active' : '' }}">Today</a>
+        <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['date' => 'tomorrow'])) }}"
+           class="rr-date-btn {{ ($dateFilter ?? '') === 'tomorrow' ? 'active' : '' }}">Tomorrow</a>
+        <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['date' => 'week'])) }}"
+           class="rr-date-btn {{ ($dateFilter ?? '') === 'week' ? 'active' : '' }}">Week</a>
+        <a href="{{ route('reorder-requests.index', array_merge(request()->query(), ['date' => 'all'])) }}"
+           class="rr-date-btn {{ ($dateFilter ?? '') === 'all' ? 'active' : '' }}">All</a>
+    </div>
+    <form method="GET" class="rr-date-form">
+        @foreach(request()->except(['date', 'page']) as $k => $v)
+            <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+        @endforeach
+        <input type="date" name="date"
+               value="{{ preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFilter ?? '') ? $dateFilter : '' }}"
+               class="rr-date-input"
+               onchange="this.form.submit()">
+    </form>
+    <form method="GET" class="rr-store-filter-form">
+        @foreach(request()->except(['store', 'page']) as $k => $v)
+            <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+        @endforeach
+        <div class="rr-store-select-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 9l1.5-6h15L21 9M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18"/>
+            </svg>
+            <select name="store" class="rr-store-select" onchange="this.form.submit()">
+                <option value="all">All Stores</option>
+                @foreach($stores ?? [] as $s)
+                    <option value="{{ $s->id }}" {{ ($storeFilter ?? 'all') == $s->id ? 'selected' : '' }}>
+                        {{ $s->store_name }}{{ $s->code ? ' · ' . $s->code : '' }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </form>
+    <button type="button" class="rr-print-btn" onclick="window.print()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print
+    </button>
+</div>
 {{-- ===== KPIs ===== --}}
 <div class="rr-kpis">
     <div class="rr-kpi rr-kpi-primary">
@@ -138,6 +209,7 @@
     @endif
 </form>
 
+@if($viewMode === 'store')
 @if($currentStore)
     {{-- ===== STORE VIEW — Show requests table ===== --}}
     <a href="{{ route('reorder-requests.index') }}" class="rr-back-link">
@@ -285,6 +357,90 @@
     @endif
 @endif
 
+
+{{-- ═══════════════════════════════════════════ --}}
+{{-- ORDER VIEW — Flat list of all orders ═══ --}}
+{{-- ═══════════════════════════════════════════ --}}
+@endif
+
+@if(($viewMode ?? 'store') === 'order')
+
+@if($allRequests->isEmpty())
+    <div class="rr-empty-state">
+        <div class="rr-empty-icon">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+        </div>
+        <h3 class="rr-empty-title">Walay orders</h3>
+        <p class="rr-empty-text">Walay orders nga mo-match sa imong filter.</p>
+    </div>
+@else
+    {{-- ═══ AGGREGATED PRODUCTS — Delivery List ═══ --}}
+@if($aggregatedProducts->count() > 0)
+    <div class="rr-aggregated">
+        <div class="rr-aggregated-head">
+            <div class="rr-aggregated-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                Delivery List — Total Products
+            </div>
+            <div class="rr-aggregated-count">
+                {{ $aggregatedProducts->count() }} product{{ $aggregatedProducts->count() !== 1 ? 's' : '' }}
+            </div>
+        </div>
+        <div class="rr-aggregated-list">
+            @foreach($aggregatedProducts as $product)
+                                <div class="rr-aggregated-item">
+                    <div class="rr-aggregated-main">
+                        <div class="rr-aggregated-icon">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                        </div>
+                        <div class="rr-aggregated-info">
+                            <div class="rr-aggregated-name">{{ $product['name'] }}</div>
+                            @if($product['sku'])
+                                <div class="rr-aggregated-sku">SKU: {{ $product['sku'] }}</div>
+                            @endif
+                        </div>
+                        <div class="rr-aggregated-qty">
+                            <strong>{{ number_format($product['total_qty']) }}</strong>
+                            @if($product['unit'])
+                                <span class="rr-aggregated-unit">{{ $product['unit'] }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if(isset($product['stores']) && count($product['stores']) > 0)
+                        <div class="rr-agg-store-list">
+                            @foreach($product['stores'] as $store)
+                                <div class="rr-agg-store-item">
+                                    <span class="rr-agg-store-dot"></span>
+                                    <span class="rr-agg-store-name">{{ $store['store_name'] }}</span>
+                                    @if($store['store_code'])
+                                        <span class="rr-agg-store-code">{{ $store['store_code'] }}</span>
+                                    @endif
+                                    <span class="rr-agg-store-qty">×{{ $store['qty'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+        <div class="rr-aggregated-foot">
+            <div class="rr-aggregated-total">
+                Total Items: <strong>{{ $aggregatedProducts->sum('total_qty') }}</strong>
+            </div>
+        </div>
+    </div>
+@endif
+@endif
+
+@endif
 @endsection
 
 @push('styles')
@@ -746,5 +902,464 @@
         .rr-search-wrap { flex: 1 1 100%; max-width: 100%; }
         .rr-filters { flex-wrap: wrap; }
     }
-</style>
+
+/* ═══ VIEW TABS ═══ */
+.rr-view-tabs {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 18px; padding: 6px;
+    background: rgba(30, 26, 22, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+}
+.rr-view-tab {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: transparent; border: 1px solid transparent;
+    color: #a8a5a0; text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rr-view-tab svg { color: #6b6862; flex-shrink: 0; }
+.rr-view-tab:hover {
+    background: rgba(201, 169, 97, 0.08);
+    border-color: rgba(201, 169, 97, 0.2);
+    color: #f5f3f0;
+}
+.rr-view-tab:hover svg { color: #c9a961; }
+.rr-view-tab.active {
+    background: linear-gradient(135deg, #c9a961, #8a5f36);
+    color: #ffffff;
+    box-shadow: 0 8px 20px -8px rgba(201, 169, 97, 0.6);
+}
+.rr-view-tab.active svg { color: #ffffff; }
+.rr-view-tab-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rr-view-tab-title { font-size: 13.5px; font-weight: 800; }
+.rr-view-tab-count { font-size: 11px; font-weight: 600; opacity: 0.75; }
+
+/* ═══ ORDER LIST ═══ */
+.rr-order-list { display: flex; flex-direction: column; gap: 10px; }
+.rr-order-item {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; padding: 14px 16px;
+    background: rgba(30, 26, 22, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px; text-decoration: none; color: inherit;
+    transition: all 0.2s;
+}
+.rr-order-item:hover {
+    border-color: rgba(201, 169, 97, 0.35);
+    background: rgba(30, 26, 22, 0.75);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -10px rgba(201, 169, 97, 0.3);
+}
+.rr-order-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.rr-order-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: rgba(201, 169, 97, 0.12);
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    color: #c9a961;
+    display: grid; place-items: center; flex-shrink: 0;
+}
+.rr-order-info { min-width: 0; flex: 1; }
+.rr-order-num {
+    font-size: 13.5px; font-weight: 800; color: #f5f3f0;
+    font-family: ui-monospace, monospace; margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rr-order-meta {
+    font-size: 11.5px; color: #6b6862;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rr-order-meta strong { color: #a8a5a0; font-weight: 700; }
+.rr-order-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.rr-order-amount {
+    font-size: 16px; font-weight: 800; color: #c9a961;
+    font-variant-numeric: tabular-nums;
+}
+.rr-order-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 7px;
+    font-size: 10px; font-weight: 800;
+    text-transform: capitalize; border: 1px solid;
+}
+.rr-order-status.pending  { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.rr-order-status.approved { background: rgba(34, 197, 94, 0.12);  color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+.rr-order-status.rejected { background: rgba(239, 68, 68, 0.12);  color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+
+.rr-empty-state {
+    text-align: center; padding: 60px 20px;
+    background: rgba(30, 26, 22, 0.5);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+}
+.rr-empty-icon {
+    width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 20px;
+    background: rgba(201, 169, 97, 0.1);
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    color: #c9a961;
+    display: grid; place-items: center;
+}
+.rr-empty-title { font-size: 16px; font-weight: 800; color: #f5f3f0; margin-bottom: 6px; }
+.rr-empty-text { font-size: 13px; color: #6b6862; }
+
+@media (max-width: 640px) {
+    .rr-view-tabs { gap: 6px; padding: 5px; }
+    .rr-view-tab { padding: 12px; gap: 10px; }
+    .rr-view-tab-title { font-size: 12.5px; }
+    .rr-order-item { padding: 12px 14px; }
+    .rr-order-amount { font-size: 14px; }
+}
+
+/* ═══ ORDER PRODUCTS LIST ═══ */
+.rr-order-item {
+    display: block !important;
+    padding: 16px !important;
+}
+.rr-order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.rr-order-products {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.rr-order-product {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(201, 169, 97, 0.06);
+    border: 1px solid rgba(201, 169, 97, 0.15);
+    border-radius: 10px;
+    transition: background 0.15s;
+}
+.rr-order-product:hover {
+    background: rgba(201, 169, 97, 0.12);
+    border-color: rgba(201, 169, 97, 0.3);
+}
+.rr-order-product-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #f5f3f0;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rr-order-product-qty {
+    font-size: 12px;
+    font-weight: 800;
+    color: #c9a961;
+    background: rgba(201, 169, 97, 0.15);
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+.rr-order-product-qty strong {
+    color: #c9a961;
+    font-weight: 800;
+}
+
+@media (max-width: 640px) {
+    .rr-order-product { padding: 7px 10px; }
+    .rr-order-product-name { font-size: 12px; }
+    .rr-order-product-qty { font-size: 11px; padding: 2px 8px; }
+}
+
+/* ═══ AGGREGATED PRODUCTS — DELIVERY LIST ═══ */
+.rr-aggregated {
+    margin-top: 16px;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.08), rgba(30, 26, 22, 0.6));
+    border: 1px solid rgba(201, 169, 97, 0.28);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.rr-aggregated-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(201, 169, 97, 0.12);
+    border-bottom: 1px solid rgba(201, 169, 97, 0.2);
+}
+.rr-aggregated-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #c9a961;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.rr-aggregated-count {
+    display: inline-flex;
+    padding: 4px 12px;
+    background: rgba(201, 169, 97, 0.15);
+    border: 1px solid rgba(201, 169, 97, 0.3);
+    border-radius: 100px;
+    color: #c9a961;
+    font-size: 11px;
+    font-weight: 800;
+}
+.rr-aggregated-list {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 4px;
+}
+.rr-aggregated-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(20, 18, 15, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    transition: all 0.15s;
+}
+.rr-aggregated-item:hover {
+    background: rgba(201, 169, 97, 0.08);
+    border-color: rgba(201, 169, 97, 0.25);
+}
+.rr-aggregated-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(201, 169, 97, 0.12);
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    color: #c9a961;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.rr-aggregated-info {
+    flex: 1;
+    min-width: 0;
+}
+.rr-aggregated-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f5f3f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.rr-aggregated-sku {
+    font-size: 10.5px;
+    color: #6b6862;
+    font-family: ui-monospace, monospace;
+    font-weight: 600;
+}
+.rr-aggregated-qty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.2), rgba(201, 169, 97, 0.1));
+    border: 1px solid rgba(201, 169, 97, 0.35);
+    border-radius: 100px;
+    flex-shrink: 0;
+}
+.rr-aggregated-qty strong {
+    font-size: 15px;
+    font-weight: 800;
+    color: #c9a961;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+.rr-aggregated-unit {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(201, 169, 97, 0.7);
+    text-transform: lowercase;
+}
+.rr-aggregated-foot {
+    padding: 12px 18px;
+    background: rgba(201, 169, 97, 0.06);
+    border-top: 1px solid rgba(201, 169, 97, 0.15);
+    text-align: right;
+}
+.rr-aggregated-total {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #a8a5a0;
+}
+.rr-aggregated-total strong {
+    font-size: 16px;
+    font-weight: 800;
+    color: #c9a961;
+    margin-left: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .rr-aggregated-head { padding: 12px 14px; }
+    .rr-aggregated-title { font-size: 12px; }
+    .rr-aggregated-item { padding: 10px 12px; gap: 10px; }
+    .rr-aggregated-icon { width: 28px; height: 28px; }
+    .rr-aggregated-name { font-size: 12px; }
+    .rr-aggregated-qty { padding: 5px 11px; }
+    .rr-aggregated-qty strong { font-size: 13px; }
+    .rr-aggregated-foot { padding: 10px 14px; }
+    .rr-aggregated-total strong { font-size: 14px; }
+}
+
+/* ═══ AGGREGATED PRODUCT — STORE BREAKDOWN ═══ */
+.rr-aggregated-item {
+    display: block !important;
+    padding: 0 !important;
+    background: rgba(20, 18, 15, 0.5);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.rr-aggregated-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    transition: background 0.15s;
+}
+.rr-aggregated-item:hover .rr-aggregated-main {
+    background: rgba(201, 169, 97, 0.06);
+}
+.rr-agg-store-list {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 14px 10px 14px;
+    gap: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    margin-top: 2px;
+    padding-top: 8px;
+}
+.rr-agg-store-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(201, 169, 97, 0.04);
+    border: 1px solid rgba(201, 169, 97, 0.12);
+    border-radius: 8px;
+    font-size: 11.5px;
+}
+.rr-agg-store-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #c9a961;
+    box-shadow: 0 0 6px rgba(201, 169, 97, 0.7);
+    flex-shrink: 0;
+}
+.rr-agg-store-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+    color: #f5f3f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rr-agg-store-code {
+    font-size: 9.5px;
+    color: #6b6862;
+    font-family: ui-monospace, monospace;
+    padding: 1px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.rr-agg-store-qty {
+    font-size: 11px;
+    font-weight: 800;
+    color: #c9a961;
+    padding: 2px 8px;
+    background: rgba(201, 169, 97, 0.15);
+    border-radius: 100px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .rr-agg-store-item { padding: 5px 8px; font-size: 11px; }
+    .rr-agg-store-qty { font-size: 10px; padding: 2px 6px; }
+}
+
+/* ═══ STORE FILTER DROPDOWN ═══ */
+      .rr-store-filter-form { display: flex; }
+      .rr-store-select-wrap { position: relative; display: flex; align-items: center; }
+      .rr-store-select-wrap svg { position: absolute; left: 12px; color: #c9a961; pointer-events: none; }
+      .rr-store-select {
+          padding: 7px 30px 7px 34px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #f5f3f0;
+          font-size: 12px;
+          font-family: inherit;
+          font-weight: 700;
+          cursor: pointer;
+          outline: none;
+          appearance: none;
+          -webkit-appearance: none;
+      }
+      .rr-store-select:hover { border-color: rgba(201, 169, 97, 0.3); background-color: rgba(201, 169, 97, 0.06); }
+      .rr-store-select:focus { border-color: #c9a961; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15); }
+      .rr-store-select option { background: #1e1a16; color: #f5f3f0; padding: 8px; }
+      @media (max-width: 640px) { .rr-store-select { font-size: 11px; padding: 6px 26px 6px 30px; } }
+
+/* ═══ DATE BAR ═══ */
+.rr-date-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; margin-bottom: 14px;
+    background: rgba(30, 26, 22, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px; flex-wrap: wrap;
+}
+.rr-date-quick { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.rr-date-btn {
+    display: inline-flex; align-items: center;
+    padding: 7px 14px; border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #a8a5a0; font-size: 12px; font-weight: 700;
+    text-decoration: none; transition: all 0.15s;
+}
+.rr-date-btn:hover { background: rgba(201, 169, 97, 0.1); border-color: rgba(201, 169, 97, 0.3); color: #c9a961; }
+.rr-date-btn.active {
+    background: linear-gradient(135deg, #c9a961, #8a5f36);
+    border-color: transparent; color: #fff;
+    box-shadow: 0 6px 16px -6px rgba(201, 169, 97, 0.5);
+}
+.rr-date-form { display: flex; }
+.rr-date-input {
+    padding: 7px 12px; border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #f5f3f0; font-size: 12px;
+    font-family: inherit; cursor: pointer; outline: none;
+}
+.rr-date-input:focus { border-color: #c9a961; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15); }
+.rr-print-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 10px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6; font-size: 12px; font-weight: 700;
+    font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.rr-print-btn:hover { background: rgba(59, 130, 246, 0.2); }
+
+@media (max-width: 640px) {
+    .rr-date-bar { padding: 10px; gap: 8px; }
+    .rr-date-btn { padding: 6px 11px; font-size: 11px; }
+}</style>
 @endpush

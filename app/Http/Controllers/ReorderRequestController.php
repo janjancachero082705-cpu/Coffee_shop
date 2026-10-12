@@ -22,13 +22,42 @@ class ReorderRequestController extends Controller
     public function index(Request $request)
     {
         $tab = $request->get('status', 'all');
+        $viewMode = $request->get('view', 'store');
+        $storeFilter = $request->get('store', 'all');
 
-        $query = ReorderRequest::with('store', 'items');
+        // ─── DATE FILTER ───
+        $dateFilter = $request->get('date', 'today');
+        $dateFrom = null;
+        $dateTo = null;
+        $dateLabel = 'All Dates';
 
-        // Filter logic:
-        // - 'all' or 'approved'  show EVERYTHING
-        // - 'pending'  only pending (case-insensitive)
-        // - 'rejected'  only rejected (case-insensitive)
+        if ($dateFilter === 'today') {
+            $dateFrom = today()->toDateString();
+            $dateTo = $dateFrom;
+            $dateLabel = 'Today · ' . today()->format('M d, Y');
+        } elseif ($dateFilter === 'tomorrow') {
+            $dateFrom = today()->addDay()->toDateString();
+            $dateTo = $dateFrom;
+            $dateLabel = 'Tomorrow · ' . today()->addDay()->format('M d, Y');
+        } elseif ($dateFilter === 'week') {
+            $dateFrom = today()->startOfWeek()->toDateString();
+            $dateTo = today()->endOfWeek()->toDateString();
+            $dateLabel = 'This Week';
+        } elseif ($dateFilter && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFilter)) {
+            $dateFrom = $dateFilter;
+            $dateTo = $dateFilter;
+            try {
+                $dateLabel = \Carbon\Carbon::parse($dateFilter)->format('l, M d, Y');
+            } catch (\Exception $e) {
+                $dateFrom = today()->toDateString();
+                $dateTo = $dateFrom;
+                $dateLabel = 'Today · ' . today()->format('M d, Y');
+            }
+        }
+
+        // ─── QUERY ───
+        $query = ReorderRequest::with(['store', 'items.product']);
+
         if ($tab === 'pending') {
             $query->whereRaw('LOWER(status) = ?', ['pending']);
         } elseif ($tab === 'approved') {
@@ -36,7 +65,6 @@ class ReorderRequestController extends Controller
         } elseif ($tab === 'rejected') {
             $query->whereRaw('LOWER(status) = ?', ['rejected']);
         }
-        // 'all'  no filter (show everything)
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -46,8 +74,85 @@ class ReorderRequestController extends Controller
             });
         }
 
-        $requests = $query->latest()->paginate(15)->withQueryString();
+        if ($dateFrom) {
+            $query->where(function ($q) use ($dateFrom, $dateTo) {
+                $q->whereDate('requested_date', '>=', $dateFrom)
+                  ->whereDate('requested_date', '<=', $dateTo)
+                  ->orWhereHas('deliveryReceipt', function ($dq) use ($dateFrom, $dateTo) {
+                      $dq->whereDate('delivery_date', '>=', $dateFrom)
+                         ->whereDate('delivery_date', '<=', $dateTo);
+                  });
+            });
+        }
 
+        // Store filter
+        if ($storeFilter && $storeFilter !== 'all') {
+            $query->where('store_id', $storeFilter);
+        }
+
+        $allRequests = $query->latest()->get();
+        $requests = $allRequests;
+
+        // ─── STORE GROUPS ───
+        $storeGroups = $allRequests->groupBy('store_id')->map(function ($group) {
+            $store = $group->first()->store;
+            return [
+                'store' => $store,
+                'requests' => $group,
+                'count' => $group->count(),
+                'pending' => $group->where('status', 'pending')->count(),
+                'approved' => $group->where('status', 'approved')->count(),
+                'rejected' => $group->where('status', 'rejected')->count(),
+                'total_amount' => $group->sum('total_amount'),
+                'latest' => $group->max('created_at'),
+            ];
+        })->sortByDesc('latest')->values();
+
+        // ─── AGGREGATED PRODUCTS (with store breakdown) ───
+        $flatItems = collect();
+
+        foreach ($allRequests as $order) {
+            foreach ($order->items as $item) {
+                $flatItems->push([
+                    'product_id' => $item->product_id,
+                    'name'       => $item->product->name ?? ('Product #' . $item->product_id),
+                    'sku'        => $item->product->sku ?? null,
+                    'unit'       => $item->product->unit ?? null,
+                    'qty'        => $item->quantity_requested ?? $item->quantity ?? 0,
+                    'store_id'   => $order->store_id,
+                    'store_name' => $order->store->store_name ?? 'Unknown Store',
+                    'store_code' => $order->store->code ?? null,
+                ]);
+            }
+        }
+
+        $aggregatedProducts = $flatItems
+            ->groupBy('product_id')
+            ->map(function ($items) {
+                $first = $items->first();
+                $stores = $items->groupBy('store_id')->map(function ($storeItems) {
+                    $s = $storeItems->first();
+                    return [
+                        'store_id'   => $s['store_id'],
+                        'store_name' => $s['store_name'],
+                        'store_code' => $s['store_code'],
+                        'qty'        => $storeItems->sum('qty'),
+                    ];
+                })->sortByDesc('qty')->values();
+
+                return [
+                    'product_id' => $first['product_id'],
+                    'name'       => $first['name'],
+                    'sku'        => $first['sku'],
+                    'unit'       => $first['unit'],
+                    'total_qty'  => $items->sum('qty'),
+                    'stores'     => $stores,
+                ];
+            })
+            ->sortByDesc('total_qty')
+            ->values();
+
+        // ─── STATS ───
         $stats = [
             'total'    => ReorderRequest::count(),
             'pending'  => ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count(),
@@ -62,9 +167,21 @@ class ReorderRequestController extends Controller
             'rejected' => $stats['rejected'],
         ];
 
-        return view('reorder-requests.index', compact('requests', 'stats', 'tab', 'tabCounts'));
+        return view('reorder-requests.index', compact(
+            'requests',
+            'allRequests',
+            'storeGroups',
+            'stats',
+            'tabCounts',
+            'tab',
+            'viewMode',
+            'dateFilter',
+            'dateFrom',
+            'dateTo',
+            'dateLabel',
+            'aggregatedProducts'
+        ));
     }
-
     public function show(ReorderRequest $reorderRequest)
     {
         $reorderRequest->load(['store', 'items.product', 'deliveryReceipt', 'approver']);
