@@ -11,7 +11,7 @@
         <div class="fin-hero-title-group">
             <div class="fin-hero-eyebrow">
                 <span class="fin-live-dot"></span>
-                FINANCIAL OVERVIEW
+                Financial Overview
             </div>
             <h1 class="fin-hero-title">Financial Dashboard</h1>
             <p class="fin-hero-subtitle">
@@ -71,7 +71,7 @@
         <div class="fin-metric-value">₱{{ number_format($totalCost, 2) }}</div>
         <div class="fin-metric-foot">{{ $totalRevenue > 0 ? number_format(($totalCost / $totalRevenue) * 100, 1) : 0 }}% of revenue</div>
         <div class="fin-metric-bar">
-            <div class="fin-metric-bar-fill" style="width:{{ $totalRevenue > 0 ? min(100, ($totalCost / $totalRevenue) * 100) : 0 }}%; background:#ef4444;"></div>
+            <div class="fin-metric-bar-fill" style="width:{{ $totalRevenue > 0 ? min(100, ($totalCost / $totalRevenue) * 100) : 0 }}%; background:#f87171;"></div>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
             </span>
         </div>
         <div class="fin-metric-bar">
-            <div class="fin-metric-bar-fill" style="width:{{ max(0, min(100, $profitMargin)) }}%; background:#22c55e;"></div>
+            <div class="fin-metric-bar-fill" style="width:{{ max(0, min(100, $profitMargin)) }}%; background:#34d399;"></div>
         </div>
     </div>
 
@@ -110,16 +110,16 @@
     </div>
 </div>
 
-{{-- ========== REVENUE TREND BAR CHART ========== --}}
+{{-- ========== REVENUE TREND ========== --}}
 @if($dailyTrend->count() > 0)
 <section class="fin-section">
     <div class="fin-section-head">
         <div>
-            <div class="fin-section-eyebrow">DAILY TREND</div>
+            <div class="fin-section-eyebrow">Daily Trend</div>
             <h2 class="fin-section-title">Revenue Overview</h2>
         </div>
         <div class="fin-section-meta">
-            Total: <strong>₱{{ number_format($totalRevenue, 0) }}</strong>
+            Total <strong>₱{{ number_format($totalRevenue, 0) }}</strong>
         </div>
     </div>
 
@@ -139,13 +139,14 @@
             <div class="fin-chart-bars">
                 @foreach($dailyTrend as $day)
                     @php
-                        $heightPct = $maxDailyRevenue > 0 ? ($day['revenue'] / $maxDailyRevenue) * 100 : 0;
-                        $paidHeightPct = $maxDailyRevenue > 0 ? ($day['paid'] / $maxDailyRevenue) * 100 : 0;
+                        $heightPct     = $maxDailyRevenue > 0 ? ($day['revenue'] / $maxDailyRevenue) * 100 : 0;
+                        $paidHeightPct = $maxDailyRevenue > 0 ? ($day['paid']    / $maxDailyRevenue) * 100 : 0;
                     @endphp
-                    <div class="fin-bar-group" title="{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }} — Revenue ₱{{ number_format($day['revenue'], 2) }}">
+                    <div class="fin-bar-group"
+                         title="{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }} — Revenue ₱{{ number_format($day['revenue'], 2) }} · Paid ₱{{ number_format($day['paid'], 2) }}">
                         <div class="fin-bar-stack">
                             <div class="fin-bar fin-bar-revenue" style="height: {{ $heightPct }}%;"></div>
-                            <div class="fin-bar fin-bar-paid" style="height: {{ $paidHeightPct }}%;"></div>
+                            <div class="fin-bar fin-bar-paid"    style="height: {{ $paidHeightPct }}%;"></div>
                         </div>
                         <div class="fin-bar-label">{{ \Carbon\Carbon::parse($day['date'])->format('d') }}</div>
                     </div>
@@ -156,11 +157,11 @@
 
     <div class="fin-legend">
         <div class="fin-legend-item">
-            <span class="fin-legend-dot" style="background:linear-gradient(180deg, #c9a961, #b8944d);"></span>
+            <span class="fin-legend-dot fin-dot-revenue"></span>
             Revenue
         </div>
         <div class="fin-legend-item">
-            <span class="fin-legend-dot" style="background:linear-gradient(180deg, #22c55e, #16a34a);"></span>
+            <span class="fin-legend-dot fin-dot-paid"></span>
             Payments Received
         </div>
     </div>
@@ -171,7 +172,7 @@
 <section class="fin-section">
     <div class="fin-section-head">
         <div>
-            <div class="fin-section-eyebrow">BALANCE SHEET</div>
+            <div class="fin-section-eyebrow">Balance Sheet</div>
             <h2 class="fin-section-title">Money Position</h2>
         </div>
     </div>
@@ -215,15 +216,15 @@
     </div>
 </section>
 
-{{-- ========== TWO-COLUMN GRID: Payments + Products/Stores ========== --}}
-<div class="fin-2col">
+{{-- ========== PRODUCTS + STORES (paired) ========== --}}
+<div class="fin-2col fin-2col-fill">
 
-    {{-- LEFT: Payments by Method (Bar Chart) --}}
+    {{-- Payments by Method --}}
     @if($paymentsByMethod->count() > 0)
     <section class="fin-section">
         <div class="fin-section-head">
             <div>
-                <div class="fin-section-eyebrow">COLLECTIONS</div>
+                <div class="fin-section-eyebrow">Collections</div>
                 <h2 class="fin-section-title">Payments by Method</h2>
             </div>
         </div>
@@ -231,14 +232,14 @@
         <div class="fin-method-chart">
             @foreach($paymentsByMethod as $m)
                 @php
-                    $pct = $maxMethodTotal > 0 ? ($m['total'] / $maxMethodTotal) * 100 : 0;
+                    $pct      = $maxMethodTotal > 0 ? ($m['total'] / $maxMethodTotal) * 100 : 0;
                     $sharePct = $paymentsByMethod->sum('total') > 0 ? ($m['total'] / $paymentsByMethod->sum('total')) * 100 : 0;
-                    $color = match($m['method']) {
-                        'cash' => '#22c55e',
-                        'gcash' => '#3b82f6',
-                        'maya' => '#a855f7',
-                        'bank_transfer' => '#f59e0b',
-                        default => '#c9a961',
+                    $color    = match($m['method']) {
+                        'cash'          => '#34d399',
+                        'gcash'         => '#60a5fa',
+                        'maya'          => '#c084fc',
+                        'bank_transfer' => '#fbbf24',
+                        default         => '#d4b36a',
                     };
                 @endphp
                 <div class="fin-method-row">
@@ -260,12 +261,12 @@
     </section>
     @endif
 
-    {{-- RIGHT: Top Products (Horizontal Bar Chart) --}}
+    {{-- Top Products --}}
     @if($topProducts->count() > 0)
     <section class="fin-section">
         <div class="fin-section-head">
             <div>
-                <div class="fin-section-eyebrow">PERFORMANCE</div>
+                <div class="fin-section-eyebrow">Performance</div>
                 <h2 class="fin-section-title">Top Products</h2>
             </div>
             <div class="fin-section-meta">{{ $topProducts->count() }} item(s)</div>
@@ -274,8 +275,8 @@
         <div class="fin-product-chart">
             @foreach($topProducts as $i => $p)
                 @php
-                    $pct = $maxProductRevenue > 0 ? ($p['revenue'] / $maxProductRevenue) * 100 : 0;
-                    $marginColor = $p['margin'] >= 50 ? '#22c55e' : ($p['margin'] >= 25 ? '#f59e0b' : '#ef4444');
+                    $pct         = $maxProductRevenue > 0 ? ($p['revenue'] / $maxProductRevenue) * 100 : 0;
+                    $marginColor = $p['margin'] >= 50 ? '#34d399' : ($p['margin'] >= 25 ? '#fbbf24' : '#f87171');
                 @endphp
                 <div class="fin-product-row">
                     <div class="fin-product-rank">{{ $i + 1 }}</div>
@@ -287,7 +288,61 @@
                     </div>
                     <div class="fin-product-meta">
                         <div class="fin-product-revenue">₱{{ number_format($p['revenue'], 0) }}</div>
-                        <div class="fin-product-margin" style="color:{{ $marginColor }};">{{ number_format($p['margin'], 0) }}%</div>
+                        <div class="fin-product-margin" style="color:{{ $marginColor }};">{{ number_format($p['margin'], 0) }}% margin</div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
+    {{-- Top Stores --}}
+    @if($topStores->count() > 0)
+    <section class="fin-section">
+        <div class="fin-section-head">
+            <div>
+                <div class="fin-section-eyebrow">Performance</div>
+                <h2 class="fin-section-title">Top Stores</h2>
+            </div>
+            <div class="fin-section-meta">{{ $topStores->count() }} store(s)</div>
+        </div>
+
+        <div class="fin-store-list">
+            @foreach($topStores as $i => $s)
+                @php
+                    $revPct  = $maxStoreRevenue > 0 ? ($s['revenue'] / $maxStoreRevenue) * 100 : 0;
+                    $paidPct = $s['revenue'] > 0 ? min(100, ($s['paid'] / $s['revenue']) * 100) : 0;
+
+                    $paidTone = $paidPct >= 80 ? 'is-ok'
+                              : ($paidPct >= 40 ? 'is-warn'
+                              : ($paidPct > 0   ? 'is-low' : 'is-zero'));
+                @endphp
+                <div class="fin-store-row">
+                    <div class="fin-store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">
+                        {{ $i + 1 }}
+                    </div>
+
+                    <div class="fin-store-info">
+                        <div class="fin-store-name">{{ $s['name'] }}</div>
+                        @if($s['code'])
+                            <div class="fin-store-code">{{ $s['code'] }}</div>
+                        @endif
+                    </div>
+
+                    <div class="fin-store-chart">
+                        <div class="fin-store-bar-wrap">
+                            <div class="fin-store-bar-rev"  style="width:{{ $revPct }}%;"></div>
+                            <div class="fin-store-bar-paid" style="width:{{ $paidPct }}%;"></div>
+                        </div>
+                        <div class="fin-store-bar-legend">
+                            <span><i class="fin-mini-dot rev"></i>Revenue</span>
+                            <span><i class="fin-mini-dot paid"></i>Paid</span>
+                        </div>
+                    </div>
+
+                    <div class="fin-store-meta">
+                        <div class="fin-store-amount">₱{{ number_format($s['revenue'], 0) }}</div>
+                        <div class="fin-store-paid {{ $paidTone }}">{{ number_format($paidPct, 0) }}% paid</div>
                     </div>
                 </div>
             @endforeach
@@ -297,761 +352,846 @@
 
 </div>
 
-{{-- ========== TOP STORES (Full Width with Bars) ========== --}}
-@if($topStores->count() > 0)
-<section class="fin-section">
-    <div class="fin-section-head">
-        <div>
-            <div class="fin-section-eyebrow">PERFORMANCE</div>
-            <h2 class="fin-section-title">Top Stores</h2>
-        </div>
-        <div class="fin-section-meta">{{ $topStores->count() }} store(s)</div>
-    </div>
-
-    <div class="fin-store-list">
-        @foreach($topStores as $i => $s)
-            @php
-                $revPct = $maxStoreRevenue > 0 ? ($s['revenue'] / $maxStoreRevenue) * 100 : 0;
-                $paidPct = $s['revenue'] > 0 ? min(100, ($s['paid'] / $s['revenue']) * 100) : 0;
-            @endphp
-            <div class="fin-store-row">
-                <div class="fin-store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">
-                    {{ $i + 1 }}
-                </div>
-                <div class="fin-store-info">
-                    <div class="fin-store-name">{{ $s['name'] }}</div>
-                    @if($s['code'])
-                        <div class="fin-store-code">{{ $s['code'] }}</div>
-                    @endif
-                </div>
-                <div class="fin-store-chart">
-                    <div class="fin-store-bar-wrap">
-                        <div class="fin-store-bar-rev" style="width:{{ $revPct }}%;"></div>
-                        <div class="fin-store-bar-paid" style="width:{{ $paidPct }}%;"></div>
-                    </div>
-                </div>
-                <div class="fin-store-meta">
-                    <div class="fin-store-amount">₱{{ number_format($s['revenue'], 0) }}</div>
-                    <div class="fin-store-paid">{{ number_format($paidPct, 0) }}% paid</div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="fin-legend" style="margin-top:14px;">
-        <div class="fin-legend-item">
-            <span class="fin-legend-dot" style="background:linear-gradient(90deg, #c9a961, #b8944d);"></span>
-            Revenue
-        </div>
-        <div class="fin-legend-item">
-            <span class="fin-legend-dot" style="background:linear-gradient(90deg, #22c55e, #16a34a);"></span>
-            Paid
-        </div>
-    </div>
-</section>
-@endif
-
 @endsection
 
 @push('styles')
 <style>
-    /* ============================================================
-       FINANCE DASHBOARD — REDESIGN WITH BAR GRAPHS
-       ============================================================ */
+/* ============================================================
+   FINANCE DASHBOARD — TRANSPARENT / FROSTED
+   ============================================================ */
+:root {
+    --fin-bg-1:      #1a1612;
+    --fin-bg-2:      #14110e;
 
-    /* ========== HERO ========== */
-    .fin-hero {
-        position: relative;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-        background: linear-gradient(135deg, rgba(201, 169, 97, 0.08) 0%, rgba(30, 26, 22, 0.4) 100%);
-        border: 1px solid rgba(201, 169, 97, 0.15);
-        border-radius: 18px;
-        overflow: hidden;
-    }
-    .fin-hero::before {
-        content: '';
-        position: absolute;
-        top: -80px; right: -80px;
-        width: 240px; height: 240px;
-        background: radial-gradient(circle, rgba(201, 169, 97, 0.12), transparent 70%);
-        pointer-events: none;
-    }
-    .fin-hero-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 20px;
-        flex-wrap: wrap;
-        position: relative;
-        z-index: 1;
-    }
-    .fin-hero-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 9px;
-        background: rgba(201, 169, 97, 0.12);
-        border: 1px solid rgba(201, 169, 97, 0.25);
-        border-radius: 100px;
-        font-size: 9px;
-        font-weight: 800;
-        color: #c9a961;
-        letter-spacing: 0.15em;
-        margin-bottom: 10px;
-    }
-    .fin-live-dot {
-        width: 5px; height: 5px;
-        background: #22c55e;
-        border-radius: 50%;
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-        animation: finPulse 2s ease-in-out infinite;
-    }
-    @keyframes finPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-    }
-    .fin-hero-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-        margin-bottom: 6px;
-    }
-    .fin-hero-subtitle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-        font-size: 11.5px;
-        color: #a1a1aa;
-    }
-    .fin-date-chip {
-        padding: 2px 8px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 5px;
-        font-family: ui-monospace, monospace;
-        font-size: 10.5px;
-        font-weight: 600;
-        color: #d4d4d8;
-    }
-    .fin-date-arrow { color: #71717a; }
-    .fin-date-sep { color: #52525b; }
-    .fin-date-range { font-weight: 700; color: #c9a961; font-size: 10.5px; }
+    --fin-panel:     #1e1a16;
+    --fin-panel-2:   #181512;
 
-    .fin-hero-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-end;
-    }
-    .fin-presets {
-        display: flex;
-        gap: 3px;
-        padding: 3px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 9px;
-    }
-    .fin-preset {
-        padding: 5px 11px;
-        border-radius: 6px;
-        font-size: 10.5px;
-        font-weight: 700;
-        color: #a1a1aa;
-        text-decoration: none;
-        transition: all 0.15s;
-        white-space: nowrap;
-    }
-    .fin-preset:hover { background: rgba(255, 255, 255, 0.06); color: #fafafa; }
-    .fin-preset.active {
-        background: linear-gradient(135deg, #c9a961, #b8944d);
-        color: #0f0f14;
-        box-shadow: 0 4px 12px -4px rgba(201, 169, 97, 0.5);
-    }
-    .fin-custom-range {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .fin-date-input {
-        padding: 6px 10px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 7px;
-        color: #fafafa;
-        font-size: 11px;
-        font-family: ui-monospace, monospace;
-        outline: none;
-        transition: all 0.15s;
-    }
-    .fin-date-input:focus {
-        border-color: #c9a961;
-        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
-    }
-    .fin-date-input-sep { color: #71717a; font-size: 10.5px; }
-    .fin-apply-btn {
-        padding: 6px 13px;
-        background: linear-gradient(135deg, #c9a961, #b8944d);
-        color: #0f0f14;
-        border: none;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 800;
-        font-family: inherit;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .fin-apply-btn:hover {
-        background: linear-gradient(135deg, #d4b672, #c9a961);
-        transform: translateY(-1px);
-    }
+    --fin-glass:        rgba(24, 20, 16, .62);
+    --fin-glass-2:      rgba(18, 15, 12, .58);
+    --fin-glass-soft:   rgba(24, 20, 16, .45);
+    --fin-blur:         18px;
 
-    /* ========== METRICS ========== */
-    .fin-metrics {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-    .fin-metric {
-        padding: 14px 16px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        transition: all 0.2s;
-    }
-    .fin-metric:hover {
-        transform: translateY(-2px);
-        border-color: rgba(201, 169, 97, 0.25);
-        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.5);
-    }
-    .fin-metric-primary {
-        background: linear-gradient(165deg, rgba(201, 169, 97, 0.1), rgba(21, 18, 15, 0.9));
-        border-color: rgba(201, 169, 97, 0.2);
-    }
-    .fin-metric-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .fin-metric-icon {
-        width: 28px; height: 28px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-    }
-    .fin-icon-revenue { background: rgba(201, 169, 97, 0.15); color: #c9a961; }
-    .fin-icon-cost { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
-    .fin-icon-profit { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-    .fin-icon-loss { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-    .fin-icon-payments { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-    .fin-metric-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #71717a;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        flex: 1;
-    }
-    .fin-metric-change {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 6px;
-        border-radius: 5px;
-        font-size: 9.5px;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-    }
-    .fin-metric-change.up { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-    .fin-metric-change.down { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
-    .fin-metric-value {
-        font-size: 20px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.03em;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-        margin-bottom: 6px;
-    }
-    .fin-metric-value.positive { color: #22c55e; }
-    .fin-metric-value.negative { color: #ef4444; }
-    .fin-metric-foot {
-        font-size: 10.5px;
-        color: #71717a;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .fin-metric-bar {
-        margin-top: 10px;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    .fin-metric-bar-fill {
-        height: 100%;
-        border-radius: 2px;
-        transition: width 0.5s ease;
-    }
+    --fin-border:    rgba(255,255,255,.09);
+    --fin-border-2:  rgba(255,255,255,.06);
+    --fin-border-hi: rgba(212,179,106,.28);
 
-    /* ========== SECTION ========== */
+    --fin-ink:       #f5f2ec;
+    --fin-ink-2:     #b8b2aa;
+    --fin-ink-3:     #857e76;
+    --fin-ink-4:     #5f5952;
+
+    --fin-gold:      #d4b36a;
+    --fin-gold-2:    #e6c88a;
+    --fin-gold-dim:  rgba(212,179,106,.14);
+
+    --fin-ok:        #34d399;
+    --fin-info:      #60a5fa;
+    --fin-warn:      #fbbf24;
+    --fin-bad:       #f87171;
+    --fin-purple:    #c084fc;
+
+    --fin-r-sm:  8px;
+    --fin-r:     12px;
+    --fin-r-lg:  16px;
+    --fin-r-pill: 999px;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+.fin-hero, .fin-metric, .fin-section, .fin-money-card {
+    color: var(--fin-ink);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+}
+.fin-hero *, .fin-metric *, .fin-section *, .fin-money-card * { box-sizing: border-box; }
+
+/* ── Hero ─────────────────────────────────────────────── */
+.fin-hero {
+    position: relative;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    background:
+        radial-gradient(120% 140% at 100% 0%, rgba(212,179,106,.10), transparent 55%),
+        linear-gradient(180deg, var(--fin-glass), var(--fin-glass-2));
+    backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    border: 1px solid var(--fin-border);
+    border-radius: var(--fin-r-lg);
+    overflow: hidden;
+    box-shadow: 0 22px 48px -32px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.fin-hero::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold), transparent);
+}
+.fin-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.fin-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: var(--fin-gold-dim);
+    border: 1px solid var(--fin-border-hi);
+    border-radius: var(--fin-r-pill);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fin-gold);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+.fin-live-dot {
+    width: 6px; height: 6px;
+    background: var(--fin-ok);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.18);
+    animation: finPulse 2.2s ease-in-out infinite;
+}
+@keyframes finPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .5; transform: scale(.9); }
+}
+.fin-hero-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--fin-ink);
+    letter-spacing: -.028em;
+    line-height: 1.1;
+    margin: 0 0 8px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+.fin-hero-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: var(--fin-ink-2);
+    margin: 0;
+}
+.fin-date-chip {
+    padding: 3px 9px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--fin-border);
+    border-radius: 6px;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fin-ink);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.fin-date-arrow { color: var(--fin-ink-3); }
+.fin-date-sep   { color: var(--fin-ink-4); }
+.fin-date-range {
+    font-weight: 600;
+    color: var(--fin-gold);
+    font-size: 11.5px;
+    letter-spacing: .02em;
+}
+
+.fin-hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+.fin-presets {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(0,0,0,.4);
+    border: 1px solid var(--fin-border);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.fin-preset {
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fin-ink-2);
+    text-decoration: none;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+}
+.fin-preset:hover { background: rgba(255,255,255,.07); color: var(--fin-ink); }
+.fin-preset.active {
+    background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold));
+    color: #1a1612;
+    box-shadow: 0 4px 12px -4px rgba(212,179,106,.5);
+}
+.fin-custom-range { display: flex; align-items: center; gap: 6px; }
+.fin-date-input {
+    padding: 7px 11px;
+    background: rgba(0,0,0,.4);
+    border: 1px solid var(--fin-border);
+    border-radius: 8px;
+    color: var(--fin-ink);
+    font-size: 11.5px;
+    font-family: ui-monospace, "SF Mono", monospace;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.fin-date-input:focus {
+    border-color: rgba(212,179,106,.6);
+    box-shadow: 0 0 0 3px rgba(212,179,106,.14);
+}
+.fin-date-input-sep { color: var(--fin-ink-3); font-size: 11px; }
+.fin-apply-btn {
+    padding: 7px 14px;
+    background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold));
+    color: #1a1612;
+    border: none;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+}
+.fin-apply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -6px rgba(212,179,106,.55);
+}
+
+/* ── Metrics ──────────────────────────────────────────── */
+.fin-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.fin-metric {
+    position: relative;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, var(--fin-glass), var(--fin-glass-2));
+    backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    border: 1px solid var(--fin-border);
+    border-radius: var(--fin-r);
+    transition: transform .2s, border-color .2s, box-shadow .2s, background .2s;
+    overflow: hidden;
+    box-shadow: 0 18px 40px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fin-metric::before {
+    content: '';
+    position: absolute; top: 0; left: 18px; right: 18px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+    opacity: 0;
+    transition: opacity .25s;
+}
+.fin-metric:hover {
+    transform: translateY(-2px);
+    border-color: var(--fin-border-hi);
+    box-shadow: 0 22px 48px -28px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.fin-metric:hover::before { opacity: 1; }
+.fin-metric-primary {
+    background:
+        radial-gradient(120% 120% at 0% 0%, rgba(212,179,106,.12), transparent 60%),
+        linear-gradient(180deg, var(--fin-glass), var(--fin-glass-2));
+    border-color: var(--fin-border-hi);
+}
+.fin-metric-primary::after {
+    content: '';
+    position: absolute; left: 0; top: 18px; bottom: 18px; width: 2px;
+    background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold));
+    border-radius: 2px;
+}
+.fin-metric-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.fin-metric-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.fin-icon-revenue  { background: rgba(212,179,106,.16); color: var(--fin-gold); }
+.fin-icon-cost     { background: rgba(248,113,113,.15); color: var(--fin-bad); }
+.fin-icon-profit   { background: rgba(52,211,153,.15);  color: var(--fin-ok);  }
+.fin-icon-loss     { background: rgba(248,113,113,.18); color: var(--fin-bad); }
+.fin-icon-payments { background: rgba(96,165,250,.15);  color: var(--fin-info);}
+.fin-metric-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--fin-ink-3);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    flex: 1;
+}
+.fin-metric-change {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+}
+.fin-metric-change.up   { background: rgba(52,211,153,.15);  color: var(--fin-ok); }
+.fin-metric-change.down { background: rgba(248,113,113,.15); color: var(--fin-bad); }
+.fin-metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fin-ink);
+    letter-spacing: -.03em;
+    line-height: 1.05;
+    margin-bottom: 6px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.fin-metric-value.positive { color: var(--fin-ok); }
+.fin-metric-value.negative { color: var(--fin-bad); }
+.fin-metric-foot {
+    font-size: 11.5px;
+    color: var(--fin-ink-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fin-metric-bar {
+    margin-top: 12px;
+    height: 3px;
+    background: rgba(255,255,255,.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.fin-metric-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+}
+.fin-margin-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+    letter-spacing: .01em;
+}
+.fin-margin-badge.high { background: rgba(52,211,153,.15); color: var(--fin-ok); }
+.fin-margin-badge.mid  { background: rgba(251,191,36,.15); color: var(--fin-warn); }
+.fin-margin-badge.low  { background: rgba(248,113,113,.15);color: var(--fin-bad); }
+
+/* ── Section shell ────────────────────────────────────── */
+.fin-section {
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    background: linear-gradient(180deg, var(--fin-glass), var(--fin-glass-2));
+    backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--fin-blur)) saturate(140%);
+    border: 1px solid var(--fin-border);
+    border-radius: var(--fin-r-lg);
+    box-shadow: 0 22px 48px -32px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fin-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--fin-border-2);
+}
+.fin-section-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fin-gold);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+.fin-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fin-ink);
+    letter-spacing: -.018em;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.fin-section-meta {
+    font-size: 11.5px;
+    color: var(--fin-ink-3);
+}
+.fin-section-meta strong { color: var(--fin-gold); font-weight: 700; }
+
+/* ── Trend chart ──────────────────────────────────────── */
+.fin-chart {
+    display: flex;
+    gap: 14px;
+    height: 210px;
+    padding: 6px 0 24px;
+}
+.fin-chart-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 2px 0;
+}
+.fin-chart-y-label {
+    font-size: 10px;
+    color: var(--fin-ink-3);
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-weight: 600;
+    text-align: right;
+    min-width: 56px;
+    letter-spacing: -.01em;
+}
+.fin-chart-bars-wrap { flex: 1; position: relative; min-width: 0; }
+.fin-chart-grid {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: space-between;
+    pointer-events: none;
+}
+.fin-grid-line {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 80%, transparent);
+}
+.fin-chart-bars {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 0 4px;
+}
+.fin-bar-group {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+}
+.fin-bar-stack {
+    width: 100%;
+    max-width: 34px;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+}
+.fin-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    transition: filter .2s;
+    min-height: 2px;
+    cursor: pointer;
+}
+.fin-bar-revenue { background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold)); }
+.fin-bar-paid    { background: linear-gradient(180deg, #4ade80, #16a34a); }
+.fin-bar-group:hover .fin-bar { filter: brightness(1.2); }
+.fin-bar-label {
+    position: absolute;
+    bottom: -20px;
+    font-size: 9.5px;
+    color: var(--fin-ink-3);
+    font-weight: 600;
+    font-family: ui-monospace, "SF Mono", monospace;
+    letter-spacing: .02em;
+}
+
+.fin-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    color: var(--fin-ink-2);
+    padding-top: 10px;
+}
+.fin-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+.fin-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.fin-dot-revenue { background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold)); }
+.fin-dot-paid    { background: linear-gradient(180deg, #4ade80, #16a34a); }
+
+/* ── Money position ───────────────────────────────────── */
+.fin-money-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+.fin-money-card {
+    position: relative;
+    padding: 16px 18px;
+    background: var(--fin-glass-soft);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid var(--fin-border);
+    border-radius: var(--fin-r);
+    overflow: hidden;
+    transition: transform .2s, border-color .2s, background .2s;
+    box-shadow: 0 16px 36px -28px rgba(0,0,0,.85);
+}
+.fin-money-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px;
+}
+.fin-money-cash::before       { background: linear-gradient(180deg, #4ade80, transparent); }
+.fin-money-digital::before    { background: linear-gradient(180deg, var(--fin-info), transparent); }
+.fin-money-receivable::before { background: linear-gradient(180deg, var(--fin-warn), transparent); }
+.fin-money-collected::before  { background: linear-gradient(180deg, var(--fin-gold-2), transparent); }
+.fin-money-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,.14);
+    background: rgba(24, 20, 16, .58);
+}
+.fin-money-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 12px;
+}
+.fin-money-cash       .fin-money-icon { background: rgba(52,211,153,.15);  color: var(--fin-ok);   }
+.fin-money-digital    .fin-money-icon { background: rgba(96,165,250,.15);  color: var(--fin-info); }
+.fin-money-receivable .fin-money-icon { background: rgba(251,191,36,.15);  color: var(--fin-warn); }
+.fin-money-collected  .fin-money-icon { background: rgba(212,179,106,.15); color: var(--fin-gold); }
+.fin-money-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fin-ink-3);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 6px;
+}
+.fin-money-value {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    margin-bottom: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.fin-money-cash       .fin-money-value { color: var(--fin-ok);   }
+.fin-money-digital    .fin-money-value { color: var(--fin-info); }
+.fin-money-receivable .fin-money-value { color: var(--fin-warn); }
+.fin-money-collected  .fin-money-value { color: var(--fin-gold); }
+.fin-money-sub { font-size: 11px; color: var(--fin-ink-3); }
+
+/* ── Paired 2-col grid ───────────────────────────────── */
+.fin-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+    align-items: start;
+}
+.fin-2col > :only-child { grid-column: 1 / -1; }
+
+/* ── Method chart ─────────────────────────────────────── */
+.fin-method-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.fin-method-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 100px;
+    align-items: center;
+    gap: 14px;
+}
+.fin-method-info { min-width: 0; }
+.fin-method-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+.fin-method-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.fin-method-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fin-ink);
+}
+.fin-method-pct {
+    margin-left: auto;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--fin-ink-3);
+    font-family: ui-monospace, "SF Mono", monospace;
+}
+.fin-method-count {
+    font-size: 10.5px;
+    color: var(--fin-ink-3);
+    padding-left: 16px;
+}
+.fin-method-bar-wrap {
+    height: 26px;
+    background: rgba(0,0,0,.35);
+    border-radius: 7px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,.04);
+}
+.fin-method-bar {
+    height: 100%;
+    border-radius: 7px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+    min-width: 4px;
+}
+.fin-method-amount {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fin-gold);
+    text-align: right;
+    font-family: ui-monospace, "SF Mono", monospace;
+    white-space: nowrap;
+    letter-spacing: -.01em;
+}
+
+/* ── Product chart ────────────────────────────────────── */
+.fin-product-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.fin-product-row {
+    display: grid;
+    grid-template-columns: 24px 1fr minmax(80px, auto);
+    gap: 12px;
+    align-items: center;
+}
+.fin-product-rank {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--fin-border-2);
+    color: var(--fin-ink-2);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+    display: grid;
+    place-items: center;
+}
+.fin-product-info { min-width: 0; }
+.fin-product-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fin-ink);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fin-product-bar-wrap {
+    height: 6px;
+    background: rgba(0,0,0,.35);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.fin-product-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--fin-gold-2), var(--fin-gold));
+    border-radius: 3px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+    min-width: 4px;
+}
+.fin-product-meta { text-align: right; }
+.fin-product-revenue {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--fin-ink);
+    font-family: ui-monospace, "SF Mono", monospace;
+    letter-spacing: -.01em;
+}
+.fin-product-margin {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+    margin-top: 2px;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+/* ── Store rows ───────────────────────────────────────── */
+.fin-store-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.fin-store-row {
+    display: grid;
+    grid-template-columns: 32px minmax(120px, 200px) 1fr minmax(90px, auto);
+    gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+}
+.fin-store-row + .fin-store-row { border-top: 1px solid var(--fin-border-2); }
+
+.fin-store-rank {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--fin-border-2);
+    color: var(--fin-ink-2);
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+    display: grid; place-items: center;
+}
+.fin-store-rank.gold   { background: linear-gradient(140deg, #fcd34d, #d97706); color: #1a1612; border-color: transparent; }
+.fin-store-rank.silver { background: linear-gradient(140deg, #e5e7eb, #9ca3af); color: #1a1612; border-color: transparent; }
+.fin-store-rank.bronze { background: linear-gradient(140deg, #d97706, #92400e); color: #fff;    border-color: transparent; }
+
+.fin-store-info { min-width: 0; }
+.fin-store-name {
+    font-size: 12.5px; font-weight: 600; color: var(--fin-ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fin-store-code {
+    font-size: 10px; color: var(--fin-ink-3);
+    font-family: ui-monospace, "SF Mono", monospace;
+    margin-top: 3px; letter-spacing: .02em;
+}
+
+/* Store bar: gold = revenue, green overlay = paid */
+.fin-store-chart { min-width: 0; }
+.fin-store-bar-wrap {
+    position: relative;
+    height: 8px;
+    background: rgba(0,0,0,.4);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.04);
+}
+.fin-store-bar-rev {
+    position: absolute; inset: 0 auto 0 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(212,179,106,.9), var(--fin-gold));
+    border-radius: 4px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+    min-width: 3px;
+}
+.fin-store-bar-paid {
+    position: absolute; inset: 0 auto 0 0;
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80, #16a34a);
+    border-radius: 4px;
+    transition: width .6s cubic-bezier(.2,.7,.2,1);
+    min-width: 0;
+    z-index: 1;
+}
+
+.fin-store-bar-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 6px;
+    font-size: 9.5px;
+    color: var(--fin-ink-3);
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.fin-store-bar-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.fin-mini-dot {
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    display: inline-block;
+}
+.fin-mini-dot.rev  { background: linear-gradient(180deg, var(--fin-gold-2), var(--fin-gold)); }
+.fin-mini-dot.paid { background: linear-gradient(180deg, #4ade80, #16a34a); }
+
+.fin-store-meta { text-align: right; }
+.fin-store-amount {
+    font-size: 13px; font-weight: 700; color: var(--fin-ink);
+    font-family: ui-monospace, "SF Mono", monospace;
+    letter-spacing: -.01em;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.fin-store-paid {
+    font-size: 10.5px; font-weight: 700;
+    font-family: ui-monospace, "SF Mono", monospace;
+    margin-top: 3px;
+    letter-spacing: .02em;
+}
+.fin-store-paid.is-ok   { color: var(--fin-ok); }
+.fin-store-paid.is-warn { color: var(--fin-warn); }
+.fin-store-paid.is-low  { color: var(--fin-bad); }
+.fin-store-paid.is-zero { color: var(--fin-ink-3); }
+
+/* ── Fallback for browsers without backdrop-filter ────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .fin-hero,
+    .fin-metric,
     .fin-section {
-        padding: 16px 18px;
-        margin-bottom: 16px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.85), rgba(21, 18, 15, 0.85));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-    }
-    .fin-section-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 14px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .fin-section-eyebrow {
-        font-size: 9px;
-        font-weight: 800;
-        color: #c9a961;
-        letter-spacing: 0.15em;
-        margin-bottom: 3px;
-    }
-    .fin-section-title {
-        font-size: 15px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.02em;
-    }
-    .fin-section-meta {
-        font-size: 10.5px;
-        color: #71717a;
-    }
-    .fin-section-meta strong { color: #c9a961; }
-
-    /* ========== BAR CHART (Revenue Trend) ========== */
-    .fin-chart {
-        display: flex;
-        gap: 12px;
-        height: 200px;
-        padding: 8px 0;
-    }
-    .fin-chart-y {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 2px 0;
-        flex-shrink: 0;
-    }
-    .fin-chart-y-label {
-        font-size: 9.5px;
-        color: #71717a;
-        font-family: ui-monospace, monospace;
-        font-weight: 600;
-        text-align: right;
-        min-width: 50px;
-    }
-    .fin-chart-bars-wrap {
-        flex: 1;
-        position: relative;
-    }
-    .fin-chart-grid {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        pointer-events: none;
-    }
-    .fin-grid-line {
-        height: 1px;
-        background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent);
-    }
-    .fin-chart-bars {
-        position: relative;
-        height: 100%;
-        display: flex;
-        align-items: flex-end;
-        gap: 3px;
-        padding: 0 2px;
-    }
-    .fin-bar-group {
-        flex: 1;
-        min-width: 0;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        position: relative;
-    }
-    .fin-bar-stack {
-        width: 100%;
-        max-width: 32px;
-        height: 100%;
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-    }
-    .fin-bar {
-        flex: 1;
-        border-radius: 3px 3px 0 0;
-        transition: all 0.3s ease;
-        min-height: 2px;
-        cursor: pointer;
-    }
-    .fin-bar-revenue {
-        background: linear-gradient(180deg, #c9a961, #b8944d);
-    }
-    .fin-bar-paid {
-        background: linear-gradient(180deg, #22c55e, #16a34a);
-    }
-    .fin-bar:hover {
-        filter: brightness(1.2);
-        transform: scaleY(1.02);
-    }
-    .fin-bar-label {
-        position: absolute;
-        bottom: -18px;
-        font-size: 9px;
-        color: #71717a;
-        font-weight: 600;
-        font-family: ui-monospace, monospace;
-    }
-
-    .fin-legend {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        font-size: 10.5px;
-        color: #a1a1aa;
-        padding-top: 6px;
-    }
-    .fin-legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 600;
-    }
-    .fin-legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 3px;
-        flex-shrink: 0;
-    }
-
-    /* ========== MONEY GRID ========== */
-    .fin-money-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
+        background: rgba(18, 15, 12, .92);
     }
     .fin-money-card {
-        position: relative;
-        padding: 14px;
-        background: rgba(20, 20, 26, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        overflow: hidden;
-        transition: all 0.2s;
+        background: rgba(18, 15, 12, .85);
     }
-    .fin-money-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 2px;
-    }
-    .fin-money-cash::before { background: linear-gradient(90deg, #22c55e, transparent); }
-    .fin-money-digital::before { background: linear-gradient(90deg, #3b82f6, transparent); }
-    .fin-money-receivable::before { background: linear-gradient(90deg, #f59e0b, transparent); }
-    .fin-money-collected::before { background: linear-gradient(90deg, #c9a961, transparent); }
-    .fin-money-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.12);
-    }
-    .fin-money-icon {
-        width: 32px; height: 32px;
-        border-radius: 9px;
-        display: grid;
-        place-items: center;
-        margin-bottom: 10px;
-    }
-    .fin-money-cash .fin-money-icon { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-    .fin-money-digital .fin-money-icon { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-    .fin-money-receivable .fin-money-icon { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-    .fin-money-collected .fin-money-icon { background: rgba(201, 169, 97, 0.12); color: #c9a961; }
-    .fin-money-label {
-        font-size: 9.5px;
-        font-weight: 800;
-        color: #71717a;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 5px;
-    }
-    .fin-money-value {
-        font-size: 16px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-        line-height: 1.1;
-        margin-bottom: 3px;
-    }
-    .fin-money-cash .fin-money-value { color: #22c55e; }
-    .fin-money-digital .fin-money-value { color: #3b82f6; }
-    .fin-money-receivable .fin-money-value { color: #f59e0b; }
-    .fin-money-collected .fin-money-value { color: #c9a961; }
-    .fin-money-sub { font-size: 10px; color: #71717a; }
+}
 
-    /* ========== 2-COLUMN GRID ========== */
-    .fin-2col {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    /* ========== METHOD CHART (Payments) ========== */
-    .fin-method-chart {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .fin-method-row {
-        display: grid;
-        grid-template-columns: 130px 1fr 90px;
-        align-items: center;
-        gap: 12px;
-    }
-    .fin-method-info { min-width: 0; }
-    .fin-method-name-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 2px;
-    }
-    .fin-method-dot {
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-    .fin-method-name {
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #fafafa;
-    }
-    .fin-method-pct {
-        margin-left: auto;
-        font-size: 10px;
-        font-weight: 800;
-        color: #71717a;
-        font-family: ui-monospace, monospace;
-    }
-    .fin-method-count {
-        font-size: 9.5px;
-        color: #71717a;
-        padding-left: 14px;
-    }
-    .fin-method-bar-wrap {
-        height: 22px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 6px;
-        overflow: hidden;
-        position: relative;
-    }
-    .fin-method-bar {
-        height: 100%;
-        border-radius: 6px;
-        transition: width 0.5s ease;
-        min-width: 4px;
-    }
-    .fin-method-amount {
-        font-size: 12.5px;
-        font-weight: 800;
-        color: #c9a961;
-        text-align: right;
-        font-family: ui-monospace, monospace;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-
-    /* ========== PRODUCT CHART ========== */
-    .fin-product-chart {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .fin-product-row {
-        display: grid;
-        grid-template-columns: 24px 1fr 80px;
-        gap: 10px;
-        align-items: center;
-    }
-    .fin-product-rank {
-        width: 22px; height: 22px;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.04);
-        color: #a1a1aa;
-        font-size: 10.5px;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-        display: grid;
-        place-items: center;
-    }
-    .fin-product-info { min-width: 0; }
-    .fin-product-name {
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #fafafa;
-        margin-bottom: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .fin-product-bar-wrap {
-        height: 6px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 3px;
-        overflow: hidden;
-    }
-    .fin-product-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #c9a961, #b8944d);
-        border-radius: 3px;
-        transition: width 0.5s ease;
-        min-width: 4px;
-    }
-    .fin-product-meta { text-align: right; }
-    .fin-product-revenue {
-        font-size: 12px;
-        font-weight: 800;
-        color: #fafafa;
-        font-family: ui-monospace, monospace;
-        font-variant-numeric: tabular-nums;
-    }
-    .fin-product-margin {
-        font-size: 10px;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-        margin-top: 1px;
-    }
-
-    /* ========== STORE CHART ========== */
-    .fin-store-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .fin-metrics     { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .fin-money-grid  { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .fin-2col        { grid-template-columns: 1fr; }
+    .fin-store-row   { grid-template-columns: 32px minmax(120px, 1fr) 1.4fr minmax(90px, auto); }
+}
+@media (max-width: 700px) {
+    :root { --fin-blur: 12px; }
+    .fin-hero         { padding: 18px; }
+    .fin-hero-title   { font-size: 20px; }
+    .fin-hero-top     { flex-direction: column; align-items: stretch; gap: 16px; }
+    .fin-hero-actions { align-items: stretch; }
+    .fin-presets      { justify-content: center; flex-wrap: wrap; }
+    .fin-custom-range { justify-content: center; flex-wrap: wrap; }
+    .fin-metrics      { grid-template-columns: 1fr; }
+    .fin-money-grid   { grid-template-columns: 1fr; }
+    .fin-chart        { height: 160px; }
+    .fin-chart-y-label { font-size: 9px; min-width: 44px; }
+    .fin-bar-label    { font-size: 8.5px; }
+    .fin-method-row   { grid-template-columns: 110px 1fr 80px; gap: 10px; }
+    .fin-product-row  { grid-template-columns: 24px 1fr 80px; }
     .fin-store-row {
-        display: grid;
-        grid-template-columns: 32px 180px 1fr 110px;
-        gap: 14px;
-        align-items: center;
-        padding: 8px 0;
+        grid-template-columns: 28px 1fr auto;
+        row-gap: 6px;
     }
-    .fin-store-rank {
-        width: 28px; height: 28px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.04);
-        color: #a1a1aa;
-        font-size: 11.5px;
-        font-weight: 800;
-        font-family: ui-monospace, monospace;
-        display: grid;
-        place-items: center;
+    .fin-store-chart { grid-column: 2 / 4; }
+    .fin-store-meta  { grid-column: 3 / 4; grid-row: 1; text-align: right; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fin-hero *, .fin-metric *, .fin-section *, .fin-money-card * {
+        animation: none !important;
+        transition: none !important;
     }
-    .fin-store-rank.gold { background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; }
-    .fin-store-rank.silver { background: linear-gradient(135deg, #d4d4d8, #a1a1aa); color: #0f0f14; }
-    .fin-store-rank.bronze { background: linear-gradient(135deg, #d97706, #92400e); color: #fff; }
-    .fin-store-info { min-width: 0; }
-    .fin-store-name {
-        font-size: 12px;
-        font-weight: 800;
-        color: #fafafa;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .fin-store-code {
-        font-size: 9.5px;
-        color: #71717a;
-        font-family: ui-monospace, monospace;
-        margin-top: 2px;
-    }
-    .fin-store-chart { min-width: 0; }
-    .fin-store-bar-wrap {
-        height: 8px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 4px;
-        overflow: hidden;
-        position: relative;
-    }
-    .fin-store-bar-rev {
-        height: 100%;
-        background: linear-gradient(90deg, #c9a961, #b8944d);
-        border-radius: 4px;
-        position: absolute;
-        top: 0; left: 0;
-        transition: width 0.5s ease;
-        min-width: 2px;
-    }
-    .fin-store-bar-paid {
-        height: 100%;
-        background: linear-gradient(90deg, #22c55e, #16a34a);
-        border-radius: 4px;
-        position: absolute;
-        top: 0; left: 0;
-        transition: width 0.5s ease;
-        min-width: 2px;
-    }
-    .fin-store-meta { text-align: right; }
-    .fin-store-amount {
-        font-size: 12.5px;
-        font-weight: 800;
-        color: #fafafa;
-        font-family: ui-monospace, monospace;
-        font-variant-numeric: tabular-nums;
-    }
-    .fin-store-paid {
-        font-size: 9.5px;
-        color: #22c55e;
-        font-weight: 700;
-        margin-top: 1px;
-    }
-
-    /* ========== RESPONSIVE ========== */
-    @media (max-width: 1100px) {
-        .fin-metrics { grid-template-columns: repeat(2, 1fr); }
-        .fin-money-grid { grid-template-columns: repeat(2, 1fr); }
-        .fin-2col { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 700px) {
-        .fin-hero { padding: 16px 18px; }
-        .fin-hero-top { flex-direction: column; align-items: stretch; }
-        .fin-hero-actions { align-items: stretch; }
-        .fin-presets { justify-content: center; flex-wrap: wrap; }
-        .fin-custom-range { justify-content: center; flex-wrap: wrap; }
-        .fin-metrics { grid-template-columns: 1fr; }
-        .fin-money-grid { grid-template-columns: 1fr; }
-        .fin-hero-title { font-size: 18px; }
-        .fin-chart { height: 150px; }
-        .fin-chart-y-label { font-size: 8px; min-width: 40px; }
-        .fin-bar-label { font-size: 8px; }
-        .fin-method-row { grid-template-columns: 100px 1fr 70px; gap: 8px; }
-        .fin-product-row { grid-template-columns: 22px 1fr 70px; }
-        .fin-store-row {
-            grid-template-columns: 28px 1fr 90px;
-            gap: 10px;
-        }
-        .fin-store-chart { grid-column: 2 / 3; margin-top: 4px; }
-    }
+}
 </style>
 @endpush
