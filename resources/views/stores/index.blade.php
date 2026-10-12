@@ -553,6 +553,145 @@
         .search-box { max-width: 100%; flex: 1 1 100%; }
         .filter-select { flex: 1; width: auto; }
     }
+
+    /* ═══════════════════════════════════════════════
+       STORES — 2-PER-ROW ON MOBILE (override)
+       ═══════════════════════════════════════════════ */
+
+    /* Tablet — 2 cols */
+    @media (max-width: 1100px) {
+        .stores-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 14px !important;
+        }
+    }
+
+    /* Mobile — 2 cols, compact cards */
+    @media (max-width: 700px) {
+        .stores-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+        }
+
+        .store-card {
+            padding: 12px 12px 10px;
+            border-radius: 12px;
+        }
+
+        .store-card-head {
+            margin-bottom: 10px;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .store-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 6px 12px -4px rgba(169, 120, 74, 0.4);
+        }
+
+        .card-head-right {
+            gap: 4px;
+        }
+
+        /* Smaller status badge */
+        .card-head-right .badge {
+            font-size: 9px;
+            padding: 3px 7px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Smaller 3-dots button */
+        .dots-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+        }
+        .dots-btn svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* Card body — tighter */
+        .store-card-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            line-height: 1.25;
+            -webkit-line-clamp: 1;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .store-card-code {
+            font-size: 9.5px;
+            margin-bottom: 8px;
+        }
+
+        /* Meta rows — compact */
+        .store-card-meta {
+            padding-top: 8px;
+            gap: 4px;
+        }
+        .meta-row {
+            gap: 5px;
+            font-size: 10.5px;
+        }
+        .meta-row svg {
+            width: 10px;
+            height: 10px;
+        }
+
+        /* Hide contact number on very small — para dili huot */
+        .store-card-meta .meta-row:nth-child(2) {
+            display: none;
+        }
+
+        /* Footer — smaller */
+        .store-card-foot {
+            margin-top: 10px;
+            padding-top: 8px;
+        }
+        .foot-label {
+            font-size: 8.5px;
+            margin-bottom: 2px;
+            letter-spacing: 0.06em;
+        }
+        .foot-value {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Dropdown menu — smaller */
+        .dots-menu {
+            min-width: 130px;
+            padding: 4px;
+        }
+        .dots-item {
+            padding: 7px 9px;
+            font-size: 11.5px;
+            gap: 7px;
+        }
+        .dots-item svg {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    /* Small phone — 2 cols, tighter pa */
+    @media (max-width: 400px) {
+        .stores-grid { gap: 8px !important; }
+        .store-card { padding: 10px 10px 8px; border-radius: 10px; }
+        .store-avatar { width: 32px; height: 32px; border-radius: 8px; font-size: 12px; }
+        .store-card-name { font-size: 11.5px; }
+        .store-card-code { font-size: 9px; margin-bottom: 6px; }
+        .meta-row { font-size: 10px; }
+        .foot-value { font-size: 10px; }
+        .card-head-right .badge { font-size: 8.5px; padding: 2px 6px; }
+    }
 </style>
 @endpush
 

@@ -1095,6 +1095,127 @@
         .pl-toolbar { flex-direction: column; align-items: stretch; }
         .pl-add-btn { justify-content: center; }
     }
+
+    /* ═══════════════════════════════════════════════
+       2-PER-ROW ON MOBILE (override)
+       ═══════════════════════════════════════════════ */
+
+    /* Tablet — lock to 2 cols */
+    @media (max-width: 900px) {
+        .pl-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+        }
+    }
+
+    /* Mobile — 2 cols, compact card */
+    @media (max-width: 700px) {
+        .pl-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            margin-bottom: 16px;
+        }
+
+        .pl-card { border-radius: 14px; }
+
+        /* Square image for tighter grid */
+        .pl-media { aspect-ratio: 1 / 1; }
+
+        .pl-body { padding: 10px 12px 8px; }
+
+        .pl-name {
+            font-size: 12.5px;
+            min-height: 32px;
+            -webkit-line-clamp: 2;
+            line-height: 1.3;
+            margin-bottom: 3px;
+        }
+        .pl-sku { font-size: 9.5px; margin-bottom: 8px; }
+
+        /* Pricing — compact */
+        .pl-pricing {
+            padding: 8px 10px;
+            gap: 5px;
+        }
+        .pl-pricing-line { font-size: 10.5px; gap: 4px; }
+        .pl-pricing-lbl { font-size: 9px; gap: 4px; }
+        .pl-pricing-val { font-size: 11px; gap: 4px; }
+        .pl-pricing-main .pl-pricing-val { font-size: 12.5px; }
+
+        /* Hide wholesale line para dili huot */
+        .pl-pricing-line:has(.pl-dot.wholesale) { display: none; }
+
+        .pl-tag {
+            font-size: 8.5px;
+            padding: 2px 5px;
+        }
+
+        /* Profit row — compact */
+        .pl-profit-row {
+            padding: 5px 8px;
+            gap: 4px;
+        }
+        .pl-profit-lbl { font-size: 8.5px; gap: 3px; }
+        .pl-profit-lbl svg { width: 9px; height: 9px; }
+        .pl-profit-val { font-size: 11px; }
+
+        /* Badges */
+        .pl-stock-badge {
+            font-size: 8.5px;
+            padding: 3px 7px;
+            top: 6px;
+            left: 6px;
+            letter-spacing: 0.03em;
+        }
+        .pl-loss-badge {
+            font-size: 8px;
+            padding: 3px 6px;
+            top: 6px;
+            right: 6px;
+        }
+
+        /* Actions bar */
+        .pl-actions {
+            padding: 8px 10px;
+            gap: 6px;
+        }
+        .pl-margin-chip {
+            font-size: 9px;
+            padding: 3px 7px;
+        }
+        .pl-menu-btn {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Simple price view (no cost set) */
+        .pl-price-simple { font-size: 16px; padding: 6px 0; }
+        .pl-no-cost {
+            font-size: 9.5px;
+            padding: 4px 6px;
+        }
+
+        /* Empty state — smaller */
+        .pl-empty { padding: 48px 16px; }
+        .pl-empty-icon { width: 64px; height: 64px; margin-bottom: 14px; }
+        .pl-empty-icon svg { width: 32px; height: 32px; }
+        .pl-empty-title { font-size: 15px; }
+        .pl-empty-desc { font-size: 12px; margin-bottom: 18px; }
+    }
+
+    /* Small phone — still 2 cols, tighter pa gyud */
+    @media (max-width: 400px) {
+        .pl-grid { gap: 8px !important; }
+        .pl-card { border-radius: 12px; }
+        .pl-body { padding: 8px 10px 6px; }
+        .pl-name { font-size: 11.5px; min-height: 30px; }
+        .pl-sku { font-size: 9px; }
+        .pl-pricing { padding: 6px 8px; }
+        .pl-pricing-main .pl-pricing-val { font-size: 12px; }
+        .pl-pricing-val { font-size: 10px; }
+        .pl-stock-badge { font-size: 8px; padding: 2px 5px; }
+        .pl-margin-chip { font-size: 8.5px; padding: 2px 6px; }
+    }
 </style>
 @endpush
 

@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0f0f14">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>@yield('title', 'Admin') - Coffee Consignment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -36,6 +39,8 @@
             --radius: 10px;
             --radius-sm: 8px;
             --radius-lg: 14px;
+            --sidebar-width: 240px;
+            --topbar-height: 64px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,6 +51,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -55,36 +61,91 @@
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             background: var(--sidebar-bg);
+            overscroll-behavior: none;
         }
 
         a { color: inherit; text-decoration: none; }
         button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
         svg { display: block; }
+        img { max-width: 100%; height: auto; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(169, 120, 74, 0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(169, 120, 74, 0.4); }
 
-        .app { height: 100vh; display: flex; width: 100%; position: relative; overflow: hidden; }
+        .app {
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ===== SIDEBAR SCRIM (mobile overlay) ===== */
+        .sidebar-scrim {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+        }
 
         /* ===== SIDEBAR ===== */
         .sidebar {
-            width: 240px; min-width: 240px; max-width: 240px;
-            height: 100vh; position: fixed; top: 0; left: 0; z-index: 100;
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
             display: flex;
             flex-direction: column;
             padding: 20px 12px 24px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--sidebar-border);
             overflow: hidden;
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        .sidebar-close {
+            display: none;
+            position: absolute;
+            top: 18px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.15s;
+        }
+        .sidebar-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        .sidebar-close svg { width: 18px; height: 18px; }
 
         .sidebar-nav {
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
             margin-bottom: 12px;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         .brand {
@@ -119,6 +180,7 @@
             color: #a8a5a0; font-size: 13px; font-weight: 500;
             transition: all 0.18s ease; position: relative;
             margin-bottom: 2px; text-decoration: none;
+            min-height: 42px;
         }
 
         .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
@@ -175,29 +237,29 @@
             transition: all 0.18s ease;
             text-align: left;
             white-space: nowrap;
+            min-height: 42px;
         }
         .logout-btn:hover {
             background: rgba(239, 68, 68, 0.15);
             color: #ef4444;
             border-color: rgba(239, 68, 68, 0.3);
         }
-        .logout-btn svg {
-            width: 17px;
-            height: 17px;
-            flex-shrink: 0;
-        }
+        .logout-btn svg { width: 17px; height: 17px; flex-shrink: 0; }
 
         /* ===== MAIN ===== */
         .main {
             flex: 1;
             min-width: 0;
             height: 100vh;
-            margin-left: 240px;
+            height: 100dvh;
+            margin-left: var(--sidebar-width);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow-y: auto;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
             background-color: #1a1a22;
             background-image: linear-gradient(180deg, rgba(20, 20, 26, 0.65), rgba(15, 15, 20, 0.78)),
                 url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80');
@@ -216,32 +278,53 @@
             -webkit-backdrop-filter: blur(20px) saturate(1.3);
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
+            min-height: var(--topbar-height);
         }
 
-        .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .topbar-right { display: flex; align-items: center; gap: 8px; }
+        .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+        .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
         .menu-toggle {
-            display: none; width: 36px; height: 36px;
-            place-items: center; border: 1px solid var(--border-strong);
-            border-radius: var(--radius-sm); color: var(--text-secondary);
+            display: none;
+            width: 42px; height: 42px;
+            place-items: center;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
             background: rgba(255, 255, 255, 0.02);
+            flex-shrink: 0;
+            transition: all 0.15s;
         }
+        .menu-toggle:active {
+            background: rgba(169, 120, 74, 0.15);
+            transform: scale(0.96);
+        }
+        .menu-toggle svg { width: 20px; height: 20px; }
 
         .page-title { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -.02em; line-height: 1.2; }
         .page-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .topbar-title-group { min-width: 0; flex: 1; }
+        .topbar-title-group .page-title,
+        .topbar-title-group .page-sub {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .chip {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 7px 13px; border: 1px solid var(--border);
             border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.03);
             font-size: 12px; font-weight: 500; color: var(--text-secondary);
+            white-space: nowrap;
         }
 
         .user-menu {
             display: flex; align-items: center; gap: 9px;
             padding: 4px 14px 4px 4px; border: 1px solid var(--border);
             border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.03);
+            flex-shrink: 0;
         }
 
         .user-avatar {
@@ -249,12 +332,13 @@
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             display: grid; place-items: center; color: #fff;
             font-size: 13px; font-weight: 800;
+            flex-shrink: 0;
         }
 
         .user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); line-height: 1.1; }
         .user-role { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
 
-        .content { flex: 1; padding: 24px 28px 32px; }
+        .content { flex: 1; padding: 24px 28px 32px; min-width: 0; }
 
         .card {
             background: rgba(34, 34, 44, 0.55);
@@ -269,6 +353,7 @@
             gap: 6px; padding: 9px 16px; border-radius: var(--radius-sm);
             font-size: 12px; font-weight: 600; transition: all .15s ease;
             white-space: nowrap; border: 1px solid transparent; font-family: inherit;
+            min-height: 38px;
         }
 
         .btn-primary {
@@ -290,6 +375,7 @@
             color: var(--text-muted); text-transform: uppercase;
             letter-spacing: .1em; padding: 12px;
             border-bottom: 1px solid var(--border);
+            white-space: nowrap;
         }
         tbody td {
             padding: 14px 12px; font-size: 13px;
@@ -300,6 +386,7 @@
             display: inline-flex; align-items: center; gap: 4px;
             padding: 4px 10px; border-radius: 5px;
             font-size: 11px; font-weight: 700;
+            white-space: nowrap;
         }
         .badge-pending { background: var(--warning-bg); color: var(--warning); }
         .badge-completed, .badge-active, .badge-paid, .badge-approved { background: var(--success-bg); color: var(--success); }
@@ -336,29 +423,6 @@
         }
 
         .scrim { display: none !important; }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 1100px) {
-            /* keep at least some grid handling on page level */
-        }
-
-        @media (max-width: 900px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform .25s ease;
-            }
-            body.nav-open .sidebar {
-                transform: translateX(0);
-            }
-            .main {
-                margin-left: 0;
-                height: 100vh;
-                overflow-y: auto;
-            }
-            .menu-toggle { display: grid; }
-            .content { padding: 16px; }
-            .topbar { padding: 12px 16px; }
-        }
 
         /* ===== NOTIFICATION BELL ===== */
         .notif-wrap { position: relative; display: inline-block; }
@@ -418,17 +482,15 @@
             border-top: 1px solid rgba(169, 120, 74, 0.15);
             color: #c9a961; font-size: 12px; font-weight: 700; text-decoration: none;
         }
-    
-        /* ========== UNIVERSAL BACK BUTTON ========== */
+
+        /* ===== UNIVERSAL BACK BUTTON ===== */
         .universal-back-btn {
-            width: 36px;
-            height: 36px;
+            width: 36px; height: 36px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             color: var(--text-secondary, #a1a1aa);
-            display: grid;
-            place-items: center;
+            display: grid; place-items: center;
             cursor: pointer;
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
@@ -443,54 +505,203 @@
             color: #c9a961;
             transform: translateX(-2px);
         }
-        .universal-back-btn:active {
-            transform: scale(0.94);
+        .universal-back-btn:active { transform: scale(0.94); }
+        .universal-back-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        /* ===== PENDING ORDERS NAV BADGE ===== */
+        .nav-count-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 100px;
+            letter-spacing: 0.02em;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+            animation: navBadgePulse 2.4s ease-in-out infinite;
         }
-        .universal-back-btn svg {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
+        @keyframes navBadgePulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+            50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.04); }
         }
 
+        /* ===== RESPONSIVE BREAKPOINTS ===== */
+
+        /* Tablet */
+        @media (max-width: 1100px) {
+            .content { padding: 20px 20px 28px; }
+            .topbar { padding: 14px 20px; }
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            /* Sidebar slides off-canvas */
+            .sidebar {
+                transform: translateX(-100%);
+                width: min(84vw, 300px);
+                min-width: min(84vw, 300px);
+                max-width: min(84vw, 300px);
+                box-shadow: 20px 0 60px -20px rgba(0, 0, 0, 0.9);
+            }
+            body.nav-open .sidebar {
+                transform: translateX(0);
+            }
+            body.nav-open .sidebar-scrim {
+                display: block;
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .sidebar-close { display: flex; }
+            .brand { padding-right: 48px; }
+
+            /* Main takes full width */
+            .main { margin-left: 0; }
+
+            /* Show hamburger */
+            .menu-toggle { display: grid; }
+
+            /* Tighter padding */
+            .topbar { padding: 12px 14px; gap: 10px; }
+            .content { padding: 16px 14px 24px; }
+
+            /* Title font smaller */
+            .page-title { font-size: 15px; }
+            .page-sub { font-size: 11px; }
+
+            /* Hide some topbar elements to save space */
+            .chip { display: none; }
+            .user-menu > div:last-child { display: none; }
+            .user-menu { padding: 4px; gap: 0; }
+
+            /* Kill background-attachment: fixed (buggy on mobile) */
+            .main {
+                background-attachment: scroll;
+            }
+
+            /* Footer stacks */
+            .foot {
+                flex-direction: column;
+                gap: 4px;
+                align-items: center;
+                padding: 14px 16px;
+                text-align: center;
+            }
+
+            /* Tables scroll horizontally */
+            .content table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                width: 100%;
+            }
+            .content table thead,
+            .content table tbody {
+                display: table;
+                width: 100%;
+                min-width: 640px;
+            }
+
+            /* Prevent iOS zoom on input focus */
+            .input, select, textarea {
+                font-size: 16px !important;
+                min-height: 44px;
+            }
+
+            /* Touch-friendly buttons */
+            .btn {
+                min-height: 44px;
+                padding: 11px 16px;
+            }
+
+            /* Card padding tighter */
+            .card { padding: 16px; border-radius: 12px; }
+        }
+
+        /* Small phone */
         @media (max-width: 600px) {
+            /* Notification dropdown full width */
+            .notif-dropdown {
+                position: fixed;
+                top: 62px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                max-width: none;
+                border-radius: 12px;
+            }
+            .notif-body { max-height: 55vh; }
+
+            /* Smaller back button */
             .universal-back-btn {
-                width: 32px;
-                height: 32px;
+                width: 34px;
+                height: 34px;
                 margin-right: 2px;
             }
-            .universal-back-btn svg {
-                width: 14px;
-                height: 14px;
+            .universal-back-btn svg { width: 14px; height: 14px; }
+
+            .menu-toggle { width: 40px; height: 40px; }
+            .menu-toggle svg { width: 18px; height: 18px; }
+
+            .topbar { padding: 10px 12px; }
+            .content { padding: 14px 12px 20px; }
+        }
+
+        @media (max-width: 400px) {
+            .user-menu { display: none; }
+            .page-title { font-size: 14px; }
+        }
+
+        /* ===== SAFE AREA (iPhone notch, Android gesture bar) ===== */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .sidebar {
+                padding-bottom: calc(24px + env(safe-area-inset-bottom));
+                padding-top: calc(20px + env(safe-area-inset-top));
+            }
+            .content {
+                padding-bottom: calc(32px + env(safe-area-inset-bottom));
+            }
+            .topbar {
+                padding-top: max(12px, env(safe-area-inset-top));
+            }
+            .notif-dropdown {
+                top: calc(62px + env(safe-area-inset-top));
             }
         }
-    
-    /* ============ PENDING ORDERS NAV BADGE ============ */
-    .nav-count-badge {
-        margin-left: auto;
-        padding: 2px 8px;
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        color: #fff;
-        font-size: 10px;
-        font-weight: 800;
-        border-radius: 100px;
-        letter-spacing: 0.02em;
-        min-width: 20px;
-        text-align: center;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
-        animation: navBadgePulse 2.4s ease-in-out infinite;
-    }
-    @keyframes navBadgePulse {
-        0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
-        50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.04); }
-    }
-</style>
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            .sidebar, .sidebar-scrim, .notif-dropdown, .nav-item {
+                transition: none !important;
+            }
+            .nav-count-badge { animation: none; }
+        }
+
+        /* ===== PRINT ===== */
+        @media print {
+            .sidebar, .topbar, .sidebar-scrim { display: none !important; }
+            .main { margin-left: 0 !important; background: #fff !important; color: #000; }
+        }
+    </style>
     @stack('styles')
 </head>
 <body>
     <div class="app">
 
+        {{-- ===== SIDEBAR SCRIM (mobile overlay) ===== --}}
+        <div class="sidebar-scrim" id="sidebarScrim" onclick="closeSidebar()"></div>
+
         {{-- ===== SIDEBAR ===== --}}
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <button type="button" class="sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+                </svg>
+            </button>
+
             <div class="brand">
                 <div class="brand-icon">
                     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -546,14 +757,14 @@
                         Orders
                         @php $unread = \App\Models\ReorderRequest::where('is_read_by_admin', false)->count(); @endphp
                         @if($unread > 0)<span class="nav-count">{{ $unread }}</span>@endif
-                    
 
-                            @php
-                                $__pendingOrders = \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count();
-                            @endphp
-                            @if($__pendingOrders > 0)
-                                <span class="nav-count-badge">{{ $__pendingOrders > 99 ? '99+' : $__pendingOrders }}</span>
-                            @endif</a>
+                        @php
+                            $__pendingOrders = \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count();
+                        @endphp
+                        @if($__pendingOrders > 0)
+                            <span class="nav-count-badge">{{ $__pendingOrders > 99 ? '99+' : $__pendingOrders }}</span>
+                        @endif
+                    </a>
                     <a href="{{ route('consignment.reports.index') }}" class="nav-item {{ request()->routeIs('consignment.reports.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
                         Sales Reports
@@ -596,7 +807,7 @@
         <div class="main">
             <header class="topbar">
                 <div class="topbar-left">
-                    <button class="menu-toggle" onclick="document.body.classList.toggle('nav-open')">
+                    <button type="button" class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
                     </button>
                     @unless(request()->routeIs('dashboard'))
@@ -604,7 +815,7 @@
                             <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                         </button>
                     @endunless
-                    <div>
+                    <div class="topbar-title-group">
                         <div class="page-title">@yield('title', 'Dashboard')</div>
                         <div class="page-sub">@yield('subtitle', '')</div>
                     </div>
@@ -663,6 +874,52 @@
             </footer>
         </div>
     </div>
+
+    <script>
+        // ===== SIDEBAR MOBILE CONTROLS =====
+        function openSidebar() {
+            document.body.classList.add('nav-open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSidebar() {
+            document.body.classList.remove('nav-open');
+            document.body.style.overflow = '';
+        }
+        function toggleSidebar() {
+            if (document.body.classList.contains('nav-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        // Close sidebar when clicking a nav link (mobile only)
+        document.querySelectorAll('.sidebar .nav-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth < 900) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && document.body.classList.contains('nav-open')) {
+                closeSidebar();
+            }
+        });
+
+        // Auto-close sidebar when resizing to desktop
+        var resizeTimer;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if (window.innerWidth >= 900) {
+                    closeSidebar();
+                }
+            }, 150);
+        });
+    </script>
 
     <script>
         // ===== NOTIFICATIONS =====
@@ -793,8 +1050,8 @@
 
     @stack('scripts')
 
-        <script>
-        // Smart back button ÃƒÂ¢¬ with fallback to dashboard
+    <script>
+        // Smart back button with fallback to dashboard
         (function() {
             document.addEventListener('click', function(e) {
                 var btn = e.target.closest('.universal-back-btn');
@@ -812,87 +1069,6 @@
                 }
             });
         })();
-        </script>
+    </script>
 </body>
 </html>
-@push('scripts')
-<script>
-/**
- * Smart Nav Badge Polling
- * - Updates badge count ra, dili mag-reload sa page
- * - Skip kung tab hidden (para save bandwidth)
- * - 30s interval
- */
-(function () {
-    const POLL_INTERVAL = 30000;
-    let timer = null;
-    let lastCount = -1;
-
-    function updateBadge(count) {
-        document.querySelectorAll('a[href*="reorder-requests"]').forEach(link => {
-            let badge = link.querySelector('.nav-count-badge');
-            if (count > 0) {
-                const txt = count > 99 ? '99+' : count;
-                if (badge) {
-                    badge.textContent = txt;
-                } else {
-                    badge = document.createElement('span');
-                    badge.className = 'nav-count-badge';
-                    badge.textContent = txt;
-                    link.appendChild(badge);
-                }
-            } else if (badge) {
-                badge.remove();
-            }
-        });
-    }
-
-    async function poll() {
-        // Skip kung tab hidden
-        if (document.hidden) return;
-
-        try {
-            const r = await fetch('/nav/pending-orders', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                credentials: 'same-origin'
-            });
-            if (!r.ok) return;
-
-            const data = await r.json();
-            const count = data.pending ?? 0;
-
-            if (count !== lastCount) {
-                updateBadge(count);
-                lastCount = count;
-            }
-        } catch (e) {
-            // Silent fail
-        }
-    }
-
-    function start() {
-        if (timer) clearInterval(timer);
-        poll();
-        timer = setInterval(poll, POLL_INTERVAL);
-    }
-
-    function stop() {
-        if (timer) {
-            clearInterval(timer);
-            timer = null;
-        }
-    }
-
-    // Pause when tab hidden (save resources)
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            stop();
-        } else {
-            start(); // Immediate poll on return
-        }
-    });
-
-    start();
-})();
-</script>
-@endpush
