@@ -13,8 +13,8 @@ class StoreAuthController extends Controller
         if (Auth::guard('store')->check()) {
             return redirect()->route('portal.dashboard');
         }
-        // Redirect sa unified login with store tab pre-selected
-        return redirect()->route('login', ['tab' => 'store']);
+        // Store-only login view (may register link)
+        return view('portal.auth.login');
     }
 
     public function login(Request $request)
@@ -31,12 +31,16 @@ class StoreAuthController extends Controller
 
             if (!$store->portal_enabled) {
                 Auth::guard('store')->logout();
-                return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Portal access not enabled. Contact admin.'])->withInput(['_tab_store' => 1, 'email' => $request->email]);
+                return redirect()->route('portal.login')
+                    ->withErrors(['email' => 'Portal access not enabled. Contact admin.'])
+                    ->withInput(['email' => $request->email]);
             }
 
             if ($store->status !== 'active') {
                 Auth::guard('store')->logout();
-                return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Account is ' . $store->status . '.'])->withInput(['_tab_store' => 1, 'email' => $request->email]);
+                return redirect()->route('portal.login')
+                    ->withErrors(['email' => 'Account is ' . $store->status . '.'])
+                    ->withInput(['email' => $request->email]);
             }
 
             $store->update(['last_login_at' => now()]);
@@ -45,7 +49,9 @@ class StoreAuthController extends Controller
             return redirect()->intended(route('portal.dashboard'));
         }
 
-        return redirect()->route('login', ['tab' => 'store'])->withErrors(['email' => 'Invalid credentials.'])->withInput(['_tab_store' => 1, 'email' => $request->email, 'remember' => $request->boolean('remember')]);
+        return redirect()->route('portal.login')
+            ->withErrors(['email' => 'Invalid credentials.'])
+            ->withInput(['email' => $request->email, 'remember' => $request->boolean('remember')]);
     }
 
     public function logout(Request $request)

@@ -36,7 +36,7 @@
             @if($store->logo_url)
                 <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}" id="logoPreviewImg">
             @else
-                {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
+                <span>{{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}</span>
             @endif
         </div>
         <div class="logo-info">
@@ -95,12 +95,12 @@
     </div>
 
     {{-- ═══ BARANGAY + CITY ═══ --}}
-    <div class="form-group form-row">
-        <div>
+    <div class="form-row">
+        <div class="form-group">
             <label class="form-label">Barangay</label>
             <input type="text" name="barangay" class="form-input" value="{{ old('barangay', $store->barangay) }}">
         </div>
-        <div>
+        <div class="form-group">
             <label class="form-label">City</label>
             <input type="text" name="city" class="form-input" value="{{ old('city', $store->city) }}">
         </div>
@@ -146,242 +146,248 @@
 
 @push('styles')
 <style>
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-    @media (max-width: 500px) {
-        .form-row {
-            grid-template-columns: 1fr;
-        }
-    }
+/* ═══════════════════════════════════════════════════════════
+   EDIT PROFILE — PREMIUM COFFEE THEME
+   ═══════════════════════════════════════════════════════════ */
 
-    /* ════════════════════════════════════════════════════════
-       LIGHT MODE — EMERALD GREEN FORCE OVERRIDE
-       Bisag unsang gold hardcoded → emerald
-       ════════════════════════════════════════════════════════ */
+/* ═══ HEADER ═══ */
+.edit-header {
+    text-align: center;
+    padding: 24px 16px 20px;
+    margin-bottom: 20px;
+}
+.edit-header-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2D1A11, #4E342E);
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 12px 28px -10px rgba(45, 26, 17, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.edit-header-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #2D1A11;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+.edit-header-sub {
+    font-size: 13px;
+    color: #8D6E63;
+    font-weight: 600;
+}
 
-    html[data-theme="light"] .p-main *[style*="#c9a961"],
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97"],
-    html[data-theme="light"] .p-main *[style*="rgba(169, 120, 74"],
-    html[data-theme="light"] .p-main *[style*="#8a5f36"],
-    html[data-theme="light"] .p-main *[style*="#b8944d"] {
-        color: #059669 !important;
-    }
+/* ═══ LOGO UPLOAD ═══ */
+.logo-upload {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #FFFFFF;
+    border: 1.5px solid #EFEBE9;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04);
+}
+.logo-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #2D1A11, #4E342E);
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid #EFEBE9;
+    box-shadow: 0 8px 20px -8px rgba(45, 26, 17, 0.4);
+}
+.logo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.logo-info { flex: 1; min-width: 0; }
+.logo-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #2D1A11;
+    margin-bottom: 2px;
+}
+.logo-hint {
+    font-size: 11.5px;
+    color: #8D6E63;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.logo-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.logo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 11.5px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1.5px solid;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.logo-btn:active { transform: scale(0.97); }
+.logo-btn.upload {
+    background: #2D1A11;
+    color: #FFFFFF;
+    border-color: #2D1A11;
+}
+.logo-btn.upload:hover { background: #4E342E; border-color: #4E342E; }
+.logo-btn.remove {
+    background: #FEF2F2;
+    color: #B91C1C;
+    border-color: #FECACA;
+}
+.logo-btn.remove:hover { background: #FEE2E2; border-color: #FCA5A5; }
 
-    /* Force emerald sa tanan accent colors sa light theme */
-    html[data-theme="light"] .p-main *[style*="color: #c9a961"] {
-        color: #10b981 !important;
-    }
+/* ═══ FORM ═══ */
+.form-group { margin-bottom: 16px; }
+.form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    color: #2D1A11;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+}
+.req { color: #D84315; font-weight: 800; }
 
-    /* Kill any gold shadows */
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.7)"],
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.5)"],
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.6)"] {
-        box-shadow: 0 8px 20px -8px rgba(16, 185, 129, 0.5) !important;
-    }
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #FFFFFF;
+    border: 1.5px solid #EFEBE9;
+    border-radius: 14px;
+    color: #2D1A11;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.form-input::placeholder { color: #B8A29A; font-weight: 500; }
+.form-input:focus {
+    border-color: #2D1A11;
+    box-shadow: 0 0 0 4px rgba(45, 26, 17, 0.08);
+}
+.form-input:hover:not(:focus) { border-color: #D7CCC8; }
 
-    /* Override gold gradient backgrounds */
-    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #c9a961"] {
-        background: linear-gradient(135deg, #10b981, #059669) !important;
-    }
+/* ═══ FORM ROW ═══ */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
 
-    /* Force all spans/divs inside cards dark */
-    html[data-theme="light"] .p-main,
-    html[data-theme="light"] .p-main *:not([class*="badge"]):not([class*="status"]):not([class*="pill"]):not([class*="text-"]) {
-        /* Fallback */
-    }
+/* ═══ ALERT ═══ */
+.form-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.4;
+    border: 1.5px solid;
+}
+.form-alert svg { flex-shrink: 0; }
+.form-alert.error {
+    background: #FEF2F2;
+    color: #B91C1C;
+    border-color: #FECACA;
+}
+.form-alert.success {
+    background: #F0FDF4;
+    color: #15803D;
+    border-color: #BBF7D0;
+}
 
-    /* Headings */
-    html[data-theme="light"] .p-main h1,
-    html[data-theme="light"] .p-main h2,
-    html[data-theme="light"] .p-main h3,
-    html[data-theme="light"] .p-main h4 {
-        color: #0f1e17 !important;
-    }
+/* ═══ ACTIONS ═══ */
+.form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+}
+.p-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 50px;
+    padding: 0 18px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+.p-btn:active { transform: scale(0.97); }
+.p-btn-primary {
+    background: linear-gradient(135deg, #D84315, #BF360C);
+    color: #FFFFFF;
+    box-shadow: 0 10px 24px -8px rgba(216, 67, 21, 0.6);
+}
+.p-btn-primary:hover {
+    box-shadow: 0 12px 28px -8px rgba(216, 67, 21, 0.8);
+    transform: translateY(-1px);
+}
+.p-btn-ghost {
+    background: #FFFFFF;
+    color: #2D1A11;
+    border-color: #EFEBE9;
+}
+.p-btn-ghost:hover {
+    background: #FDFBF7;
+    border-color: #D7CCC8;
+}
 
-    /* All text classes */
-    html[data-theme="light"] .p-main [class*="title"],
-    html[data-theme="light"] .p-main [class*="value"]:not([class*="badge"]),
-    html[data-theme="light"] .p-main [class*="label"]:not([class*="badge"]),
-    html[data-theme="light"] .p-main [class*="name"],
-    html[data-theme="light"] .p-main strong,
-    html[data-theme="light"] .p-main b {
-        color: #0f1e17 !important;
-    }
-
-    html[data-theme="light"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
-    html[data-theme="light"] .p-main [class*="meta"],
-    html[data-theme="light"] .p-main [class*="desc"],
-    html[data-theme="light"] .p-main [class*="hint"] {
-        color: #6b7f75 !important;
-    }
-
-    /* Inline hardcoded white → dark */
-    html[data-theme="light"] .p-main *[style*="color: #fafafa"],
-    html[data-theme="light"] .p-main *[style*="color:#fafafa"],
-    html[data-theme="light"] .p-main *[style*="color: #f5f3f0"],
-    html[data-theme="light"] .p-main *[style*="color:#f5f3f0"],
-    html[data-theme="light"] .p-main *[style*="color: white"],
-    html[data-theme="light"] .p-main *[style*="color:#fff"],
-    html[data-theme="light"] .p-main *[style*="color: #fff"],
-    html[data-theme="light"] .p-main *[style*="color:#ffffff"],
-    html[data-theme="light"] .p-main *[style*="color: #ffffff"] {
-        color: #0f1e17 !important;
-    }
-
-    /* Dark backgrounds → white */
-    html[data-theme="light"] .p-main *[style*="background: #1e1a16"],
-    html[data-theme="light"] .p-main *[style*="background:#1e1a16"],
-    html[data-theme="light"] .p-main *[style*="background: #0f0f14"],
-    html[data-theme="light"] .p-main *[style*="background:#0f0f14"],
-    html[data-theme="light"] .p-main *[style*="background: #15120f"],
-    html[data-theme="light"] .p-main *[style*="background:#15120f"] {
-        background: #ffffff !important;
-    }
-    /* ════════════════════════════════════════════════════════
-       LIGHT MODE — PURE SLATE FORCE OVERRIDE
-       ════════════════════════════════════════════════════════ */
-
-    /* Gold/green/brown hardcoded colors → slate */
-    html[data-theme="light"] .p-main *[style*="#c9a961"],
-    html[data-theme="light"] .p-main *[style*="#10b981"],
-    html[data-theme="light"] .p-main *[style*="#059669"],
-    html[data-theme="light"] .p-main *[style*="#a9784a"],
-    html[data-theme="light"] .p-main *[style*="#8a5f36"],
-    html[data-theme="light"] .p-main *[style*="#b8944d"] {
-        color: #475569 !important;
-    }
-
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97"],
-    html[data-theme="light"] .p-main *[style*="rgba(16, 185, 129"],
-    html[data-theme="light"] .p-main *[style*="rgba(169, 120, 74"] {
-        color: #475569 !important;
-    }
-
-    /* Gradient override */
-    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #c9a961"],
-    html[data-theme="light"] .p-main *[style*="linear-gradient(135deg, #10b981"] {
-        background: linear-gradient(135deg, #475569, #334155) !important;
-    }
-
-    /* Gold shadow → slate shadow */
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.7)"],
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.5)"],
-    html[data-theme="light"] .p-main *[style*="rgba(201, 169, 97, 0.6)"] {
-        box-shadow: 0 8px 20px -8px rgba(71, 85, 105, 0.4) !important;
-    }
-
-    /* All text — dark */
-    html[data-theme="light"] .p-main h1,
-    html[data-theme="light"] .p-main h2,
-    html[data-theme="light"] .p-main h3,
-    html[data-theme="light"] .p-main h4 {
-        color: #0f172a !important;
-    }
-
-    html[data-theme="light"] .p-main [class*="title"],
-    html[data-theme="light"] .p-main [class*="value"]:not([class*="badge"]),
-    html[data-theme="light"] .p-main [class*="label"]:not([class*="badge"]),
-    html[data-theme="light"] .p-main [class*="name"],
-    html[data-theme="light"] .p-main strong,
-    html[data-theme="light"] .p-main b {
-        color: #0f172a !important;
-    }
-
-    html[data-theme="light"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
-    html[data-theme="light"] .p-main [class*="meta"],
-    html[data-theme="light"] .p-main [class*="desc"],
-    html[data-theme="light"] .p-main [class*="hint"] {
-        color: #64748b !important;
-    }
-
-    /* Hardcoded white text → dark */
-    html[data-theme="light"] .p-main *[style*="color: #fafafa"],
-    html[data-theme="light"] .p-main *[style*="color:#fafafa"],
-    html[data-theme="light"] .p-main *[style*="color: #f5f3f0"],
-    html[data-theme="light"] .p-main *[style*="color:#f5f3f0"],
-    html[data-theme="light"] .p-main *[style*="color: white"],
-    html[data-theme="light"] .p-main *[style*="color:#fff"],
-    html[data-theme="light"] .p-main *[style*="color: #fff"],
-    html[data-theme="light"] .p-main *[style*="color:#ffffff"],
-    html[data-theme="light"] .p-main *[style*="color: #ffffff"] {
-        color: #0f172a !important;
-    }
-
-    /* Dark backgrounds → white */
-    html[data-theme="light"] .p-main *[style*="background: #1e1a16"],
-    html[data-theme="light"] .p-main *[style*="background:#1e1a16"],
-    html[data-theme="light"] .p-main *[style*="background: #0f0f14"],
-    html[data-theme="light"] .p-main *[style*="background:#0f0f14"],
-    html[data-theme="light"] .p-main *[style*="background: #15120f"],
-    html[data-theme="light"] .p-main *[style*="background:#15120f"] {
-        background: #ffffff !important;
-    }
-    /* ════════════════════════════════════════════════════════
-       DARK MODE — PURE BLACK FORCE OVERRIDE
-       ════════════════════════════════════════════════════════ */
-
-    /* Kill all gold/emerald/purple accents sa dark mode */
-    html[data-theme="dark"] .p-main *[style*="#c9a961"],
-    html[data-theme="dark"] .p-main *[style*="#10b981"],
-    html[data-theme="dark"] .p-main *[style*="#8b5cf6"],
-    html[data-theme="dark"] .p-main *[style*="#a9784a"],
-    html[data-theme="dark"] .p-main *[style*="#8a5f36"],
-    html[data-theme="dark"] .p-main *[style*="#b8944d"],
-    html[data-theme="dark"] .p-main *[style*="#ec4899"] {
-        color: #ffffff !important;
-    }
-
-    /* Gradient → white */
-    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #c9a961"],
-    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #10b981"],
-    html[data-theme="dark"] .p-main *[style*="linear-gradient(135deg, #8b5cf6"] {
-        background: linear-gradient(135deg, #ffffff, #e5e5e5) !important;
-    }
-
-    /* All text light */
-    html[data-theme="dark"] .p-main h1,
-    html[data-theme="dark"] .p-main h2,
-    html[data-theme="dark"] .p-main h3,
-    html[data-theme="dark"] .p-main h4 {
-        color: #ffffff !important;
-    }
-
-    html[data-theme="dark"] .p-main [class*="title"],
-    html[data-theme="dark"] .p-main [class*="value"]:not([class*="badge"]),
-    html[data-theme="dark"] .p-main [class*="label"]:not([class*="badge"]),
-    html[data-theme="dark"] .p-main [class*="name"],
-    html[data-theme="dark"] .p-main strong,
-    html[data-theme="dark"] .p-main b {
-        color: #ffffff !important;
-    }
-
-    html[data-theme="dark"] .p-main [class*="sub"]:not([class*="button"]):not([class*="btn"]),
-    html[data-theme="dark"] .p-main [class*="meta"],
-    html[data-theme="dark"] .p-main [class*="desc"],
-    html[data-theme="dark"] .p-main [class*="hint"] {
-        color: #a3a3a3 !important;
-    }
-
-    /* Any hardcoded dark text → white */
-    html[data-theme="dark"] .p-main *[style*="color: #0f172a"],
-    html[data-theme="dark"] .p-main *[style*="color:#0f172a"],
-    html[data-theme="dark"] .p-main *[style*="color: #1a1a1f"],
-    html[data-theme="dark"] .p-main *[style*="color: #000"],
-    html[data-theme="dark"] .p-main *[style*="color:#000"],
-    html[data-theme="dark"] .p-main *[style*="color: black"],
-    html[data-theme="dark"] .p-main *[style*="color:black"] {
-        color: #ffffff !important;
-    }
-
-    /* Any hardcoded light bg → dark */
-    html[data-theme="dark"] .p-main *[style*="background: #ffffff"],
-    html[data-theme="dark"] .p-main *[style*="background:#ffffff"],
-    html[data-theme="dark"] .p-main *[style*="background: white"],
-    html[data-theme="dark"] .p-main *[style*="background: #f8fafc"],
-    html[data-theme="dark"] .p-main *[style*="background: #f1f5f9"] {
-        background: #0a0a0a !important;
-    }</style>
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 500px) {
+    .form-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+    .edit-header { padding: 20px 12px 16px; }
+    .edit-header-icon { width: 56px; height: 56px; border-radius: 18px; }
+    .edit-header-icon svg { width: 22px; height: 22px; }
+    .edit-header-title { font-size: 20px; }
+    .logo-upload { padding: 14px; gap: 12px; border-radius: 16px; }
+    .logo-preview { width: 64px; height: 64px; border-radius: 16px; font-size: 22px; }
+    .logo-title { font-size: 13px; }
+    .logo-hint { font-size: 11px; }
+    .logo-btn { padding: 7px 10px; font-size: 11px; }
+    .form-input { padding: 13px 15px; font-size: 13.5px; }
+    .p-btn { min-height: 46px; font-size: 13px; }
+}
+</style>
 @endpush

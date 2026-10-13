@@ -50,7 +50,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
+            background-color: #0f0f14;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -80,7 +80,6 @@
             display: flex;
             width: 100%;
             position: relative;
-            overflow: hidden;
         }
 
         /* ===== SIDEBAR SCRIM (mobile overlay) ===== */
@@ -250,13 +249,12 @@
         .main {
             flex: 1;
             min-width: 0;
-            height: 100vh;
-            height: 100dvh;
+            min-height: 100dvh;
             margin-left: var(--sidebar-width);
             display: flex;
             flex-direction: column;
             position: relative;
-            overflow-y: auto;
+            
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
@@ -265,7 +263,7 @@
                 url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
+            background-attachment: scroll;
             background-repeat: no-repeat;
         }
 
@@ -687,6 +685,138 @@
         }
     </style>
     @stack('styles')
+<style id="MOBILE-BG-FIX">
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE BACKGROUND FIX v2 â€” FINAL
+   Fixes: iOS Safari fixed-bg bug, theme conflicts, slow load
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â•â•â• BASE LAYER â€” Fixed background (all devices) â•â•â• */
+html body::before {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: scroll !important;
+    pointer-events: none !important;
+    /* Safe compositing â€” prevents iOS scroll jitter */
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    will-change: transform !important;
+    z-index: -2 !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* â•â•â• OVERLAY LAYER â•â•â• */
+html body::after {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    display: block !important;
+}
+
+/* â•â•â• DEFAULT THEME â€” Coffee beans â•â•â• */
+html[data-theme="default"] body::before,
+html:not([data-theme]) body::before {
+    background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80') !important;
+    background-color: #0f0f14 !important;
+}
+html[data-theme="default"] body::after,
+html:not([data-theme]) body::after {
+    background: linear-gradient(180deg, rgba(15, 15, 20, 0.72), rgba(10, 10, 16, 0.82)) !important;
+}
+
+/* â•â•â• DARK THEME â€” Solid black â•â•â• */
+html[data-theme="dark"] body::before {
+    background-image: none !important;
+    background-color: #050505 !important;
+}
+html[data-theme="dark"] body::after {
+    background: none !important;
+}
+
+/* â•â•â• LIGHT THEME â€” Solid white â•â•â• */
+html[data-theme="light"] body::before {
+    background-image: none !important;
+    background-color: #f8fafc !important;
+}
+html[data-theme="light"] body::after {
+    background: none !important;
+}
+
+/* â•â•â• BLUE THEME â€” Solid blue â•â•â• */
+html[data-theme="blue"] body::before {
+    background-image: none !important;
+    background-color: #eff6ff !important;
+}
+html[data-theme="blue"] body::after {
+    background: none !important;
+}
+
+/* â•â•â• ENSURE BODY BG MATCHES â•â•â• */
+html[data-theme="default"] body,
+html:not([data-theme]) body { background-color: #0f0f14 !important; }
+html[data-theme="dark"] body    { background-color: #050505 !important; }
+html[data-theme="light"] body   { background-color: #f8fafc !important; }
+html[data-theme="blue"] body    { background-color: #eff6ff !important; }
+
+/* â•â•â• MOBILE â€” optimized â•â•â• */
+@media (max-width: 768px) {
+
+    /* Smaller image for faster load */
+    html[data-theme="default"] body::before,
+    html:not([data-theme]) body::before {
+        background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=70') !important;
+        background-position: center center !important;
+    }
+
+    /* Stronger overlay for text readability */
+    html[data-theme="default"] body::after,
+    html:not([data-theme]) body::after {
+        background: linear-gradient(180deg, rgba(15, 15, 20, 0.78), rgba(10, 10, 16, 0.88)) !important;
+    }
+}
+
+/* â•â•â• VERY SMALL PHONES â•â•â• */
+@media (max-width: 480px) {
+    html[data-theme="default"] body::before,
+    html:not([data-theme]) body::before {
+        background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=600&q=65') !important;
+    }
+}
+
+/* â•â•â• USE 100dvh para sa mobile URL bar â•â•â• */
+@supports (height: 100dvh) {
+    html body::before,
+    html body::after {
+        height: 100dvh !important;
+    }
+}
+
+/* â•â•â• REDUCED MOTION â•â•â• */
+@media (prefers-reduced-motion: reduce) {
+    html body::before {
+        will-change: auto !important;
+    }
+}
+</style>
 </head>
 <body>
     <div class="app">

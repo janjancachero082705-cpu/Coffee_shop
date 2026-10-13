@@ -22,7 +22,16 @@ use App\Http\Controllers\Portal\PortalSalesReportController;
 use App\Http\Controllers\Portal\PortalPaymentController;
 
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
+    // Logged-in admin -> dashboard
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    // Logged-in store -> portal dashboard
+    if (auth('store')->check()) {
+        return redirect()->route('portal.dashboard');
+    }
+    // Guest -> login page
+    return redirect()->route('portal.login');
 });
 
 Route::middleware('guest')->group(function () {

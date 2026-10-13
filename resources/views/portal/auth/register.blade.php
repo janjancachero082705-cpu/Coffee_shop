@@ -4,327 +4,476 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#0a0a0e">
-    <title>Register Store - Coffee Beans Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#B8651B">
+    <title>Register Store - RYS Farm Products Dealer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: #f5f3f0;
+            color: #3E2723;
             font-size: 14px;
             -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            background: #FFFFFF;
         }
 
-        body {
-            background-color: #0a0a0e;
-            background-image:
-                linear-gradient(180deg, rgba(10, 10, 14, 0.4) 0%, rgba(10, 10, 14, 0.6) 100%),
-                url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80');
+        /* ═══ SCROLLABLE SCREEN ═══ */
+        .auth-screen {
+            min-height: 100vh;
+            min-height: 100dvh;
+            width: 100%;
+            background: #FFFFFF;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ═══ HERO — COFFEE BEANS ═══ */
+        .hero {
+            position: relative;
+            height: 42vh;
+            height: 42dvh;
+            min-height: 260px;
+            max-height: 380px;
+            background-image: url('{{ asset("images/coffee_bg.png") }}');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+            background-color: #2D1A11;
+            overflow: hidden;
+            z-index: 1;
+            isolation: isolate;
         }
 
-        body::after {
+        .hero::after {
             content: '';
-            position: fixed;
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(20, 10, 5, 0.5) 0%,
+                rgba(20, 10, 5, 0.6) 45%,
+                rgba(20, 10, 5, 0.75) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 40%, rgba(184, 101, 27, 0.2), transparent 55%),
+                        radial-gradient(circle at 75% 70%, rgba(255, 183, 77, 0.12), transparent 60%);
+            z-index: 1;
+            pointer-events: none;
+            animation: heroGlow 8s ease-in-out infinite;
+        }
+        @keyframes heroGlow {
+            0%, 100% { opacity: 0.85; }
+            50%      { opacity: 1; }
+        }
+
+        /* ═══ RYS LOGO — CENTERED ═══ */
+        .logo-badge {
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle, rgba(201, 169, 97, 0.1), transparent 70%);
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .register-card {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 480px;
-            background: rgba(20, 20, 26, 0.55);
-            backdrop-filter: blur(24px) saturate(1.6);
-            -webkit-backdrop-filter: blur(24px) saturate(1.6);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            padding: 32px 28px;
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.85);
-            animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 20px 0;
-        }
-
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .brand {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .brand-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
+            z-index: 3;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: #FDFBF7;
+            padding: 8px;
+            box-shadow:
+                0 24px 56px -14px rgba(0, 0, 0, 0.75),
+                0 0 0 5px rgba(201, 169, 97, 0.7),
+                0 0 0 10px rgba(201, 169, 97, 0.22),
+                0 0 0 1px rgba(255, 255, 255, 0.15) inset;
             display: grid;
             place-items: center;
-            margin: 0 auto 14px;
-            color: #fff;
-            box-shadow: 0 14px 28px -8px rgba(169, 120, 74, 0.7);
+            overflow: hidden;
+            animation: logoFloat 4.5s ease-in-out infinite;
+        }
+        .logo-badge::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 183, 77, 0.45), transparent 60%);
+            opacity: 0.6;
+            animation: rotateRing 8s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+            display: block;
+            background: #FDFBF7;
+            position: relative;
+            z-index: 1;
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50%      { transform: translate(-50%, -50%) translateY(-7px); }
+        }
+        @keyframes rotateRing {
+            to { transform: rotate(360deg); }
         }
 
-        .brand-name {
-            font-size: 20px;
+        /* ═══ WHITE FORM — ROUNDED TOP ═══ */
+        .form-side {
+            position: relative;
+            z-index: 2;
+            background: #FFFFFF;
+            border-radius: 32px 32px 0 0;
+            margin-top: -32px;
+            padding: 32px 32px 40px;
+            box-shadow:
+                0 -12px 32px -8px rgba(45, 26, 17, 0.25),
+                0 -2px 8px -2px rgba(45, 26, 17, 0.08);
+        }
+        .form-side::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 44px;
+            height: 4px;
+            border-radius: 2px;
+            background: #EFEBE9;
+        }
+
+        .form-inner {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding-top: 16px;
+        }
+
+        /* Title */
+        .form-title {
+            font-size: 24px;
             font-weight: 800;
+            color: #B8651B;
             letter-spacing: -0.02em;
-            margin-bottom: 4px;
-            color: #f5f3f0;
+            margin-bottom: 6px;
+            line-height: 1.15;
         }
-
-        .brand-name .accent { color: #c9a961; }
-
-        .brand-sub {
-            font-size: 10px;
-            color: #b8b5b0;
-            text-transform: uppercase;
-            letter-spacing: 0.16em;
-            font-weight: 700;
-        }
-
-        .alert {
-            display: flex;
-            align-items: flex-start;
-            gap: 9px;
-            padding: 10px 12px;
-            border-radius: 9px;
-            font-size: 12px;
+        .form-subtitle {
+            font-size: 13px;
+            color: #8D6E63;
             font-weight: 500;
-            margin-bottom: 16px;
-            border: 1px solid;
-            line-height: 1.4;
-        }
-        .alert svg { flex-shrink: 0; margin-top: 1px; }
-        .alert-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border-color: rgba(239, 68, 68, 0.3);
+            margin-bottom: 24px;
+            line-height: 1.5;
         }
 
+        /* Fields */
+        .form-group { margin-bottom: 14px; }
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
-
-        .form-group { margin-bottom: 12px; }
-
-        .label {
+        .field-label {
             display: block;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
-            color: #d8d5d0;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            color: #5D4037;
+            margin-bottom: 7px;
+            letter-spacing: 0.01em;
         }
+        .field-label .req { color: #D84315; }
 
-        .input {
+        .field-input {
             width: 100%;
-            padding: 11px 12px;
-            background: rgba(15, 15, 20, 0.4);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 9px;
-            color: #f5f3f0;
-            font-size: 13px;
+            padding: 14px 16px;
+            background: #FFFFFF;
+            border: 1.5px solid #E5DFD8;
+            border-radius: 12px;
+            color: #3E2723;
+            font-size: 14px;
             font-family: inherit;
+            font-weight: 500;
             outline: none;
-            transition: all 0.2s;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-appearance: none;
+        }
+        .field-input::placeholder { color: #B8A29A; font-weight: 400; }
+        .field-input:hover { border-color: #C9BFB5; background: #FFFDFA; }
+        .field-input:focus {
+            border-color: #B8651B;
+            background: #FFFFFF;
+            box-shadow:
+                0 0 0 4px rgba(184, 101, 27, 0.1),
+                0 4px 12px -4px rgba(184, 101, 27, 0.15);
+            transform: translateY(-1px);
         }
 
-        .input::placeholder { color: #a8a5a0; }
-
-        .input:focus {
-            border-color: #c9a961;
-            background: rgba(15, 15, 20, 0.6);
-            box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.18);
-        }
-
+        /* Submit */
         .btn-submit {
             position: relative;
             width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
-            color: #fff;
-            font-size: 13.5px;
+            padding: 16px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #C9782B 0%, #B8651B 50%, #9C5415 100%);
+            color: #FFFFFF;
+            font-size: 15px;
             font-weight: 700;
             font-family: inherit;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
-            box-shadow: 0 8px 20px -8px rgba(169, 120, 74, 0.8);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 10px 24px -6px rgba(184, 101, 27, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 7px;
-            margin-top: 8px;
+            gap: 8px;
+            letter-spacing: -0.005em;
             overflow: hidden;
+            margin-top: 8px;
         }
-
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.65s ease;
+        }
+        .btn-submit:hover::before { left: 100%; }
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 14px 28px -8px rgba(169, 120, 74, 1);
+            box-shadow:
+                0 16px 32px -8px rgba(184, 101, 27, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
         }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.75; cursor: not-allowed; transform: none; }
 
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        /* Back link */
         .back-link {
-            display: block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
             text-align: center;
             margin-top: 18px;
-            font-size: 12px;
-            color: #b8b5b0;
+            font-size: 13px;
+            color: #6D4C41;
+            font-weight: 600;
             text-decoration: none;
+            transition: color 0.15s;
         }
+        .back-link:hover { color: #B8651B; }
+        .back-link svg { transition: transform 0.2s; }
+        .back-link:hover svg { transform: translateX(-3px); }
 
-        .back-link:hover { color: #c9a961; }
-
+        /* Footer */
         .form-footer {
-            margin-top: 18px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1.5px dashed #EFEBE9;
             text-align: center;
             font-size: 10.5px;
-            color: #b8b5b0;
+            color: #8D6E63;
+            font-weight: 600;
         }
 
+        /* Alert */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 12px 14px;
+            border-radius: 11px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1.5px solid #FECACA;
+            line-height: 1.45;
+            animation: shakeIn 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        .alert svg { flex-shrink: 0; margin-top: 1px; }
+        @keyframes shakeIn {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-8px); }
+            30% { transform: translateX(7px); }
+            45% { transform: translateX(-5px); }
+            60% { transform: translateX(4px); }
+            75% { transform: translateX(-2px); }
+        }
+
+        /* Spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner {
-            width: 13px;
-            height: 13px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
             border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
         }
 
+        /* ═══ RESPONSIVE ═══ */
         @media (max-width: 480px) {
+            .hero { height: 38vh; height: 38dvh; min-height: 240px; }
+            .logo-badge {
+                width: 110px;
+                height: 110px;
+                padding: 6px;
+                box-shadow:
+                    0 20px 44px -12px rgba(0, 0, 0, 0.7),
+                    0 0 0 4px rgba(201, 169, 97, 0.7),
+                    0 0 0 8px rgba(201, 169, 97, 0.22);
+            }
+            .form-side {
+                border-radius: 28px 28px 0 0;
+                margin-top: -28px;
+                padding: 28px 22px 32px;
+            }
+            .form-side::before { width: 40px; height: 3px; top: 10px; }
+            .form-title { font-size: 21px; }
+            .form-subtitle { font-size: 12.5px; margin-bottom: 20px; }
             .form-row { grid-template-columns: 1fr; }
-            .register-card { padding: 24px 20px; }
+            .field-input { padding: 13px 15px; font-size: 13.5px; }
+        }
+
+        @media (min-width: 768px) {
+            .hero { height: 46vh; height: 46dvh; max-height: 420px; }
+            .logo-badge { width: 160px; height: 160px; padding: 10px; }
+            .form-side {
+                border-radius: 40px 40px 0 0;
+                margin-top: -40px;
+                padding: 44px 48px 48px;
+            }
+            .form-side::before { width: 50px; height: 5px; top: 16px; }
+            .form-inner { max-width: 520px; padding-top: 20px; }
+            .form-title { font-size: 28px; }
+            .field-input { padding: 16px 18px; font-size: 15px; }
+            .btn-submit { padding: 18px; font-size: 16px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="register-card">
+<div class="auth-screen">
 
-    <div class="brand">
-        <div class="brand-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                <line x1="6" y1="1" x2="6" y2="4"/>
-                <line x1="10" y1="1" x2="10" y2="4"/>
-                <line x1="14" y1="1" x2="14" y2="4"/>
-            </svg>
+    {{-- ═══ HERO ═══ --}}
+    <div class="hero">
+        <div class="logo-badge">
+            <img src="{{ asset('images/logo.png') }}" alt="RYS Farm Products Dealer">
         </div>
-        <div class="brand-name">Coffee <span class="accent">Beans</span></div>
-        <div class="brand-sub">Register your store</div>
     </div>
 
-    @if($errors->any())
-        <div class="alert alert-danger">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v4M12 16h.01"/>
-            </svg>
-            <div>{{ $errors->first() }}</div>
-        </div>
-    @endif
+    {{-- ═══ FORM ═══ --}}
+    <div class="form-side">
+        <div class="form-inner">
 
-    <form method="POST" action="{{ route('portal.register.store') }}" id="registerForm">
-        @csrf
+            <h1 class="form-title">Create your store account</h1>
+            <p class="form-subtitle">Fill out the form below. Your account will be reviewed and activated by an admin.</p>
 
-        <div class="form-group">
-            <label class="label">Store Name <span style="color:#ef4444;">*</span></label>
-            <input type="text" name="store_name" value="{{ old('store_name') }}" class="input" placeholder="e.g. Juan Sari-sari Store" required>
-        </div>
+            @if($errors->any())
+                <div class="alert">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                    <div>{{ $errors->first() }}</div>
+                </div>
+            @endif
 
-        <div class="form-group">
-            <label class="label">Owner Name <span style="color:#ef4444;">*</span></label>
-            <input type="text" name="owner_name" value="{{ old('owner_name') }}" class="input" placeholder="Full name" required>
-        </div>
+            <form method="POST" action="{{ route('portal.register.store') }}" id="registerForm">
+                @csrf
 
-        <div class="form-row">
-            <div>
-                <label class="label">Email <span style="color:#ef4444;">*</span></label>
-                <input type="email" name="email" value="{{ old('email') }}" class="input" placeholder="store@example.com" required>
+                <div class="form-group">
+                    <label class="field-label" for="store_name">Store Name <span class="req">*</span></label>
+                    <input type="text" id="store_name" name="store_name" value="{{ old('store_name') }}" class="field-input" placeholder="e.g. Juan Sari-sari Store" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="owner_name">Owner Name <span class="req">*</span></label>
+                    <input type="text" id="owner_name" name="owner_name" value="{{ old('owner_name') }}" class="field-input" placeholder="Full name" required>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="field-label" for="email">Email <span class="req">*</span></label>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="store@example.com" required>
+                    </div>
+                    <div>
+                        <label class="field-label" for="contact_number">Contact <span class="req">*</span></label>
+                        <input type="text" id="contact_number" name="contact_number" value="{{ old('contact_number') }}" class="field-input" placeholder="09XX XXX XXXX" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="field-label" for="city">City <span class="req">*</span></label>
+                        <input type="text" id="city" name="city" value="{{ old('city') }}" class="field-input" placeholder="Cebu City" required>
+                    </div>
+                    <div>
+                        <label class="field-label" for="barangay">Barangay</label>
+                        <input type="text" id="barangay" name="barangay" value="{{ old('barangay') }}" class="field-input" placeholder="Barangay">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="address">Address <span class="req">*</span></label>
+                    <input type="text" id="address" name="address" value="{{ old('address') }}" class="field-input" placeholder="Street address" required>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="field-label" for="password">Password <span class="req">*</span></label>
+                        <input type="password" id="password" name="password" class="field-input" placeholder="Min 6 chars" required>
+                    </div>
+                    <div>
+                        <label class="field-label" for="password_confirmation">Confirm <span class="req">*</span></label>
+                        <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="Repeat" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span id="btnText">Submit Registration</span>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" id="btnArrow">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </form>
+
+            <a href="{{ route('portal.login') }}" class="back-link">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Sign In
+            </a>
+
+            <div class="form-footer">
+                &copy; {{ date('Y') }} RYS Farm Products Dealer · All rights reserved
             </div>
-            <div>
-                <label class="label">Contact <span style="color:#ef4444;">*</span></label>
-                <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="input" placeholder="09XX XXX XXXX" required>
-            </div>
+
         </div>
-
-        <div class="form-row">
-            <div>
-                <label class="label">City <span style="color:#ef4444;">*</span></label>
-                <input type="text" name="city" value="{{ old('city') }}" class="input" placeholder="Cebu City" required>
-            </div>
-            <div>
-                <label class="label">Barangay</label>
-                <input type="text" name="barangay" value="{{ old('barangay') }}" class="input" placeholder="Barangay">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label class="label">Address <span style="color:#ef4444;">*</span></label>
-            <input type="text" name="address" value="{{ old('address') }}" class="input" placeholder="Street address" required>
-        </div>
-
-        <div class="form-row">
-            <div>
-                <label class="label">Password <span style="color:#ef4444;">*</span></label>
-                <input type="password" name="password" class="input" placeholder="Min 6 chars" required>
-            </div>
-            <div>
-                <label class="label">Confirm <span style="color:#ef4444;">*</span></label>
-                <input type="password" name="password_confirmation" class="input" placeholder="Repeat" required>
-            </div>
-        </div>
-
-        <button type="submit" class="btn-submit" id="submitBtn">
-            <span id="btnText">Submit Registration</span>
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" id="btnArrow">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-        </button>
-    </form>
-
-    <a href="{{ route('portal.login') }}" class="back-link">&larr; Back to Sign In</a>
-
-    <div class="form-footer">
-        &copy; {{ date('Y') }} Coffee Beans - All rights reserved
     </div>
 
 </div>

@@ -216,8 +216,8 @@
     </div>
 </section>
 
-{{-- ========== PRODUCTS + STORES (paired) ========== --}}
-<div class="fin-2col fin-2col-fill">
+{{-- ========== PAYMENTS BY METHOD + TOP PRODUCTS (paired) ========== --}}
+<div class="fin-2col">
 
     {{-- Payments by Method --}}
     @if($paymentsByMethod->count() > 0)
@@ -296,61 +296,61 @@
     </section>
     @endif
 
-    {{-- Top Stores --}}
-    @if($topStores->count() > 0)
-    <section class="fin-section">
-        <div class="fin-section-head">
-            <div>
-                <div class="fin-section-eyebrow">Performance</div>
-                <h2 class="fin-section-title">Top Stores</h2>
-            </div>
-            <div class="fin-section-meta">{{ $topStores->count() }} store(s)</div>
+</div>
+
+{{-- ========== TOP STORES (full-width) ========== --}}
+@if($topStores->count() > 0)
+<section class="fin-section">
+    <div class="fin-section-head">
+        <div>
+            <div class="fin-section-eyebrow">Performance</div>
+            <h2 class="fin-section-title">Top Stores</h2>
         </div>
+        <div class="fin-section-meta">{{ $topStores->count() }} store(s)</div>
+    </div>
 
-        <div class="fin-store-list">
-            @foreach($topStores as $i => $s)
-                @php
-                    $revPct  = $maxStoreRevenue > 0 ? ($s['revenue'] / $maxStoreRevenue) * 100 : 0;
-                    $paidPct = $s['revenue'] > 0 ? min(100, ($s['paid'] / $s['revenue']) * 100) : 0;
+    <div class="fin-store-list">
+        @foreach($topStores as $i => $s)
+            @php
+                $revPct  = $maxStoreRevenue > 0 ? ($s['revenue'] / $maxStoreRevenue) * 100 : 0;
+                $paidPct = $s['revenue'] > 0 ? min(100, ($s['paid'] / $s['revenue']) * 100) : 0;
 
-                    $paidTone = $paidPct >= 80 ? 'is-ok'
-                              : ($paidPct >= 40 ? 'is-warn'
-                              : ($paidPct > 0   ? 'is-low' : 'is-zero'));
-                @endphp
-                <div class="fin-store-row">
-                    <div class="fin-store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">
-                        {{ $i + 1 }}
+                $paidTone = $paidPct >= 80 ? 'is-ok'
+                          : ($paidPct >= 40 ? 'is-warn'
+                          : ($paidPct > 0   ? 'is-low' : 'is-zero'));
+            @endphp
+            <div class="fin-store-row">
+                <div class="fin-store-rank {{ $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) }}">
+                    {{ $i + 1 }}
+                </div>
+
+                <div class="fin-store-info">
+                    <div class="fin-store-name">{{ $s['name'] }}</div>
+                    @if($s['code'])
+                        <div class="fin-store-code">{{ $s['code'] }}</div>
+                    @endif
+                </div>
+
+                <div class="fin-store-chart">
+                    <div class="fin-store-bar-wrap">
+                        <div class="fin-store-bar-rev"  style="width:{{ $revPct }}%;"></div>
+                        <div class="fin-store-bar-paid" style="width:{{ $paidPct }}%;"></div>
                     </div>
-
-                    <div class="fin-store-info">
-                        <div class="fin-store-name">{{ $s['name'] }}</div>
-                        @if($s['code'])
-                            <div class="fin-store-code">{{ $s['code'] }}</div>
-                        @endif
-                    </div>
-
-                    <div class="fin-store-chart">
-                        <div class="fin-store-bar-wrap">
-                            <div class="fin-store-bar-rev"  style="width:{{ $revPct }}%;"></div>
-                            <div class="fin-store-bar-paid" style="width:{{ $paidPct }}%;"></div>
-                        </div>
-                        <div class="fin-store-bar-legend">
-                            <span><i class="fin-mini-dot rev"></i>Revenue</span>
-                            <span><i class="fin-mini-dot paid"></i>Paid</span>
-                        </div>
-                    </div>
-
-                    <div class="fin-store-meta">
-                        <div class="fin-store-amount">₱{{ number_format($s['revenue'], 0) }}</div>
-                        <div class="fin-store-paid {{ $paidTone }}">{{ number_format($paidPct, 0) }}% paid</div>
+                    <div class="fin-store-bar-legend">
+                        <span><i class="fin-mini-dot rev"></i>Revenue</span>
+                        <span><i class="fin-mini-dot paid"></i>Paid</span>
                     </div>
                 </div>
-            @endforeach
-        </div>
-    </section>
-    @endif
 
-</div>
+                <div class="fin-store-meta">
+                    <div class="fin-store-amount">₱{{ number_format($s['revenue'], 0) }}</div>
+                    <div class="fin-store-paid {{ $paidTone }}">{{ number_format($paidPct, 0) }}% paid</div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</section>
+@endif
 
 @endsection
 
@@ -909,7 +909,6 @@
     margin-bottom: 18px;
     align-items: start;
 }
-.fin-2col > :only-child { grid-column: 1 / -1; }
 
 /* ── Method chart ─────────────────────────────────────── */
 .fin-method-chart {
@@ -1048,7 +1047,7 @@
 }
 .fin-store-row {
     display: grid;
-    grid-template-columns: 32px minmax(120px, 200px) 1fr minmax(90px, auto);
+    grid-template-columns: 32px minmax(120px, 220px) 1fr minmax(90px, auto);
     gap: 14px;
     align-items: center;
     padding: 12px 0;

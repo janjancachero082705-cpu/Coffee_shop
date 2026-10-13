@@ -18,19 +18,14 @@ class AuthController extends Controller
             return redirect()->route('portal.dashboard');
         }
 
-        // Detect tab from query param (?tab=store or ?tab=admin)
-        $tab = $request->query('tab', 'admin');
-        if (!in_array($tab, ['admin', 'store'])) {
-            $tab = 'admin';
-        }
-
-        return view('auth.login', ['initialTab' => $tab]);
+        // Admin-only login (walang tabs)
+        return view('auth.login');
     }
 
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
@@ -49,7 +44,6 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'Logged out successfully.');
+        return redirect()->route('login');
     }
 }
