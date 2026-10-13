@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#B8651B">
     <title>Store Login - RYS Farm Products Dealer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -11,6 +12,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
+            color-scheme: light only;
             height: 100%;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #3E2723;
@@ -493,7 +495,7 @@
         /* ═══ RESPONSIVE — SHORT SCREENS ═══ */
         @media (max-height: 700px) {
             .hero { height: 55vh; height: 55dvh; min-height: 240px; }
-            .logo-badge { width: 120px; height: 120px; padding: 6px; }
+            .logo-badge { width: 200px; height: 160px; padding: 8px; }
             .form-side {
                 border-radius: 26px 26px 0 0;
                 margin-top: -26px;
@@ -510,9 +512,9 @@
         @media (min-width: 768px) {
             .hero { height: 62vh; height: 62dvh; max-height: 720px; }
             .logo-badge {
-                width: 180px;
-                height: 180px;
-                padding: 10px;
+                width: 320px;
+                height: 260px;
+                padding: 12px;
             }
             .form-side {
                 border-radius: 40px 40px 0 0;

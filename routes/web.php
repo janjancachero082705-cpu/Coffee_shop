@@ -30,9 +30,9 @@ Route::get('/', function () {
     if (auth('store')->check()) {
         return redirect()->route('portal.dashboard');
     }
-    // Guest -> login page
-    return redirect()->route('portal.login');
-});
+    // Guest -> welcome page (may hidden login form)
+    return view('welcome');
+})->name('welcome');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

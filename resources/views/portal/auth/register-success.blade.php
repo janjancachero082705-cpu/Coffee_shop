@@ -10,6 +10,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
+            color-scheme: light only;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #3E2723;
             font-size: 14px;

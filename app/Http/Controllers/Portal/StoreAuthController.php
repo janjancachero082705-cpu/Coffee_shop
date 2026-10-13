@@ -14,7 +14,7 @@ class StoreAuthController extends Controller
             return redirect()->route('portal.dashboard');
         }
         // Store-only login view (may register link)
-        return view('portal.auth.login');
+        return view('welcome');
     }
 
     public function login(Request $request)

@@ -326,13 +326,14 @@
 .dash-balance {
     position: relative;
     padding: 28px 24px 24px;
-    background: linear-gradient(135deg, #2D1A11 0%, #4E342E 100%);
+    background: linear-gradient(135deg, #FFFFFF 0%, #FDF8F3 100%);
+    border: 1.5px solid #EFE4D9;
     border-radius: 24px;
     margin-bottom: 20px;
     overflow: hidden;
     animation: dashIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
     animation-delay: 0.06s;
-    box-shadow: 0 20px 40px -12px rgba(45, 26, 17, 0.5);
+    box-shadow: 0 8px 24px -10px rgba(141, 110, 99, 0.15);
 }
 .dash-balance-glow {
     position: absolute;
@@ -340,7 +341,7 @@
     right: -60px;
     width: 240px;
     height: 240px;
-    background: radial-gradient(circle, rgba(216, 67, 21, 0.25), transparent 65%);
+    background: radial-gradient(circle, rgba(232, 168, 124, 0.15), transparent 65%);
     pointer-events: none;
     animation: dashGlow 6s ease-in-out infinite;
 }
@@ -363,7 +364,7 @@
     gap: 6px;
     font-size: 10.5px;
     font-weight: 800;
-    color: var(--primary-soft);
+    color: #8D6E63;
     text-transform: uppercase;
     letter-spacing: 0.14em;
 }
@@ -382,14 +383,14 @@
     border: 1px solid;
 }
 .dash-balance-status.pending {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
-    color: #FBBF24;
+    background: #FEF3C7;
+    border-color: #FDE68A;
+    color: #B45309;
 }
 .dash-balance-status.paid {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #4ADE80;
+    background: #DCFCE7;
+    border-color: #BBF7D0;
+    color: #15803D;
 }
 .dash-status-dot {
     width: 5px;
@@ -410,16 +411,16 @@
 .dash-balance-cur {
     font-size: 24px;
     font-weight: 800;
-    color: var(--primary-soft);
+    color: #A1887F;
 }
 .dash-balance-num {
     font-size: 44px;
     font-weight: 800;
-    color: #ffffff;
+    color: #2D1A11;
     letter-spacing: -0.045em;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 2px 30px rgba(216, 67, 21, 0.4);
+    text-shadow: 0 2px 12px rgba(216, 67, 21, 0.15);
 }
 
 .dash-balance-meta {
@@ -435,14 +436,14 @@
     flex-direction: column;
     gap: 4px;
     padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #FDFBF7;
+    border: 1px solid #EFE4D9;
     border-radius: 14px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: none;
 }
 .dash-meta-lbl {
     font-size: 10px;
-    color: var(--primary-soft);
+    color: #8D6E63;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -453,7 +454,7 @@
 .dash-balance-meta-item strong {
     font-size: 15px;
     font-weight: 800;
-    color: #ffffff;
+    color: #4E342E;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
 }
@@ -499,13 +500,13 @@
 }
 .dash-balance-btn.primary:active { transform: scale(0.97); }
 .dash-balance-btn.ghost {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #FFFFFF;
+    color: #4E342E;
+    border: 1px solid #D7CCC8;
 }
 .dash-balance-btn.ghost:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: #FDFBF7;
+    border-color: #8D6E63;
 }
 .dash-balance-btn.ghost:active { transform: scale(0.97); }
 

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#B8651B">
     <title>Register Store - RYS Farm Products Dealer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -11,6 +12,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
+            color-scheme: light only;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #3E2723;
             font-size: 14px;
