@@ -1,728 +1,345 @@
 @extends('layouts.admin')
 
 @section('title', 'Stores')
-@section('subtitle', 'Manage your consignment partners')
-
-@section('actions')
-    <a href="{{ route('stores.create') }}" class="btn btn-primary btn-sm">+ New Store</a>
-@endsection
+@section('subtitle', 'Manage registered stores & pending registrations')
 
 @section('content')
 
-@php
-    $totalStores = \App\Models\Store::count();
-    $active = \App\Models\Store::where('status','active')->count();
-    $inactive = \App\Models\Store::where('status','inactive')->count();
-    $suspended = \App\Models\Store::where('status','suspended')->count();
-@endphp
+{{-- HERO --}}
+<div class="st-hero">
+    <div class="st-hero-grid"></div>
 
-{{-- ===== SUMMARY ===== --}}
-<div class="summary-grid">
-    <div class="summary">
-        <div class="summary-icon">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <path d="M9 22V12h6v10"/>
-            </svg>
+    <div class="st-hero-inner">
+        <div class="st-hero-left">
+            <div class="st-hero-eyebrow">Store Management</div>
+            <h1 class="st-hero-title">All Stores</h1>
+            <p class="st-hero-sub">Manage active stores and pending registrations in one place</p>
         </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $totalStores }}</div>
-            <div class="summary-label">Total Stores</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon green">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M5 12l5 5L20 7"/>
-            </svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $active }}</div>
-            <div class="summary-label">Active</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon blue">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8 12h8"/>
-            </svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $inactive }}</div>
-            <div class="summary-label">Inactive</div>
-        </div>
-    </div>
-    <div class="summary">
-        <div class="summary-icon red">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <path d="M12 9v4M12 17h.01"/>
-            </svg>
-        </div>
-        <div class="summary-content">
-            <div class="summary-value">{{ $suspended }}</div>
-            <div class="summary-label">Suspended</div>
+
+        <div class="st-hero-right">
+            <div class="st-stat">
+                <div class="st-stat-val">{{ $totalCount }}</div>
+                <div class="st-stat-lbl">Total</div>
+            </div>
+            <div class="st-stat">
+                <div class="st-stat-val st-stat-val-active">{{ $activeCount }}</div>
+                <div class="st-stat-lbl">Active</div>
+            </div>
+            <div class="st-stat">
+                <div class="st-stat-val st-stat-val-pending">{{ $pendingCount }}</div>
+                <div class="st-stat-lbl">Pending</div>
+            </div>
         </div>
     </div>
 </div>
 
-{{-- ===== TOOLBAR ===== --}}
-<div class="toolbar">
-    <form method="GET" class="toolbar-form">
-        <div class="search-box">
-            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search stores by name, code, or owner..." class="search-input">
+{{-- TOOLBAR --}}
+<div class="st-toolbar">
+    <div class="st-tabs">
+        <a href="{{ route('stores.index', ['tab' => 'all', 'search' => $search]) }}" class="st-tab {{ $tab === 'all' ? 'active' : '' }}">
+            All
+            <span class="st-tab-count">{{ $totalCount }}</span>
+        </a>
+
+        <a href="{{ route('stores.index', ['tab' => 'active', 'search' => $search]) }}" class="st-tab {{ $tab === 'active' ? 'active' : '' }}">
+            Active
+            <span class="st-tab-count">{{ $activeCount }}</span>
+        </a>
+
+        <a href="{{ route('stores.index', ['tab' => 'pending', 'search' => $search]) }}" class="st-tab {{ $tab === 'pending' ? 'active' : '' }}">
+            Pending
+            @if($pendingCount > 0)
+                <span class="st-tab-count st-tab-count-amber">{{ $pendingCount }}</span>
+            @endif
+        </a>
+    </div>
+
+    <form method="GET" action="{{ route('stores.index') }}" class="st-search-form">
+        <input type="hidden" name="tab" value="{{ $tab }}">
+        <div class="st-search-wrap">
+            <svg class="st-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" name="search" value="{{ $search }}" placeholder="Search stores…" class="st-search-input">
+            @if($search)
+                <a href="{{ route('stores.index', ['tab' => $tab]) }}" class="st-search-clear" title="Clear search">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </a>
+            @endif
         </div>
-
-        <select name="status" class="filter-select">
-            <option value="">All Status</option>
-            <option value="active"    {{ request('status')==='active'?'selected':'' }}>Active</option>
-            <option value="inactive"  {{ request('status')==='inactive'?'selected':'' }}>Inactive</option>
-            <option value="suspended" {{ request('status')==='suspended'?'selected':'' }}>Suspended</option>
-        </select>
-
-        <button type="submit" class="btn-filter">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-            Filter
-        </button>
-
-        @if(request()->hasAny(['search','status']))
-            <a href="{{ route('stores.index') }}" class="btn-clear" title="Clear filters">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </a>
-        @endif
     </form>
 </div>
 
-{{-- ===== STORES GRID ===== --}}
-@if($stores->isEmpty())
-    <div class="card">
-        <div class="empty">
-            <div class="empty-icon">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <path d="M9 22V12h6v10"/>
-                </svg>
+{{-- PENDING REGISTRATIONS --}}
+@if(($tab === 'all' || $tab === 'pending') && $pending->count() > 0)
+    <div class="st-section">
+        <div class="st-section-head">
+            <div class="st-section-title">
+                Pending Registrations
+                <span class="st-section-count">{{ $pending->total() }}</span>
             </div>
-            <div class="empty-title">No stores found</div>
-            <div class="empty-text">
-                @if(request()->hasAny(['search','status']))
-                    Try adjusting your filters
-                @else
-                    Add your first consignment partner to get started
-                @endif
-            </div>
-            @if(!request()->hasAny(['search','status']))
-                <a href="{{ route('stores.create') }}" class="btn btn-primary">+ Create Store</a>
-            @endif
+            <div class="st-section-hint">Awaiting your review</div>
         </div>
-    </div>
-@else
-    <div class="stores-grid">
-        @foreach($stores as $store)
-            <div class="store-card" onclick="window.location='{{ route('stores.show', $store) }}'">
-                <div class="store-card-head">
-                    <div class="store-avatar">
-                        @if($store->logo_url)
-                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
-                        @else
-                            {{ strtoupper(substr($store->store_name, 0, 2)) }}
+
+        <div class="st-list">
+            @foreach($pending as $reg)
+                <a href="{{ route('store-registrations.show', $reg->id) }}" class="st-card st-card-pending">
+                    <div class="st-card-left">
+                        <div class="st-card-logo st-card-logo-amber">
+                            {{ strtoupper(substr($reg->store_name ?? 'ST', 0, 2)) }}
+                        </div>
+                    </div>
+
+                    <div class="st-card-main">
+                        <div class="st-card-title-row">
+                            <div class="st-card-name">{{ $reg->store_name }}</div>
+                            <span class="st-badge st-badge-pending">
+                                <span class="st-badge-dot"></span>
+                                Pending
+                            </span>
+                        </div>
+                        <div class="st-card-sub">
+                            {{ $reg->owner_name }}
+                            @if($reg->email)
+                                <span class="st-card-sep">·</span> {{ $reg->email }}
+                            @endif
+                            @if($reg->contact_number)
+                                <span class="st-card-sep">·</span> {{ $reg->contact_number }}
+                            @endif
+                        </div>
+                        @if($reg->address)
+                            <div class="st-card-address">{{ $reg->address }}@if($reg->city), {{ $reg->city }}@endif</div>
                         @endif
                     </div>
 
-                    <div class="card-head-right">
-                        <span class="badge badge-{{ $store->status }}">{{ ucfirst($store->status) }}</span>
-
-                        {{-- 3-Dots Menu --}}
-                        <div class="dots-wrap" onclick="event.stopPropagation();">
-                            <button type="button" class="dots-btn" onclick="toggleMenu(event, {{ $store->id }})" title="More options">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="5" r="2"/>
-                                    <circle cx="12" cy="12" r="2"/>
-                                    <circle cx="12" cy="19" r="2"/>
-                                </svg>
-                            </button>
-
-                            <div class="dots-menu" id="menu-{{ $store->id }}">
-                                <a href="{{ route('stores.edit', $store) }}" class="dots-item" onclick="event.stopPropagation();">
-                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    <span>Edit</span>
-                                </a>
-                                
-                            </div>
+                    <div class="st-card-right">
+                        <div class="st-card-time">{{ $reg->created_at->diffForHumans() }}</div>
+                        <div class="st-card-cta">
+                            Review
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
                         </div>
                     </div>
-                </div>
+                </a>
+            @endforeach
+        </div>
 
-                <div class="store-card-body">
-                    <div class="store-card-name">{{ $store->store_name }}</div>
-                    <div class="store-card-code">{{ $store->code }}</div>
-
-                    <div class="store-card-meta">
-                        <div class="meta-row">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <span>{{ $store->owner_name }}</span>
-                        </div>
-                        <div class="meta-row">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                            <span>{{ $store->contact_number }}</span>
-                        </div>
-                        <div class="meta-row">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <span>{{ $store->city ?? $store->barangay ?? 'No city' }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="store-card-foot">
-                    <div>
-                        <div class="foot-label">Credit Limit</div>
-                        <div class="foot-value">&#8369;{{ number_format($store->credit_limit, 0) }}</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div class="foot-label">Terms</div>
-                        <div class="foot-value">{{ ucfirst(str_replace('_',' ',$store->payment_terms)) }}</div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
+        @if($pending->hasPages())
+            <div class="st-pagination">{{ $pending->appends(['tab' => $tab, 'search' => $search])->links() }}</div>
+        @endif
     </div>
-
-    @if(method_exists($stores, 'links'))
-        <div class="pagination-wrap">{{ $stores->withQueryString()->links() }}</div>
-    @endif
 @endif
 
-{{-- ===== HIDDEN DELETE FORM ===== --}}
+{{-- REGISTERED STORES --}}
+@if($tab === 'all' || $tab === 'active')
+    <div class="st-section">
+        <div class="st-section-head">
+            <div class="st-section-title">
+                Registered Stores
+                <span class="st-section-count">{{ $stores->total() }}</span>
+            </div>
+        </div>
 
+        @if($stores->count() === 0)
+            <div class="st-empty">
+                <div class="st-empty-icon">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                </div>
+                <div class="st-empty-title">No stores found</div>
+                <div class="st-empty-text">{{ $search ? 'Try a different search term' : 'Wala pang registered stores' }}</div>
+            </div>
+        @else
+            <div class="st-grid">
+                @foreach($stores as $store)
+                    @php $isActive = ($store->status ?? 'inactive') === 'active'; @endphp
+                    <a href="{{ route('stores.show', $store) }}" class="st-card st-card-grid">
+                        <div class="st-card-top">
+                            <div class="st-card-logo {{ $isActive ? '' : 'st-card-logo-gray' }}">
+                                @if($store->logo_url)
+                                    <img src="{{ $store->logo_url }}" alt="">
+                                @else
+                                    {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
+                                @endif
+                            </div>
+                            <span class="st-badge {{ $isActive ? 'st-badge-active' : 'st-badge-inactive' }}">
+                                <span class="st-badge-dot"></span>
+                                {{ ucfirst($store->status ?? 'inactive') }}
+                            </span>
+                        </div>
+
+                        <div class="st-card-body">
+                            <div class="st-card-name">{{ $store->store_name }}</div>
+                            <div class="st-card-code">{{ $store->code }}</div>
+
+                            @if($store->owner_name)
+                                <div class="st-card-row">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <span>{{ $store->owner_name }}</span>
+                                </div>
+                            @endif
+                            @if($store->email)
+                                <div class="st-card-row">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+                                    <span>{{ $store->email }}</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="st-card-foot">
+                            <span class="st-card-time">Since {{ $store->created_at->format('M Y') }}</span>
+                            <span class="st-card-arrow">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                            </span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if($stores->hasPages())
+                <div class="st-pagination">{{ $stores->appends(['tab' => $tab, 'search' => $search])->links() }}</div>
+            @endif
+        @endif
+    </div>
+@endif
 
 @endsection
 
 @push('styles')
 <style>
-    /* ===== SUMMARY ===== */
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    .summary {
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px) saturate(1.4);
-        -webkit-backdrop-filter: blur(20px) saturate(1.4);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        transition: all 0.2s ease;
-    }
-    .summary:hover {
-        transform: translateY(-2px);
-        border-color: rgba(169, 120, 74, 0.25);
-    }
-    .summary-icon {
-        width: 40px; height: 40px;
-        border-radius: 10px;
-        background: rgba(169, 120, 74, 0.1);
-        border: 1px solid rgba(169, 120, 74, 0.2);
-        display: grid; place-items: center;
-        color: #c9a961;
-        flex-shrink: 0;
-    }
-    .summary-icon.green { background: rgba(34, 197, 94, 0.1);  border-color: rgba(34, 197, 94, 0.2);  color: #22c55e; }
-    .summary-icon.blue  { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-    .summary-icon.red   { background: rgba(239, 68, 68, 0.1);  border-color: rgba(239, 68, 68, 0.2);  color: #ef4444; }
-    .summary-value {
-        font-size: 20px; font-weight: 800;
-        color: var(--text-primary);
-        letter-spacing: -0.02em; line-height: 1;
-    }
-    .summary-label {
-        font-size: 10px; color: var(--text-muted);
-        text-transform: uppercase; letter-spacing: 0.1em;
-        font-weight: 700; margin-top: 3px;
-    }
+/* HERO */
+.st-hero{position:relative;padding:32px;background:#16161d;border:1px solid rgba(255,255,255,.06);border-radius:18px;margin-bottom:20px;overflow:hidden}
+.st-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(201,169,97,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,169,97,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(circle at 100% 0%,black,transparent 70%);-webkit-mask-image:radial-gradient(circle at 100% 0%,black,transparent 70%);pointer-events:none}
+.st-hero-inner{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.st-hero-left{flex:1;min-width:240px}
+.st-hero-eyebrow{display:inline-block;font-size:10.5px;font-weight:800;color:#c9a961;text-transform:uppercase;letter-spacing:.16em;margin-bottom:14px;padding-left:14px;position:relative}
+.st-hero-eyebrow::before{content:'';position:absolute;left:0;top:50%;width:6px;height:1px;background:#c9a961;transform:translateY(-50%)}
+.st-hero-title{font-size:34px;font-weight:800;color:#f5f3f0;letter-spacing:-.04em;line-height:1.05;margin:0 0 10px}
+.st-hero-sub{font-size:13.5px;color:#8a8792;font-weight:500;line-height:1.5;margin:0;max-width:440px}
+.st-hero-right{display:flex;align-items:center;gap:0;padding:16px 4px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.st-stat{padding:0 24px;text-align:center;position:relative}
+.st-stat + .st-stat::before{content:'';position:absolute;left:0;top:50%;width:1px;height:28px;background:rgba(255,255,255,.08);transform:translateY(-50%)}
+.st-stat-val{font-size:24px;font-weight:800;color:#f5f3f0;letter-spacing:-.03em;line-height:1}
+.st-stat-val-active{color:#4ade80}
+.st-stat-val-pending{color:#fbbf24}
+.st-stat-lbl{font-size:10px;font-weight:700;color:#7a7a85;text-transform:uppercase;letter-spacing:.14em;margin-top:6px}
 
-    /* ===== TOOLBAR ===== */
-    .toolbar { margin-bottom: 16px; }
-    .toolbar-form {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: nowrap;
-    }
-    .search-box {
-        flex: 1; min-width: 0; max-width: 420px;
-        position: relative;
-        display: flex; align-items: center;
-    }
-    .search-icon { position: absolute; left: 12px; color: var(--text-muted); pointer-events: none; }
-    .search-input {
-        width: 100%;
-        padding: 9px 14px 9px 36px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid var(--border-strong);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 13px; font-family: inherit; outline: none; transition: all 0.15s;
-    }
-    .search-input::placeholder { color: var(--text-muted); }
-    .search-input:focus {
-        border-color: var(--accent);
-        background: rgba(20, 20, 26, 0.9);
-        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
-    }
-    .filter-select {
-        padding: 9px 32px 9px 12px;
-        background: rgba(20, 20, 26, 0.6);
-        border: 1px solid var(--border-strong);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 13px; font-family: inherit;
-        outline: none; cursor: pointer; transition: all 0.15s;
-        appearance: none; -webkit-appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6862' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        width: 140px; flex-shrink: 0;
-    }
-    .filter-select:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(169, 120, 74, 0.15);
-    }
-    .btn-filter {
-        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-        padding: 9px 16px;
-        background: linear-gradient(135deg, #a9784a, #8a5f36);
-        color: #fff; border: none; border-radius: 8px;
-        font-size: 13px; font-weight: 600; font-family: inherit;
-        cursor: pointer; transition: all 0.15s; flex-shrink: 0;
-        box-shadow: 0 4px 10px -4px rgba(169, 120, 74, 0.5);
-    }
-    .btn-filter:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px -6px rgba(169, 120, 74, 0.7);
-    }
-    .btn-clear {
-        width: 36px; height: 36px;
-        border-radius: 8px;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        color: #ef4444;
-        display: grid; place-items: center;
-        cursor: pointer; transition: all 0.15s; flex-shrink: 0;
-    }
-    .btn-clear:hover { background: rgba(239, 68, 68, 0.2); }
+/* TOOLBAR */
+.st-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.st-tabs{display:flex;gap:4px;padding:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.st-tabs::-webkit-scrollbar{display:none}
+.st-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:transparent;border-radius:9px;font-size:12.5px;font-weight:700;color:#8a8792;text-decoration:none;white-space:nowrap;transition:all .18s;flex-shrink:0}
+.st-tab:hover{background:rgba(255,255,255,.04);color:#d4d1cc}
+.st-tab.active{background:rgba(201,169,97,.12);color:#c9a961;box-shadow:inset 0 0 0 1px rgba(201,169,97,.25)}
+.st-tab-count{padding:1px 7px;min-width:20px;background:rgba(255,255,255,.06);color:#8a8792;font-size:10.5px;font-weight:800;border-radius:100px;text-align:center}
+.st-tab.active .st-tab-count{background:rgba(201,169,97,.2);color:#c9a961}
+.st-tab-count-amber{background:rgba(245,158,11,.15) !important;color:#fbbf24 !important}
+.st-search-form{width:100%;max-width:280px}
+.st-search-wrap{position:relative;display:flex;align-items:center}
+.st-search-icon{position:absolute;left:13px;color:#7a7a85;pointer-events:none;transition:color .2s}
+.st-search-input{width:100%;padding:10px 36px 10px 36px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;color:#f5f3f0;font-size:13px;font-family:inherit;outline:none;transition:all .18s}
+.st-search-input::placeholder{color:#6b6862}
+.st-search-input:focus{border-color:rgba(201,169,97,.5);background:rgba(201,169,97,.03);box-shadow:0 0 0 3px rgba(201,169,97,.08)}
+.st-search-wrap:focus-within .st-search-icon{color:#c9a961}
+.st-search-clear{position:absolute;right:10px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.06);color:#a8a5a0;display:grid;place-items:center;transition:all .15s}
+.st-search-clear:hover{background:rgba(239,68,68,.15);color:#fca5a5}
 
-    /* ===== STORES GRID ===== */
-    .stores-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-    }
-    .store-card {
-        background: rgba(34, 34, 44, 0.55);
-        backdrop-filter: blur(20px) saturate(1.4);
-        -webkit-backdrop-filter: blur(20px) saturate(1.4);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        padding: 18px;
-        display: flex; flex-direction: column;
-        transition: all 0.25s ease;
-        position: relative;
-        overflow: visible;
-        cursor: pointer;
-    }
-    .store-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 2px;
-        border-radius: 14px 14px 0 0;
-        background: linear-gradient(90deg, transparent, #c9a961, transparent);
-        opacity: 0;
-        transition: opacity 0.25s;
-    }
-    .store-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(169, 120, 74, 0.3);
-        background: rgba(34, 34, 44, 0.75);
-        box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
-    }
-    .store-card:hover::before { opacity: 1; }
+/* SECTION */
+.st-section{margin-bottom:32px}
+.st-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 2px 14px}
+.st-section-title{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:800;color:#f5f3f0;text-transform:uppercase;letter-spacing:.12em}
+.st-section-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;padding:0 8px;background:rgba(255,255,255,.06);color:#8a8792;font-size:10.5px;font-weight:800;border-radius:100px;letter-spacing:0}
+.st-section-hint{font-size:11px;color:#7a7a85;font-weight:600;letter-spacing:.03em}
 
-    .store-card-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 16px;
-        gap: 8px;
-    }
-    .card-head-right {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-    }
-    .store-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .store-avatar {
-        width: 48px; height: 48px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #a9784a, #8a5f36);
-        display: grid; place-items: center;
-        color: #fff; font-size: 16px; font-weight: 800;
-        letter-spacing: 0.02em;
-        box-shadow: 0 8px 16px -6px rgba(169, 120, 74, 0.5);
-        flex-shrink: 0;
-    }
+/* LIST & GRID */
+.st-list{display:flex;flex-direction:column;gap:10px}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 
-    /* ===== 3-DOTS MENU ===== */
-    .dots-wrap {
-        position: relative;
-    }
-    .dots-btn {
-        width: 28px; height: 28px;
-        border-radius: 7px;
-        background: transparent;
-        border: 1px solid transparent;
-        color: var(--text-muted);
-        display: grid; place-items: center;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .dots-btn:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.08);
-        color: var(--text-primary);
-    }
-    .dots-btn svg { display: block; }
+/* CARD BASE */
+.st-card{background:rgba(34,34,44,.45);border:1px solid rgba(255,255,255,.06);border-radius:14px;text-decoration:none;color:inherit;transition:all .22s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.st-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#c9a961;transform:scaleY(0);transform-origin:top;transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.st-card:hover{background:rgba(34,34,44,.7);border-color:rgba(255,255,255,.1);transform:translateY(-2px);box-shadow:0 12px 28px -16px rgba(0,0,0,.6)}
+.st-card:hover::after{transform:scaleY(1)}
 
-    .dots-menu {
-        position: absolute;
-        top: calc(100% + 6px);
-        right: 0;
-        min-width: 140px;
-        background: rgba(20, 20, 26, 0.98);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        padding: 5px;
-        box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.7);
-        z-index: 100;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-6px) scale(0.96);
-        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-origin: top right;
-    }
-    .dots-menu.open {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0) scale(1);
-    }
-    .dots-item {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        width: 100%;
-        padding: 8px 11px;
-        border-radius: 7px;
-        font-size: 12.5px;
-        font-weight: 500;
-        color: var(--text-secondary);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        font-family: inherit;
-        text-align: left;
-        transition: all 0.12s;
-    }
-    .dots-item:hover {
-        background: rgba(169, 120, 74, 0.1);
-        color: #c9a961;
-    }
-    .dots-item.danger { color: #ef4444; }
-    .dots-item.danger:hover {
-        background: rgba(239, 68, 68, 0.12);
-        color: #ef4444;
-    }
-    .dots-item svg { flex-shrink: 0; }
+/* PENDING CARD */
+.st-card-pending{display:flex;align-items:center;gap:16px;padding:16px 20px}
+.st-card-pending::after{background:#f59e0b}
+.st-card-pending:hover{border-color:rgba(245,158,11,.25)}
+.st-card-pending .st-card-left{flex-shrink:0}
+.st-card-pending .st-card-main{flex:1;min-width:0}
+.st-card-pending .st-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.st-card-title-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.st-card-title-row .st-card-name{margin:0}
+.st-card-sub{font-size:12.5px;color:#9a97a3;font-weight:500;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-card-sep{color:#6b6862;margin:0 2px}
+.st-card-address{font-size:11.5px;color:#7a7a85;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    /* ===== CARD BODY ===== */
-    .store-card-body { flex: 1; }
-    .store-card-name {
-        font-size: 15px; font-weight: 700;
-        color: var(--text-primary);
-        letter-spacing: -0.01em;
-        margin-bottom: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .store-card-code {
-        font-family: ui-monospace, monospace;
-        font-size: 11px; color: #c9a961;
-        font-weight: 600; margin-bottom: 14px;
-    }
-    .store-card-meta {
-        display: flex; flex-direction: column;
-        gap: 6px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .meta-row {
-        display: flex; align-items: center;
-        gap: 8px;
-        font-size: 12px; color: var(--text-secondary);
-    }
-    .meta-row svg { color: var(--text-muted); flex-shrink: 0; }
-    .meta-row span {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+/* GRID CARD */
+.st-card-grid{display:flex;flex-direction:column;padding:18px}
+.st-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.st-card-grid .st-card-body{flex:1}
+.st-card-grid .st-card-name{font-size:15px;font-weight:800;color:#f5f3f0;letter-spacing:-.02em;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.st-card-code{display:inline-block;font-family:ui-monospace,SFMono-Regular,monospace;font-size:10.5px;font-weight:700;color:#7a7a85;letter-spacing:.05em;padding:2px 6px;background:rgba(255,255,255,.04);border-radius:4px;margin-bottom:14px}
+.st-card-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#9a97a3;font-weight:500;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-card-row svg{color:#6b6862;flex-shrink:0}
+.st-card-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05)}
+.st-card-time{font-size:10.5px;color:#6b6862;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.st-card-arrow{color:#7a7a85;transition:all .22s}
+.st-card:hover .st-card-arrow{color:#c9a961;transform:translateX(3px)}
+.st-card-cta{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:.08em;transition:gap .2s}
+.st-card:hover .st-card-cta{gap:8px}
 
-    .store-card-foot {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 16px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .foot-label {
-        font-size: 10px; color: var(--text-muted);
-        text-transform: uppercase; letter-spacing: 0.08em;
-        font-weight: 700; margin-bottom: 3px;
-    }
-    .foot-value {
-        font-size: 13px; font-weight: 700;
-        color: var(--text-primary);
-    }
+/* LOGO */
+.st-card-logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#c9a961,#8a5f36);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800;letter-spacing:-.02em;flex-shrink:0;overflow:hidden}
+.st-card-logo-amber{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.st-card-logo-gray{background:linear-gradient(135deg,#4b5563,#374151)}
+.st-card-logo img{width:100%;height:100%;object-fit:cover}
 
-    /* ===== EMPTY ===== */
-    .empty {
-        text-align: center;
-        padding: 60px 20px;
-    }
-    .empty-icon {
-        width: 60px; height: 60px;
-        margin: 0 auto 16px;
-        border-radius: 14px;
-        background: rgba(169, 120, 74, 0.1);
-        border: 1px solid rgba(169, 120, 74, 0.25);
-        display: grid; place-items: center;
-        color: #c9a961;
-    }
-    .empty-title {
-        font-size: 16px; font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 6px;
-    }
-    .empty-text {
-        font-size: 12.5px;
-        color: var(--text-muted);
-        margin-bottom: 18px;
-    }
+/* BADGE */
+.st-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:100px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
+.st-badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.st-badge-active{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.22)}
+.st-badge-inactive{background:rgba(255,255,255,.05);color:#8a8792;border:1px solid rgba(255,255,255,.08)}
+.st-badge-pending{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.st-badge-pending .st-badge-dot{animation:stPulse 1.8s ease-in-out infinite}
+@keyframes stPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.3);}}
 
-    /* ===== PAGINATION ===== */
-    .pagination-wrap {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-    }
+/* EMPTY */
+.st-empty{text-align:center;padding:56px 24px;background:rgba(34,34,44,.3);border:1px dashed rgba(255,255,255,.08);border-radius:14px}
+.st-empty-icon{width:60px;height:60px;margin:0 auto 14px;border-radius:14px;background:rgba(201,169,97,.06);border:1px solid rgba(201,169,97,.15);color:#c9a961;display:grid;place-items:center}
+.st-empty-title{font-size:15px;font-weight:800;color:#f5f3f0;margin-bottom:4px;letter-spacing:-.01em}
+.st-empty-text{font-size:12.5px;color:#8a8792;font-weight:500}
 
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 1100px) {
-        .summary-grid { grid-template-columns: repeat(2, 1fr); }
-        .stores-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 700px) {
-        .summary-grid { grid-template-columns: 1fr; }
-        .stores-grid { grid-template-columns: 1fr; }
-        .toolbar-form { flex-wrap: wrap; }
-        .search-box { max-width: 100%; flex: 1 1 100%; }
-        .filter-select { flex: 1; width: auto; }
-    }
+/* PAGINATION */
+.st-pagination{margin-top:20px}
 
-    /* ═══════════════════════════════════════════════
-       STORES — 2-PER-ROW ON MOBILE (override)
-       ═══════════════════════════════════════════════ */
-
-    /* Tablet — 2 cols */
-    @media (max-width: 1100px) {
-        .stores-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 14px !important;
-        }
-    }
-
-    /* Mobile — 2 cols, compact cards */
-    @media (max-width: 700px) {
-        .stores-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 10px !important;
-        }
-
-        .store-card {
-            padding: 12px 12px 10px;
-            border-radius: 12px;
-        }
-
-        .store-card-head {
-            margin-bottom: 10px;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .store-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            font-size: 13px;
-            box-shadow: 0 6px 12px -4px rgba(169, 120, 74, 0.4);
-        }
-
-        .card-head-right {
-            gap: 4px;
-        }
-
-        /* Smaller status badge */
-        .card-head-right .badge {
-            font-size: 9px;
-            padding: 3px 7px;
-            letter-spacing: 0.03em;
-        }
-
-        /* Smaller 3-dots button */
-        .dots-btn {
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
-        }
-        .dots-btn svg {
-            width: 13px;
-            height: 13px;
-        }
-
-        /* Card body — tighter */
-        .store-card-name {
-            font-size: 12.5px;
-            font-weight: 700;
-            margin-bottom: 2px;
-            line-height: 1.25;
-            -webkit-line-clamp: 1;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .store-card-code {
-            font-size: 9.5px;
-            margin-bottom: 8px;
-        }
-
-        /* Meta rows — compact */
-        .store-card-meta {
-            padding-top: 8px;
-            gap: 4px;
-        }
-        .meta-row {
-            gap: 5px;
-            font-size: 10.5px;
-        }
-        .meta-row svg {
-            width: 10px;
-            height: 10px;
-        }
-
-        /* Hide contact number on very small — para dili huot */
-        .store-card-meta .meta-row:nth-child(2) {
-            display: none;
-        }
-
-        /* Footer — smaller */
-        .store-card-foot {
-            margin-top: 10px;
-            padding-top: 8px;
-        }
-        .foot-label {
-            font-size: 8.5px;
-            margin-bottom: 2px;
-            letter-spacing: 0.06em;
-        }
-        .foot-value {
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        /* Dropdown menu — smaller */
-        .dots-menu {
-            min-width: 130px;
-            padding: 4px;
-        }
-        .dots-item {
-            padding: 7px 9px;
-            font-size: 11.5px;
-            gap: 7px;
-        }
-        .dots-item svg {
-            width: 12px;
-            height: 12px;
-        }
-    }
-
-    /* Small phone — 2 cols, tighter pa */
-    @media (max-width: 400px) {
-        .stores-grid { gap: 8px !important; }
-        .store-card { padding: 10px 10px 8px; border-radius: 10px; }
-        .store-avatar { width: 32px; height: 32px; border-radius: 8px; font-size: 12px; }
-        .store-card-name { font-size: 11.5px; }
-        .store-card-code { font-size: 9px; margin-bottom: 6px; }
-        .meta-row { font-size: 10px; }
-        .foot-value { font-size: 10px; }
-        .card-head-right .badge { font-size: 8.5px; padding: 2px 6px; }
-    }
+/* RESPONSIVE */
+@media (max-width:900px){
+    .st-hero-inner{flex-direction:column;align-items:stretch}
+    .st-hero-right{width:100%;justify-content:space-around;padding:14px 0}
+    .st-stat{padding:0 12px;flex:1}
+}
+@media (max-width:768px){
+    .st-hero{padding:24px}
+    .st-hero-title{font-size:26px}
+    .st-hero-sub{font-size:12.5px}
+    .st-stat-val{font-size:20px}
+    .st-stat-lbl{font-size:9.5px}
+    .st-toolbar{flex-direction:column;align-items:stretch}
+    .st-tabs{width:100%}
+    .st-tab{flex:1;justify-content:center;padding:9px 12px;font-size:12px}
+    .st-search-form{max-width:100%}
+    .st-card-pending{flex-direction:column;align-items:flex-start;padding:16px}
+    .st-card-pending .st-card-right{flex-direction:row;justify-content:space-between;align-items:center;width:100%;gap:12px}
+    .st-grid{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+    .st-hero{padding:20px}
+    .st-hero-title{font-size:22px}
+    .st-hero-right{flex-wrap:wrap;gap:0}
+    .st-stat{flex:1;min-width:70px}
+    .st-stat + .st-stat::before{height:24px}
+    .st-stat-val{font-size:18px}
+    .st-section-title{font-size:11px}
+    .st-tab{padding:8px 10px;font-size:11.5px}
+    .st-tab-count{font-size:10px;padding:1px 6px;min-width:18px}
+}
 </style>
-@endpush
-
-@push('scripts')
-<script>
-    // Toggle dropdown menu
-    function toggleMenu(event, id) {
-        event.stopPropagation();
-        event.preventDefault();
-
-        // Close all other menus
-        document.querySelectorAll('.dots-menu.open').forEach(m => {
-            if (m.id !== 'menu-' + id) m.classList.remove('open');
-        });
-
-        const menu = document.getElementById('menu-' + id);
-        if (menu) menu.classList.toggle('open');
-    }
-
-    // Close on outside click
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
-    });
-
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open'));
-        }
-    });
-
-    
-</script>
 @endpush

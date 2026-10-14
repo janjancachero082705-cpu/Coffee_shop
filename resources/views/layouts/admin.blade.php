@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>@yield('title', 'Admin') - Coffee Consignment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
     <style>
         :root {
             --sidebar-bg: #0f0f14;
@@ -39,7 +41,7 @@
             --radius: 10px;
             --radius-sm: 8px;
             --radius-lg: 14px;
-            --sidebar-width: 240px;
+            --sidebar-width: 260px;
             --topbar-height: 64px;
         }
 
@@ -82,7 +84,6 @@
             position: relative;
         }
 
-        /* ===== SIDEBAR SCRIM (mobile overlay) ===== */
         .sidebar-scrim {
             display: none;
             position: fixed;
@@ -96,7 +97,6 @@
             pointer-events: none;
         }
 
-        /* ===== SIDEBAR ===== */
         .sidebar {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -148,22 +148,91 @@
         }
 
         .brand {
-            display: flex; align-items: center; gap: 12px;
-            padding: 0 8px 20px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 14px;
+            padding: 4px 6px 22px; margin-bottom: 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             flex-shrink: 0;
         }
 
         .brand-icon {
-            width: 42px; height: 42px; border-radius: 12px;
-            background: linear-gradient(135deg, #c9a961 0%, #8a5f36 100%);
-            display: grid; place-items: center; color: #fff;
+            width: 68px;
+            height: 68px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
             flex-shrink: 0;
-            box-shadow: 0 8px 16px -4px rgba(169, 120, 74, 0.55);
+            overflow: hidden;
+            background: #FFFFFF;
+            padding: 5px;
+            border: 2px solid rgba(201, 169, 97, 0.45);
+            box-shadow:
+                0 0 0 1px rgba(201, 169, 97, 0.15),
+                0 6px 18px -4px rgba(0, 0, 0, 0.4);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .brand-name { font-size: 14px; font-weight: 800; color: #f5f3f0; line-height: 1.2; }
-        .brand-role { font-size: 9px; font-weight: 700; color: #c9a961; text-transform: uppercase; letter-spacing: 0.14em; margin-top: 3px; }
+        .brand:hover .brand-icon {
+            transform: scale(1.04);
+            border-color: rgba(201, 169, 97, 0.75);
+            box-shadow:
+                0 0 0 1px rgba(201, 169, 97, 0.25),
+                0 8px 22px -4px rgba(201, 169, 97, 0.5);
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            border-radius: 9px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .brand-name {
+            font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: #c9a961;
+            line-height: 1;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand-line {
+            font-family: 'Marcellus', 'Cinzel', Georgia, serif;
+            font-size: 11.5px;
+            font-weight: 400;
+            letter-spacing: 0.12em;
+            color: #d4d1cc;
+            line-height: 1.3;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .brand-tag {
+            font-family: 'Marcellus', 'Cinzel', Georgia, serif;
+            font-size: 9.5px;
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            color: #0f0f14;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-top: 6px;
+            padding: 5px 9px;
+            background: linear-gradient(135deg, #c9a961 0%, #a9784a 100%);
+            border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
+            box-shadow: 0 2px 6px rgba(169, 120, 74, 0.4);
+        }
 
         .nav-section { margin-bottom: 20px; }
 
@@ -245,7 +314,6 @@
         }
         .logout-btn svg { width: 17px; height: 17px; flex-shrink: 0; }
 
-        /* ===== MAIN ===== */
         .main {
             flex: 1;
             min-width: 0;
@@ -254,7 +322,6 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
@@ -422,7 +489,6 @@
 
         .scrim { display: none !important; }
 
-        /* ===== NOTIFICATION BELL ===== */
         .notif-wrap { position: relative; display: inline-block; }
         .notif-bell {
             position: relative; display: inline-flex; align-items: center; justify-content: center;
@@ -481,7 +547,6 @@
             color: #c9a961; font-size: 12px; font-weight: 700; text-decoration: none;
         }
 
-        /* ===== UNIVERSAL BACK BUTTON ===== */
         .universal-back-btn {
             width: 36px; height: 36px;
             border-radius: 10px;
@@ -506,7 +571,6 @@
         .universal-back-btn:active { transform: scale(0.94); }
         .universal-back-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-        /* ===== PENDING ORDERS NAV BADGE ===== */
         .nav-count-badge {
             margin-left: auto;
             padding: 2px 8px;
@@ -526,17 +590,12 @@
             50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.04); }
         }
 
-        /* ===== RESPONSIVE BREAKPOINTS ===== */
-
-        /* Tablet */
         @media (max-width: 1100px) {
             .content { padding: 20px 20px 28px; }
             .topbar { padding: 14px 20px; }
         }
 
-        /* Mobile */
         @media (max-width: 900px) {
-            /* Sidebar slides off-canvas */
             .sidebar {
                 transform: translateX(-100%);
                 width: min(84vw, 300px);
@@ -555,31 +614,24 @@
             .sidebar-close { display: flex; }
             .brand { padding-right: 48px; }
 
-            /* Main takes full width */
             .main { margin-left: 0; }
 
-            /* Show hamburger */
             .menu-toggle { display: grid; }
 
-            /* Tighter padding */
             .topbar { padding: 12px 14px; gap: 10px; }
             .content { padding: 16px 14px 24px; }
 
-            /* Title font smaller */
             .page-title { font-size: 15px; }
             .page-sub { font-size: 11px; }
 
-            /* Hide some topbar elements to save space */
             .chip { display: none; }
             .user-menu > div:last-child { display: none; }
             .user-menu { padding: 4px; gap: 0; }
 
-            /* Kill background-attachment: fixed (buggy on mobile) */
             .main {
                 background-attachment: scroll;
             }
 
-            /* Footer stacks */
             .foot {
                 flex-direction: column;
                 gap: 4px;
@@ -588,7 +640,6 @@
                 text-align: center;
             }
 
-            /* Tables scroll horizontally */
             .content table {
                 display: block;
                 overflow-x: auto;
@@ -603,25 +654,20 @@
                 min-width: 640px;
             }
 
-            /* Prevent iOS zoom on input focus */
             .input, select, textarea {
                 font-size: 16px !important;
                 min-height: 44px;
             }
 
-            /* Touch-friendly buttons */
             .btn {
                 min-height: 44px;
                 padding: 11px 16px;
             }
 
-            /* Card padding tighter */
             .card { padding: 16px; border-radius: 12px; }
         }
 
-        /* Small phone */
         @media (max-width: 600px) {
-            /* Notification dropdown full width */
             .notif-dropdown {
                 position: fixed;
                 top: 62px;
@@ -633,7 +679,6 @@
             }
             .notif-body { max-height: 55vh; }
 
-            /* Smaller back button */
             .universal-back-btn {
                 width: 34px;
                 height: 34px;
@@ -653,7 +698,6 @@
             .page-title { font-size: 14px; }
         }
 
-        /* ===== SAFE AREA (iPhone notch, Android gesture bar) ===== */
         @supports (padding: env(safe-area-inset-bottom)) {
             .sidebar {
                 padding-bottom: calc(24px + env(safe-area-inset-bottom));
@@ -670,7 +714,6 @@
             }
         }
 
-        /* ===== REDUCED MOTION ===== */
         @media (prefers-reduced-motion: reduce) {
             .sidebar, .sidebar-scrim, .notif-dropdown, .nav-item {
                 transition: none !important;
@@ -678,7 +721,6 @@
             .nav-count-badge { animation: none; }
         }
 
-        /* ===== PRINT ===== */
         @media print {
             .sidebar, .topbar, .sidebar-scrim { display: none !important; }
             .main { margin-left: 0 !important; background: #fff !important; color: #000; }
@@ -686,12 +728,6 @@
     </style>
     @stack('styles')
 <style id="MOBILE-BG-FIX">
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   MOBILE BACKGROUND FIX v2 â€” FINAL
-   Fixes: iOS Safari fixed-bg bug, theme conflicts, slow load
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-/* â•â•â• BASE LAYER â€” Fixed background (all devices) â•â•â• */
 html body::before {
     content: '' !important;
     position: fixed !important;
@@ -706,7 +742,6 @@ html body::before {
     background-repeat: no-repeat !important;
     background-attachment: scroll !important;
     pointer-events: none !important;
-    /* Safe compositing â€” prevents iOS scroll jitter */
     transform: translate3d(0, 0, 0) !important;
     -webkit-transform: translate3d(0, 0, 0) !important;
     backface-visibility: hidden !important;
@@ -717,7 +752,6 @@ html body::before {
     display: block !important;
 }
 
-/* â•â•â• OVERLAY LAYER â•â•â• */
 html body::after {
     content: '' !important;
     position: fixed !important;
@@ -732,7 +766,6 @@ html body::after {
     display: block !important;
 }
 
-/* â•â•â• DEFAULT THEME â€” Coffee beans â•â•â• */
 html[data-theme="default"] body::before,
 html:not([data-theme]) body::before {
     background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1920&q=80') !important;
@@ -743,7 +776,6 @@ html:not([data-theme]) body::after {
     background: linear-gradient(180deg, rgba(15, 15, 20, 0.72), rgba(10, 10, 16, 0.82)) !important;
 }
 
-/* â•â•â• DARK THEME â€” Solid black â•â•â• */
 html[data-theme="dark"] body::before {
     background-image: none !important;
     background-color: #050505 !important;
@@ -752,7 +784,6 @@ html[data-theme="dark"] body::after {
     background: none !important;
 }
 
-/* â•â•â• LIGHT THEME â€” Solid white â•â•â• */
 html[data-theme="light"] body::before {
     background-image: none !important;
     background-color: #f8fafc !important;
@@ -761,7 +792,6 @@ html[data-theme="light"] body::after {
     background: none !important;
 }
 
-/* â•â•â• BLUE THEME â€” Solid blue â•â•â• */
 html[data-theme="blue"] body::before {
     background-image: none !important;
     background-color: #eff6ff !important;
@@ -770,31 +800,25 @@ html[data-theme="blue"] body::after {
     background: none !important;
 }
 
-/* â•â•â• ENSURE BODY BG MATCHES â•â•â• */
 html[data-theme="default"] body,
 html:not([data-theme]) body { background-color: #0f0f14 !important; }
 html[data-theme="dark"] body    { background-color: #050505 !important; }
 html[data-theme="light"] body   { background-color: #f8fafc !important; }
 html[data-theme="blue"] body    { background-color: #eff6ff !important; }
 
-/* â•â•â• MOBILE â€” optimized â•â•â• */
 @media (max-width: 768px) {
-
-    /* Smaller image for faster load */
     html[data-theme="default"] body::before,
     html:not([data-theme]) body::before {
         background-image: url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=70') !important;
         background-position: center center !important;
     }
 
-    /* Stronger overlay for text readability */
     html[data-theme="default"] body::after,
     html:not([data-theme]) body::after {
         background: linear-gradient(180deg, rgba(15, 15, 20, 0.78), rgba(10, 10, 16, 0.88)) !important;
     }
 }
 
-/* â•â•â• VERY SMALL PHONES â•â•â• */
 @media (max-width: 480px) {
     html[data-theme="default"] body::before,
     html:not([data-theme]) body::before {
@@ -802,7 +826,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
     }
 }
 
-/* â•â•â• USE 100dvh para sa mobile URL bar â•â•â• */
 @supports (height: 100dvh) {
     html body::before,
     html body::after {
@@ -810,7 +833,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
     }
 }
 
-/* â•â•â• REDUCED MOTION â•â•â• */
 @media (prefers-reduced-motion: reduce) {
     html body::before {
         will-change: auto !important;
@@ -821,10 +843,8 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
 <body>
     <div class="app">
 
-        {{-- ===== SIDEBAR SCRIM (mobile overlay) ===== --}}
         <div class="sidebar-scrim" id="sidebarScrim" onclick="closeSidebar()"></div>
 
-        {{-- ===== SIDEBAR ===== --}}
         <aside class="sidebar" id="sidebar">
             <button type="button" class="sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -834,14 +854,12 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
 
             <div class="brand">
                 <div class="brand-icon">
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
-                        <path d="M6 1v3M10 1v3M14 1v3"/>
-                    </svg>
+                    <img src="{{ asset('images/logo.png') }}" alt="RYS Farm Products Dealer">
                 </div>
-                <div>
-                    <div class="brand-name">RYS Farm Products Dealer</div>
-                    <div class="brand-role">Consignment</div>
+                <div class="brand-text">
+                    <div class="brand-name">RYS</div>
+                    <div class="brand-line">Farm Products Dealer</div>
+                    <div class="brand-tag">Wholesale &amp; Retailer</div>
                 </div>
             </div>
 
@@ -864,7 +882,7 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
 
                 <div class="nav-section">
                     <div class="nav-label">Consignment</div>
-                    <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">
+                    <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') || request()->routeIs('store-registrations.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
                         Stores
                         @php $storeCount = \App\Models\Store::count(); @endphp
@@ -873,14 +891,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
                     <a href="{{ route('deliveries.index') }}" class="nav-item {{ request()->routeIs('deliveries.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                         Deliveries
-                    </a>
-                    <a href="{{ route('store-registrations.index') }}" class="nav-item {{ request()->routeIs('store-registrations.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M19 8v6M22 11h-6"/>
-                        </svg>
-                        Store Registrations
                     </a>
                     <a href="{{ route('reorder-requests.index') }}" class="nav-item {{ request()->routeIs('reorder-requests.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>
@@ -933,7 +943,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             </div>
         </aside>
 
-        {{-- ===== MAIN ===== --}}
         <div class="main">
             <header class="topbar">
                 <div class="topbar-left">
@@ -952,7 +961,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
                 </div>
                 <div class="topbar-right">
 
-                    {{-- NOTIFICATION BELL --}}
                     <div class="notif-wrap" id="notifWrap">
                         <button type="button" class="notif-bell" id="notifBell" onclick="toggleNotif(event)">
                             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1006,7 +1014,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
     </div>
 
     <script>
-        // ===== SIDEBAR MOBILE CONTROLS =====
         function openSidebar() {
             document.body.classList.add('nav-open');
             document.body.style.overflow = 'hidden';
@@ -1023,7 +1030,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             }
         }
 
-        // Close sidebar when clicking a nav link (mobile only)
         document.querySelectorAll('.sidebar .nav-item').forEach(function (link) {
             link.addEventListener('click', function () {
                 if (window.innerWidth < 900) {
@@ -1032,14 +1038,12 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             });
         });
 
-        // Close sidebar on Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && document.body.classList.contains('nav-open')) {
                 closeSidebar();
             }
         });
 
-        // Auto-close sidebar when resizing to desktop
         var resizeTimer;
         window.addEventListener('resize', function () {
             clearTimeout(resizeTimer);
@@ -1052,7 +1056,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
     </script>
 
     <script>
-        // ===== NOTIFICATIONS =====
         var notifUrl = "{{ route('notifications.index') }}";
         var markReadBase = "{{ url('/notifications') }}";
         var markAllUrl = "{{ route('notifications.read-all') }}";
@@ -1133,39 +1136,34 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             body.innerHTML = html;
         }
 
-        // ═══ NOTIFICATION CLICK → MARK READ → NAVIGATE ═══
         document.addEventListener('click', function(e) {
             var item = e.target.closest('.notif-item');
             if (!item) return;
-            
+
             e.preventDefault();
             e.stopPropagation();
-            
+
             var id = item.getAttribute('data-id');
             var url = item.getAttribute('data-url');
-            
-            // Visual feedback
+
             item.style.opacity = '0.6';
-            
-            // Mark as read via AJAX (fire and forget — don't wait)
+
             if (id) {
                 fetch(markReadBase + '/' + id + '/read', {
                     method: 'POST',
-                    headers: { 
-                        'X-CSRF-TOKEN': csrfToken, 
-                        'Accept': 'application/json', 
-                        'X-Requested-With': 'XMLHttpRequest' 
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     credentials: 'same-origin',
                     keepalive: true
                 }).catch(function() {});
             }
-            
-            // Navigate immediately (don't wait for AJAX)
+
             if (url && url !== '' && url !== '#') {
                 window.location.href = url;
             } else {
-                // Fallback: close dropdown, refresh list
                 var dd = document.getElementById('notifDropdown');
                 if (dd) dd.classList.remove('open');
                 item.style.opacity = '1';
@@ -1173,7 +1171,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             }
         });
 
-        // Keep backward compatibility
         function markRead(id) {
             fetch(markReadBase + '/' + id + '/read', {
                 method: 'POST',
@@ -1224,7 +1221,6 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
     @stack('scripts')
 
     <script>
-        // Smart back button with fallback to dashboard
         (function() {
             document.addEventListener('click', function(e) {
                 var btn = e.target.closest('.universal-back-btn');

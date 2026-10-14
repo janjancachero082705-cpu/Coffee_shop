@@ -9,24 +9,62 @@ class StoreController extends Controller
 {
     public function index(Request $request)
     {
+        $tab = $request->get('tab', 'all');
+        $search = $request->get('search', '');
+        $status = $request->get('status', '');
+
+        // ═══ REGISTERED STORES ═══
         $query = Store::query();
 
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('store_name', 'like', "%{$s}%")
-                  ->orWhere('code', 'like', "%{$s}%")
-                  ->orWhere('owner_name', 'like', "%{$s}%")
-                  ->orWhere('contact_number', 'like', "%{$s}%");
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('store_name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('owner_name', 'like', "%{$search}%")
+                  ->orWhere('contact_number', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($status) {
+            $query->where('status', $status);
         }
 
-        $stores = $query->latest()->paginate(12);
-        return view('stores.index', compact('stores'));
+        $stores = $query->latest()->paginate(12, ['*'], 'stores_page');
+
+        // ═══ PENDING REGISTRATIONS ═══
+        $pendingQuery = class_exists('\App\Models\StoreRegistration')
+            ? \App\Models\StoreRegistration::query()
+            : \App\Models\Store::where('status', 'pending');
+
+        if ($search) {
+            $pendingQuery->where(function ($q) use ($search) {
+                $q->where('store_name', 'like', "%{$search}%")
+                  ->orWhere('owner_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('contact_number', 'like', "%{$search}%");
+            });
+        }
+
+        $pending = $pendingQuery->latest()->paginate(12, ['*'], 'pending_page');
+
+        // ═══ COUNTS ═══
+        $totalCount = Store::count();
+        $activeCount = Store::where('status', 'active')->count();
+        $pendingCount = class_exists('\App\Models\StoreRegistration')
+            ? \App\Models\StoreRegistration::count()
+            : Store::where('status', 'pending')->count();
+
+        return view('stores.index', compact(
+            'stores',
+            'pending',
+            'tab',
+            'search',
+            'status',
+            'totalCount',
+            'activeCount',
+            'pendingCount'
+        ));
     }
 
     public function create()
