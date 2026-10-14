@@ -1,4 +1,4 @@
-@extends('portal.layouts.app')
+﻿@extends('portal.layouts.app')
 
 @section('title', 'Payments')
 
@@ -13,13 +13,11 @@
     $activeTab = request('tab', $pendingCount > 0 ? 'pending' : 'history');
     if (!in_array($activeTab, ['pending', 'history', 'reports'])) $activeTab = 'pending';
 
-    // First pending delivery URL for Pay Now button
     $firstPending = $pendingDeliveries->first();
     $payNowUrl = $firstPending
         ? route('portal.payments.create', ['dr' => $firstPending->id])
         : route('portal.payments.create');
 
-    // Compute sales summary for wallet display
     $salesWalletTotal = 0;
     $salesWalletPaid  = 0;
     $salesWalletCount = 0;
@@ -32,55 +30,52 @@
 
 @section('content')
 
-{{-- WALLET CARD (Dynamic per tab) --}}
+{{-- HERO WALLET (dynamic per tab) --}}
 @if($activeTab === 'reports')
-    {{-- SALES WALLET --}}
-    <div class="sw-wallet sw-wallet-sales">
-        <div class="sw-wallet-bg"></div>
-        <div class="sw-wallet-content">
-            <div class="sw-wallet-label">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+    <div class="pay-hero" data-variant="sales">
+        <div class="pay-hero-glow"></div>
+        <div class="pay-hero-content">
+            <div class="pay-hero-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
                 Total Sales
             </div>
-            <div class="sw-wallet-amount"><span class="sw-wallet-cur">₱</span>{{ number_format($salesWalletTotal, 2) }}</div>
-            <div class="sw-wallet-meta">
+            <div class="pay-hero-amount"><span>₱</span>{{ number_format($salesWalletTotal, 2) }}</div>
+            <div class="pay-hero-meta">
                 <span>{{ $salesWalletCount }} report{{ $salesWalletCount != 1 ? 's' : '' }}</span>
-                <span class="sw-wallet-pill">₱{{ number_format($salesWalletPaid, 0) }} paid</span>
+                <span class="pay-hero-pill">₱{{ number_format($salesWalletPaid, 0) }} paid</span>
             </div>
         </div>
     </div>
 @elseif($activeTab === 'history')
-    {{-- HISTORY WALLET --}}
-    <div class="sw-wallet sw-wallet-history">
-        <div class="sw-wallet-bg"></div>
-        <div class="sw-wallet-content">
-            <div class="sw-wallet-label">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 8v8m-4-4h8M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div class="pay-hero" data-variant="history">
+        <div class="pay-hero-glow"></div>
+        <div class="pay-hero-content">
+            <div class="pay-hero-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v8m-4-4h8M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Total Payments
             </div>
-            <div class="sw-wallet-amount"><span class="sw-wallet-cur">₱</span>{{ number_format($stats['all_amount'], 2) }}</div>
-            <div class="sw-wallet-meta">
+            <div class="pay-hero-amount"><span>₱</span>{{ number_format($stats['all_amount'], 2) }}</div>
+            <div class="pay-hero-meta">
                 <span>{{ $stats['total'] }} payment{{ $stats['total'] != 1 ? 's' : '' }}</span>
-                <span class="sw-wallet-pill">₱{{ number_format($stats['this_month'], 0) }} this month</span>
+                <span class="pay-hero-pill">₱{{ number_format($stats['this_month'], 0) }} this month</span>
             </div>
         </div>
     </div>
 @else
-    {{-- DEFAULT: TO PAY WALLET --}}
-    <div class="sw-wallet">
-        <div class="sw-wallet-bg"></div>
-        <div class="sw-wallet-content">
-            <div class="sw-wallet-label">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <div class="pay-hero" data-variant="pending">
+        <div class="pay-hero-glow"></div>
+        <div class="pay-hero-content">
+            <div class="pay-hero-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
                 Outstanding Balance
             </div>
-            <div class="sw-wallet-amount"><span class="sw-wallet-cur">₱</span>{{ number_format($pendingTotal, 2) }}</div>
-            <div class="sw-wallet-meta">
+            <div class="pay-hero-amount"><span>₱</span>{{ number_format($pendingTotal, 2) }}</div>
+            <div class="pay-hero-meta">
                 <span>{{ $pendingCount }} pending deliver{{ $pendingCount != 1 ? 'ies' : 'y' }}</span>
                 @if($pendingCount > 0)
-                    <a href="{{ $payNowUrl }}" class="sw-wallet-cta">Pay Now <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></a>
+                    <a href="{{ $payNowUrl }}" class="pay-hero-cta">Pay Now <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></a>
                 @else
-                    <span class="sw-wallet-clear"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>All clear</span>
+                    <span class="pay-hero-clear"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>All clear</span>
                 @endif
             </div>
         </div>
@@ -88,145 +83,194 @@
 @endif
 
 {{-- STATS --}}
-<div class="sw-stats">
-    <div class="sw-stat">
-        <div class="sw-stat-icon accent"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-        <div class="sw-stat-value">{{ $stats['total'] }}</div>
-        <div class="sw-stat-label">Payments</div>
+<div class="pay-stats">
+    <div class="pay-stat">
+        <div class="pay-stat-icon" style="--c:#1A1A1A;--bg:#F5F5F5;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="pay-stat-value">{{ $stats['total'] }}</div>
+        <div class="pay-stat-label">Payments</div>
     </div>
-    <div class="sw-stat">
-        <div class="sw-stat-icon green"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>
-        <div class="sw-stat-value">₱{{ number_format($stats['all_amount'], 0) }}</div>
-        <div class="sw-stat-label">Total Paid</div>
+    <div class="pay-stat">
+        <div class="pay-stat-icon" style="--c:#15803D;--bg:#E8F5E9;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        </div>
+        <div class="pay-stat-value">₱{{ number_format($stats['all_amount'], 0) }}</div>
+        <div class="pay-stat-label">Total Paid</div>
     </div>
-    <div class="sw-stat">
-        <div class="sw-stat-icon amber"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-        <div class="sw-stat-value">₱{{ number_format($stats['this_month'], 0) }}</div>
-        <div class="sw-stat-label">This Month</div>
+    <div class="pay-stat">
+        <div class="pay-stat-icon" style="--c:#B45309;--bg:#FFF8E1;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="pay-stat-value">₱{{ number_format($stats['this_month'], 0) }}</div>
+        <div class="pay-stat-label">This Month</div>
     </div>
 </div>
 
 {{-- TABS --}}
-<div class="sw-tabs">
-    <a href="{{ route('portal.payments.index', ['tab' => 'pending']) }}" class="sw-tab {{ $activeTab === 'pending' ? 'active' : '' }}"><span>To Pay</span>@if($pendingCount > 0)<span class="sw-tab-badge">{{ $pendingCount }}</span>@endif</a>
-    <a href="{{ route('portal.payments.index', ['tab' => 'history']) }}" class="sw-tab {{ $activeTab === 'history' ? 'active' : '' }}"><span>History</span>@if($stats['total'] > 0)<span class="sw-tab-badge muted">{{ $stats['total'] }}</span>@endif</a>
-    <a href="{{ route('portal.payments.index', ['tab' => 'reports']) }}" class="sw-tab {{ $activeTab === 'reports' ? 'active' : '' }}"><span>Sales</span>@if(isset($reportCount) && $reportCount > 0)<span class="sw-tab-badge muted">{{ $reportCount }}</span>@endif</a>
+<div class="pay-tabs">
+    <a href="{{ route('portal.payments.index', ['tab' => 'pending']) }}" class="pay-tab {{ $activeTab === 'pending' ? 'active' : '' }}">
+        To Pay
+        @if($pendingCount > 0)<span class="pay-tab-count">{{ $pendingCount }}</span>@endif
+    </a>
+    <a href="{{ route('portal.payments.index', ['tab' => 'history']) }}" class="pay-tab {{ $activeTab === 'history' ? 'active' : '' }}">
+        History
+        @if($stats['total'] > 0)<span class="pay-tab-count">{{ $stats['total'] }}</span>@endif
+    </a>
+    <a href="{{ route('portal.payments.index', ['tab' => 'reports']) }}" class="pay-tab {{ $activeTab === 'reports' ? 'active' : '' }}">
+        Sales
+        @if(isset($reportCount) && $reportCount > 0)<span class="pay-tab-count">{{ $reportCount }}</span>@endif
+    </a>
 </div>
 
-{{-- TO PAY --}}
+{{-- ═══ TO PAY TAB ═══ --}}
 @if($activeTab === 'pending')
     @if($pendingDeliveries->isEmpty())
-        <div class="sw-empty">
-            <div class="sw-empty-illustration"><svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
-            <div class="sw-empty-title">Nothing to pay</div>
-            <div class="sw-empty-text">Wala kay pending deliveries. Good job! 🎉</div>
+        <div class="pay-empty">
+            <div class="pay-empty-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <div class="pay-empty-title">Nothing to pay</div>
+            <div class="pay-empty-text">Wala kay pending deliveries. Good job! 🎉</div>
         </div>
     @else
-        <div class="sw-section-head">
-            <div class="sw-section-title"><span class="sw-section-dot"></span>Pending Payments</div>
-            <div class="sw-section-count">{{ $pendingCount }}</div>
+        <div class="pay-section-label">
+            <span>Pending Payments</span>
+            <span class="pay-section-count">{{ $pendingCount }}</span>
         </div>
-        <div class="sw-list" id="pending">
+        <div class="pay-list">
             @foreach($pendingDeliveries as $dr)
                 @php
                     $remaining = max(0, (float)$dr->total_amount - (float)$dr->amount_paid);
                     $paidPct = $dr->total_amount > 0 ? ((float)$dr->amount_paid / (float)$dr->total_amount) * 100 : 0;
                     $isReceived = !empty($dr->customer_confirmed);
                     $payUrl = route('portal.payments.create', ['dr' => $dr->id]);
+                    $statusKey = $isReceived ? 'paid' : 'transit';
                 @endphp
-                <div class="sw-card sw-card-clickable"
-                     onclick="window.location='{{ $payUrl }}'"
-                     role="link"
-                     tabindex="0"
-                     onkeydown="if(event.key==='Enter'){window.location='{{ $payUrl }}'}">
-                    <div class="sw-card-top">
-                        <div class="sw-card-store">
-                            <div class="sw-card-store-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></svg></div>
-                            <div>
-                                <div class="sw-card-store-name">{{ $dr->dr_number }}</div>
-                                <div class="sw-card-store-meta">{{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}</div>
-                            </div>
+                <a href="{{ $payUrl }}" class="pay-card">
+                    <div class="pay-card-stripe" data-status="{{ $statusKey }}"></div>
+
+                    <div class="pay-card-head">
+                        <div class="pay-card-dr">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/></svg>
+                            {{ $dr->dr_number }}
                         </div>
-                        <span class="sw-status-tag {{ $isReceived ? 'delivered' : 'transit' }}"><span class="sw-tag-dot"></span>{{ $isReceived ? 'Confirmed' : 'In Transit' }}</span>
+                        <span class="pay-badge pay-badge-{{ $statusKey }}">{{ $isReceived ? 'Confirmed' : 'In Transit' }}</span>
                     </div>
-                    <div class="sw-card-items">
-                        <div class="sw-card-item-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
-                        <div class="sw-card-item-info">
-                            <div class="sw-card-item-name">{{ $dr->items->count() ?? 0 }} item{{ ($dr->items->count() ?? 0) != 1 ? 's' : '' }}</div>
-                            <div class="sw-card-item-progress">
-                                <div class="sw-progress-track"><div class="sw-progress-fill" style="width: {{ $paidPct }}%"></div></div>
-                                <div class="sw-progress-labels"><span>₱{{ number_format($dr->amount_paid, 0) }} paid</span><span>{{ number_format($paidPct, 0) }}%</span></div>
-                            </div>
+
+                    <div class="pay-card-meta">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        {{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }}
+                        <span style="opacity:.4;">·</span>
+                        {{ $dr->items->count() ?? 0 }} item{{ ($dr->items->count() ?? 0) != 1 ? 's' : '' }}
+                    </div>
+
+                    <div class="pay-progress-wrap">
+                        <div class="pay-progress-info">
+                            <span>₱{{ number_format($dr->amount_paid, 0) }} paid</span>
+                            <strong>{{ number_format($paidPct, 0) }}%</strong>
+                        </div>
+                        <div class="pay-progress-bar">
+                            <div class="pay-progress-fill" style="width: {{ $paidPct }}%"></div>
                         </div>
                     </div>
-                    <div class="sw-card-total">
-                        <div class="sw-card-total-label">Amount to Pay</div>
-                        <div class="sw-card-total-value">₱{{ number_format($remaining, 2) }}</div>
+
+                    <div class="pay-card-amount">
+                        <div>
+                            <div class="pay-card-amount-lbl">Amount to Pay</div>
+                            <div class="pay-card-amount-val">₱{{ number_format($remaining, 2) }}</div>
+                        </div>
+                        <div class="pay-card-arrow">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                     </div>
+
                     @if(!$isReceived && Route::has('portal.deliveries.confirm'))
-                        <div class="sw-card-actions single">
-                            <form method="POST" action="{{ route('portal.deliveries.confirm', $dr->id) }}" style="display:contents;" onclick="event.stopPropagation();">
-                                @csrf
-                                <button type="submit" class="sw-btn sw-btn-outline" onclick="event.stopPropagation(); return confirm('Confirm na nadawat nimo ni?')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Confirm</button>
-                            </form>
-                        </div>
+                        <form method="POST" action="{{ route('portal.deliveries.confirm', $dr->id) }}" class="pay-card-form" onclick="event.stopPropagation(); event.preventDefault();">
+                            @csrf
+                            <button type="submit" class="pay-btn-ghost" onclick="event.stopPropagation(); event.preventDefault(); if(confirm('Confirm na nadawat nimo ni?')) this.form.submit();">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                                Confirm Received
+                            </button>
+                        </form>
                     @endif
-                </div>
+                </a>
             @endforeach
         </div>
     @endif
 @endif
 
-{{-- HISTORY --}}
+{{-- ═══ HISTORY TAB ═══ --}}
 @if($activeTab === 'history')
     @if($payments->isEmpty())
-        <div class="sw-empty">
-            <div class="sw-empty-illustration"><svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg></div>
-            <div class="sw-empty-title">No payments yet</div>
-            <div class="sw-empty-text">Wala pa kay na-record nga payment</div>
-            <a href="{{ route('portal.payments.create') }}" class="sw-empty-btn">Record first payment</a>
+        <div class="pay-empty">
+            <div class="pay-empty-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+            </div>
+            <div class="pay-empty-title">No payments yet</div>
+            <div class="pay-empty-text">Wala pa kay na-record nga payment</div>
+            <a href="{{ route('portal.payments.create') }}" class="pay-empty-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Record first payment
+            </a>
         </div>
     @else
-        <div class="sw-section-head">
-            <div class="sw-section-title"><span class="sw-section-dot green"></span>Recent Payments</div>
+        <div class="pay-section-label">
+            <span>Recent Payments</span>
+            <span class="pay-section-count">{{ $stats['total'] }}</span>
         </div>
-        <div class="sw-list">
+        <div class="pay-list">
             @foreach($payments as $p)
-                <a href="{{ route('portal.payments.show', $p->id) }}" class="sw-card sw-card-link">
-                    <div class="sw-card-top">
-                        <div class="sw-card-store">
-                            <div class="sw-card-store-icon" style="background: {{ $p->method_color }}22; color: {{ $p->method_color }};"><span style="font-size: 16px; line-height: 1;">{{ $p->method_icon }}</span></div>
-                            <div>
-                                <div class="sw-card-store-name">{{ $p->payment_number }}</div>
-                                <div class="sw-card-store-meta">{{ $p->method_label }} · {{ \Carbon\Carbon::parse($p->payment_date)->format('M d, Y') }}</div>
-                            </div>
+                @php $vStatus = $p->verification_status ?? 'pending'; @endphp
+                <a href="{{ route('portal.payments.show', $p->id) }}" class="pay-card">
+                    <div class="pay-card-stripe" data-status="{{ $vStatus === 'verified' ? 'paid' : ($vStatus === 'rejected' ? 'rejected' : 'pending') }}"></div>
+
+                    <div class="pay-card-head">
+                        <div class="pay-card-dr">
+                            <span style="display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:{{ $p->method_color }}22;color:{{ $p->method_color }};font-size:11px;flex-shrink:0;">{{ $p->method_icon }}</span>
+                            {{ $p->payment_number }}
                         </div>
-                        @php $vStatus = $p->verification_status ?? 'pending'; @endphp
-                        @if($vStatus === 'verified')<span class="sw-status-tag paid"><span class="sw-tag-dot"></span>Paid</span>
-                        @elseif($vStatus === 'rejected')<span class="sw-status-tag rejected"><span class="sw-tag-dot"></span>Rejected</span>
-                        @else<span class="sw-status-tag pending"><span class="sw-tag-dot"></span>Pending</span>@endif
+                        <span class="pay-badge pay-badge-{{ $vStatus === 'verified' ? 'paid' : ($vStatus === 'rejected' ? 'rejected' : 'pending') }}">
+                            {{ $vStatus === 'verified' ? 'Paid' : ($vStatus === 'rejected' ? 'Rejected' : 'Pending') }}
+                        </span>
                     </div>
-                    @if($p->reference_number)
-                        <div class="sw-card-reference"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/></svg>Ref: <span>{{ $p->reference_number }}</span></div>
-                    @endif
-                    <div class="sw-card-bottom">
-                        <div class="sw-card-amount-row"><span class="sw-card-amount-lbl">Amount</span><span class="sw-card-amount-val">₱{{ number_format($p->amount, 2) }}</span></div>
-                        <div class="sw-card-arrow"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+
+                    <div class="pay-card-meta">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        {{ $p->method_label }} · {{ \Carbon\Carbon::parse($p->payment_date)->format('M d, Y') }}
+                        @if($p->reference_number)
+                            <span style="opacity:.4;">·</span>
+                            <span style="font-family:ui-monospace,monospace;">Ref: {{ $p->reference_number }}</span>
+                        @endif
+                    </div>
+
+                    <div class="pay-card-amount">
+                        <div>
+                            <div class="pay-card-amount-lbl">Amount</div>
+                            <div class="pay-card-amount-val">₱{{ number_format($p->amount, 2) }}</div>
+                        </div>
+                        <div class="pay-card-arrow">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                     </div>
                 </a>
             @endforeach
         </div>
-        @if(method_exists($payments, 'links') && $payments->hasPages())<div style="margin-top: 20px;">{{ $payments->withQueryString()->links() }}</div>@endif
+        @if(method_exists($payments, 'links') && $payments->hasPages())
+            <div style="margin-top: 20px;">{{ $payments->withQueryString()->links() }}</div>
+        @endif
     @endif
 @endif
 
-{{-- SALES --}}
+{{-- ═══ SALES TAB ═══ --}}
 @if($activeTab === 'reports')
     @if(!isset($salesReports) || $salesReports->isEmpty())
-        <div class="sw-empty">
-            <div class="sw-empty-illustration"><svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg></div>
-            <div class="sw-empty-title">No sales reports</div>
-            <div class="sw-empty-text">Ma-generate ra ni pagka-confirm sa delivery</div>
+        <div class="pay-empty">
+            <div class="pay-empty-icon">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+            </div>
+            <div class="pay-empty-title">No sales reports</div>
+            <div class="pay-empty-text">Ma-generate ra ni pagka-confirm sa delivery</div>
         </div>
     @else
         @php
@@ -234,70 +278,88 @@
             $salesPaid      = $salesReports->sum(fn($r) => (float)($r->amount_paid ?? 0));
             $salesBalance   = max(0, $salesTotal - $salesPaid);
             $salesCount     = $salesReports->count();
-            $salesPaidCount = $salesReports->filter(fn($r) => ($r->status ?? '') === 'paid' || (float)($r->balance ?? 0) <= 0.01)->count();
         @endphp
 
-        {{-- SALES STATS --}}
-        <div class="sw-sales-stats">
-            <div class="sw-sales-stat">
-                <div class="sw-sales-stat-icon green"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>
-                <div>
-                    <div class="sw-sales-stat-value">₱{{ number_format($salesPaid, 0) }}</div>
-                    <div class="sw-sales-stat-label">Paid</div>
+        {{-- SALES MINI STATS --}}
+        <div class="pay-sales-stats">
+            <div class="pay-sales-stat">
+                <div class="pay-sales-stat-icon" style="--c:#15803D;--bg:#E8F5E9;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                </div>
+                <div class="pay-sales-stat-info">
+                    <div class="pay-sales-stat-value">₱{{ number_format($salesPaid, 0) }}</div>
+                    <div class="pay-sales-stat-label">Paid</div>
                 </div>
             </div>
-            <div class="sw-sales-stat">
-                <div class="sw-sales-stat-icon amber"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                <div>
-                    <div class="sw-sales-stat-value">₱{{ number_format($salesBalance, 0) }}</div>
-                    <div class="sw-sales-stat-label">Balance</div>
+            <div class="pay-sales-stat">
+                <div class="pay-sales-stat-icon" style="--c:#B45309;--bg:#FFF8E1;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <div class="pay-sales-stat-info">
+                    <div class="pay-sales-stat-value">₱{{ number_format($salesBalance, 0) }}</div>
+                    <div class="pay-sales-stat-label">Balance</div>
                 </div>
             </div>
         </div>
 
-        <div class="sw-section-head">
-            <div class="sw-section-title"><span class="sw-section-dot green"></span>Sales Reports</div>
-            <div class="sw-section-count green">₱{{ number_format($reportTotal ?? 0, 0) }}</div>
+        <div class="pay-section-label">
+            <span>Sales Reports</span>
+            <span class="pay-section-count">₱{{ number_format($reportTotal ?? 0, 0) }}</span>
         </div>
-        <div class="sw-list">
+        <div class="pay-list">
             @foreach($salesReports as $report)
                 @php
                     $srStatus = $report->status ?? 'pending';
                     $isPaid = $srStatus === 'paid' || (float)$report->balance <= 0.01;
                     $isPartial = !$isPaid && (float)$report->amount_paid > 0;
+                    $statusKey = $isPaid ? 'paid' : ($isPartial ? 'partial' : 'pending');
+                    $paidPct = ($report->total_sales ?? 0) > 0 ? (($report->amount_paid ?? 0) / $report->total_sales) * 100 : 0;
                 @endphp
-                <a href="{{ route('portal.reports.show', $report->id) }}" class="sw-card sw-card-link">
-                    <div class="sw-card-top">
-                        <div class="sw-card-store">
-                            <div class="sw-card-store-icon green"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg></div>
-                            <div>
-                                <div class="sw-card-store-name">{{ $report->report_number }}</div>
-                                <div class="sw-card-store-meta">{{ \Carbon\Carbon::parse($report->period_from)->format('M d') }} – {{ \Carbon\Carbon::parse($report->period_to)->format('M d, Y') }}</div>
-                            </div>
+                <a href="{{ route('portal.reports.show', $report->id) }}" class="pay-card">
+                    <div class="pay-card-stripe" data-status="{{ $statusKey }}"></div>
+
+                    <div class="pay-card-head">
+                        <div class="pay-card-dr">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+                            {{ $report->report_number }}
                         </div>
-                        @if($isPaid)<span class="sw-status-tag paid"><span class="sw-tag-dot"></span>Paid</span>
-                        @elseif($isPartial)<span class="sw-status-tag transit"><span class="sw-tag-dot"></span>Partial</span>
-                        @else<span class="sw-status-tag pending"><span class="sw-tag-dot"></span>Pending</span>@endif
+                        <span class="pay-badge pay-badge-{{ $statusKey }}">
+                            {{ $isPaid ? 'Paid' : ($isPartial ? 'Partial' : 'Pending') }}
+                        </span>
                     </div>
-                    <div class="sw-card-items">
-                        <div class="sw-card-item-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
-                        <div class="sw-card-item-info">
-                            <div class="sw-card-item-name">{{ $report->total_quantity ?? 0 }} item{{ ($report->total_quantity ?? 0) != 1 ? 's' : '' }}</div>
-                            <div class="sw-card-item-progress">
-                                @php $paidPct = ($report->total_sales ?? 0) > 0 ? (($report->amount_paid ?? 0) / $report->total_sales) * 100 : 0; @endphp
-                                <div class="sw-progress-track"><div class="sw-progress-fill" style="width: {{ min(100, $paidPct) }}%"></div></div>
-                                <div class="sw-progress-labels"><span>₱{{ number_format($report->amount_paid ?? 0, 0) }} paid</span><span>{{ number_format($paidPct, 0) }}%</span></div>
-                            </div>
+
+                    <div class="pay-card-meta">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        {{ \Carbon\Carbon::parse($report->period_from)->format('M d') }} – {{ \Carbon\Carbon::parse($report->period_to)->format('M d, Y') }}
+                        <span style="opacity:.4;">·</span>
+                        {{ $report->total_quantity ?? 0 }} items
+                    </div>
+
+                    <div class="pay-progress-wrap">
+                        <div class="pay-progress-info">
+                            <span>₱{{ number_format($report->amount_paid ?? 0, 0) }} paid</span>
+                            <strong>{{ number_format(min(100, $paidPct), 0) }}%</strong>
+                        </div>
+                        <div class="pay-progress-bar">
+                            <div class="pay-progress-fill" style="width: {{ min(100, $paidPct) }}%"></div>
                         </div>
                     </div>
-                    <div class="sw-card-bottom">
-                        <div class="sw-card-amount-row"><span class="sw-card-amount-lbl">Total Sales</span><span class="sw-card-amount-val">₱{{ number_format($report->total_sales ?? 0, 2) }}</span></div>
-                        <div class="sw-card-arrow"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+
+                    <div class="pay-card-amount">
+                        <div>
+                            <div class="pay-card-amount-lbl">Total Sales</div>
+                            <div class="pay-card-amount-val">₱{{ number_format($report->total_sales ?? 0, 2) }}</div>
+                        </div>
+                        <div class="pay-card-arrow">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                     </div>
                 </a>
             @endforeach
         </div>
-        @if(method_exists($salesReports, 'links') && $salesReports->hasPages())<div style="margin-top: 20px;">{{ $salesReports->appends(['tab' => 'reports'])->links() }}</div>@endif
+        @if(method_exists($salesReports, 'links') && $salesReports->hasPages())
+            <div style="margin-top: 20px;">{{ $salesReports->appends(['tab' => 'reports'])->links() }}</div>
+        @endif
     @endif
 @endif
 
@@ -305,128 +367,129 @@
 
 @push('styles')
 <style>
-/* ═══ PAYMENTS INDEX — PREMIUM COFFEE ═══ */
-.sw-wallet { position: relative; padding: 22px 20px; background: linear-gradient(135deg, #2D1A11, #4E342E); border-radius: 20px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 16px 40px -12px rgba(45, 26, 17, 0.4); transition: all 0.3s; }
-.sw-wallet-bg { position: absolute; top: -40px; right: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(216, 67, 21, 0.35), transparent 65%); pointer-events: none; }
-.sw-wallet::before { content: ''; position: absolute; bottom: -60px; left: -60px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(255, 255, 255, 0.06), transparent 65%); pointer-events: none; }
-.sw-wallet-content { position: relative; z-index: 1; }
-.sw-wallet-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.75); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
-.sw-wallet-amount { font-size: 38px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; margin-bottom: 14px; }
-.sw-wallet-cur { font-size: 22px; font-weight: 800; margin-right: 4px; opacity: 0.85; }
-.sw-wallet-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px; color: rgba(255, 255, 255, 0.85); font-weight: 600; }
-.sw-wallet-cta { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; background: #D84315; color: #FFFFFF; border-radius: 100px; font-size: 12px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 16px rgba(216, 67, 21, 0.4); transition: all 0.15s; cursor: pointer; position: relative; z-index: 2; }
-.sw-wallet-cta:hover { transform: translateX(3px); background: #BF360C; }
-.sw-wallet-cta:active { transform: translateX(3px) scale(0.97); }
-.sw-wallet-clear { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: rgba(34, 197, 94, 0.25); border-radius: 100px; font-size: 11.5px; font-weight: 800; color: #86efac; }
+/* ═══ PAYMENTS — MATCHING APP DESIGN ═══ */
 
-/* ═══ WALLET VARIANTS ═══ */
-.sw-wallet-sales { background: linear-gradient(135deg, #14532D, #166534) !important; box-shadow: 0 16px 40px -12px rgba(20, 83, 45, 0.4) !important; }
-.sw-wallet-sales .sw-wallet-bg { background: radial-gradient(circle, rgba(34, 197, 94, 0.4), transparent 65%) !important; }
-.sw-wallet-history { background: linear-gradient(135deg, #1E3A8A, #1D4ED8) !important; box-shadow: 0 16px 40px -12px rgba(30, 58, 138, 0.4) !important; }
-.sw-wallet-history .sw-wallet-bg { background: radial-gradient(circle, rgba(96, 165, 250, 0.4), transparent 65%) !important; }
-.sw-wallet-pill { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: rgba(255, 255, 255, 0.18); border-radius: 100px; font-size: 11.5px; font-weight: 800; color: #FFFFFF; }
+/* HERO WALLET */
+.pay-hero{position:relative;padding:22px 20px;border-radius:18px;margin-bottom:14px;overflow:hidden;animation:fadeIn .35s ease both;background:linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 55%,#3D3D3D 100%);box-shadow:0 12px 32px -12px rgba(0,0,0,.3)}
+.pay-hero[data-variant="sales"]{background:linear-gradient(135deg,#14532D 0%,#166534 55%,#15803D 100%);box-shadow:0 12px 32px -12px rgba(20,83,45,.4)}
+.pay-hero[data-variant="history"]{background:linear-gradient(135deg,#1E3A8A 0%,#1D4ED8 55%,#2563EB 100%);box-shadow:0 12px 32px -12px rgba(30,58,138,.4)}
+.pay-hero-glow{position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,rgba(232,163,61,.4),transparent 70%);pointer-events:none;animation:payGlow 5s ease-in-out infinite}
+.pay-hero[data-variant="sales"] .pay-hero-glow{background:radial-gradient(circle,rgba(34,197,94,.4),transparent 70%)}
+.pay-hero[data-variant="history"] .pay-hero-glow{background:radial-gradient(circle,rgba(96,165,250,.4),transparent 70%)}
+@keyframes payGlow{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
+.pay-hero-content{position:relative;z-index:1}
+.pay-hero-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+.pay-hero-label svg{color:rgba(255,255,255,.85)}
+.pay-hero-amount{font-size:36px;font-weight:800;color:#FFFFFF;letter-spacing:-.04em;line-height:1;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.pay-hero-amount span{font-size:22px;margin-right:2px;opacity:.8}
+.pay-hero-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,.8);font-weight:600}
+.pay-hero-cta{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;background:#E8A33D;color:#FFFFFF;border-radius:100px;font-size:12px;font-weight:800;text-decoration:none;box-shadow:0 6px 16px rgba(232,163,61,.45);transition:all .15s;cursor:pointer}
+.pay-hero-cta:hover{background:#D4901F;transform:translateX(3px)}
+.pay-hero-cta:active{transform:translateX(3px) scale(.97)}
+.pay-hero-pill{display:inline-flex;align-items:center;padding:6px 12px;background:rgba(255,255,255,.18);border-radius:100px;font-size:11px;font-weight:800;color:#FFFFFF}
+.pay-hero-clear{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(34,197,94,.25);border-radius:100px;font-size:11px;font-weight:800;color:#86efac}
 
-.sw-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px 12px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04); }
-.sw-stat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 4px; position: relative; }
-.sw-stat:not(:last-child)::after { content: ''; position: absolute; right: -5px; top: 20%; bottom: 20%; width: 1px; background: #EFEBE9; }
-.sw-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; border: 1px solid; }
-.sw-stat-icon.accent { background: #EFEBE9; border-color: #D7CCC8; color: #2D1A11; }
-.sw-stat-icon.green  { background: #DCFCE7; border-color: #BBF7D0; color: #15803D; }
-.sw-stat-icon.amber  { background: #FEF3C7; border-color: #FDE68A; color: #B45309; }
-.sw-stat-value { font-size: 15px; font-weight: 800; color: #2D1A11; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
-.sw-stat-label { font-size: 10px; color: #8D6E63; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; text-align: center; }
+/* STATS */
+.pay-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;animation:fadeIn .35s ease both;animation-delay:.05s}
+.pay-stat{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:12px;transition:all .15s}
+.pay-stat:hover{border-color:#D0D0D0;transform:translateY(-2px);box-shadow:0 6px 16px -6px rgba(0,0,0,.08)}
+.pay-stat-icon{width:36px;height:36px;border-radius:10px;background:var(--bg,#F5F5F5);color:var(--c,#757575);display:grid;place-items:center}
+.pay-stat-value{font-size:15px;font-weight:800;color:#1A1A1A;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.pay-stat-label{font-size:9.5px;color:#757575;text-transform:uppercase;letter-spacing:.08em;font-weight:800;text-align:center}
 
-.sw-tabs { display: flex; gap: 4px; padding: 4px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 14px; margin-bottom: 16px; }
-.sw-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 10px; color: #8D6E63; font-size: 13px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
-.sw-tab.active { background: linear-gradient(135deg, #2D1A11, #4E342E); color: #FFFFFF; box-shadow: 0 6px 16px -6px rgba(45, 26, 17, 0.5); }
-.sw-tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 7px; background: rgba(216, 67, 21, 0.15); color: #D84315; border-radius: 10px; font-size: 11px; font-weight: 800; }
-.sw-tab.active .sw-tab-badge { background: rgba(255, 255, 255, 0.22); color: #FFFFFF; }
-.sw-tab-badge.muted { background: rgba(141, 110, 99, 0.15) !important; color: #8D6E63 !important; }
+/* TABS */
+.pay-tabs{display:flex;gap:6px;margin-bottom:16px;animation:fadeIn .35s ease both;animation-delay:.1s}
+.pay-tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:100px;color:#757575;font-size:12.5px;font-weight:700;text-decoration:none;transition:all .15s}
+.pay-tab:hover{border-color:#D0D0D0;color:#1A1A1A}
+.pay-tab.active{background:#1A1A1A;color:#FFFFFF;border-color:#1A1A1A}
+.pay-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;background:rgba(255,255,255,.15);color:inherit;border-radius:10px;font-size:10.5px;font-weight:800}
+.pay-tab:not(.active) .pay-tab-count{background:#F5F5F5;color:#757575}
 
-.sw-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px 12px; margin-bottom: 4px; }
-.sw-section-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #2D1A11; text-transform: uppercase; letter-spacing: 0.06em; }
-.sw-section-dot { width: 8px; height: 8px; border-radius: 50%; background: #D97706; box-shadow: 0 0 10px rgba(217, 119, 6, 0.8); animation: swPulse 1.6s ease-in-out infinite; }
-.sw-section-dot.green { background: #16A34A; box-shadow: 0 0 10px rgba(22, 163, 74, 0.8); }
-@keyframes swPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
-.sw-section-count { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 22px; padding: 0 8px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 11px; color: #B45309; font-size: 11px; font-weight: 800; }
-.sw-section-count.green { background: #DCFCE7; border-color: #BBF7D0; color: #15803D; }
+/* SECTION LABEL */
+.pay-section-label{display:flex;justify-content:space-between;align-items:center;margin:0 4px 12px}
+.pay-section-label span:first-child{font-size:12px;font-weight:800;color:#1A1A1A;text-transform:uppercase;letter-spacing:.08em}
+.pay-section-count{font-size:11px;font-weight:700;color:#757575;background:#F5F5F5;padding:3px 10px;border-radius:100px}
 
-.sw-list { display: flex; flex-direction: column; gap: 12px; }
-.sw-card { padding: 16px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 18px; box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04); display: block; text-decoration: none; color: inherit; transition: all 0.25s; }
-.sw-card:hover { border-color: #D7CCC8; transform: translateY(-2px); box-shadow: 0 12px 28px -12px rgba(45, 26, 17, 0.15); }
-.sw-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding-bottom: 12px; border-bottom: 1.5px dashed #EFEBE9; margin-bottom: 12px; }
-.sw-card-store { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.sw-card-store-icon { width: 36px; height: 36px; border-radius: 10px; background: #EFEBE9; color: #2D1A11; display: grid; place-items: center; flex-shrink: 0; }
-.sw-card-store-icon.green { background: #DCFCE7; color: #15803D; }
-.sw-card-store-name { font-size: 13px; font-weight: 800; color: #2D1A11; font-family: ui-monospace, monospace; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sw-card-store-meta { font-size: 11px; color: #8D6E63; font-weight: 600; }
+/* LIST */
+.pay-list{display:flex;flex-direction:column;gap:10px;animation:fadeIn .4s ease both;animation-delay:.15s}
 
-.sw-status-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
-.sw-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; }
-.sw-status-tag.delivered, .sw-status-tag.paid { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
-.sw-status-tag.transit { background: #DBEAFE; color: #1D4ED8; border-color: #BFDBFE; }
-.sw-status-tag.pending { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
-.sw-status-tag.rejected { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+/* CARD */
+.pay-card{position:relative;display:block;padding:14px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:14px;text-decoration:none;color:inherit;transition:all .2s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.pay-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px -10px rgba(0,0,0,.1);border-color:transparent}
+.pay-card:active{transform:scale(.99)}
 
-.sw-card-items { display: flex; align-items: center; gap: 12px; padding: 12px; background: #FDFBF7; border-radius: 12px; margin-bottom: 14px; }
-.sw-card-item-icon { width: 40px; height: 40px; border-radius: 10px; background: #EFEBE9; color: #2D1A11; display: grid; place-items: center; flex-shrink: 0; }
-.sw-card-item-info { flex: 1; min-width: 0; }
-.sw-card-item-name { font-size: 13px; font-weight: 700; color: #2D1A11; margin-bottom: 6px; }
-.sw-card-item-progress { display: flex; flex-direction: column; gap: 4px; }
-.sw-progress-track { width: 100%; height: 6px; background: #EFEBE9; border-radius: 100px; overflow: hidden; }
-.sw-progress-fill { height: 100%; background: linear-gradient(90deg, #D84315, #BF360C); border-radius: 100px; transition: width 0.5s; min-width: 4px; }
-.sw-progress-labels { display: flex; justify-content: space-between; font-size: 10.5px; color: #8D6E63; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* CARD STRIPE */
+.pay-card-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.pay-card-stripe[data-status="pending"]{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.pay-card-stripe[data-status="partial"],
+.pay-card-stripe[data-status="transit"]{background:linear-gradient(90deg,#2563EB,#60A5FA)}
+.pay-card-stripe[data-status="paid"]{background:linear-gradient(90deg,#15803D,#4ADE80)}
+.pay-card-stripe[data-status="rejected"]{background:linear-gradient(90deg,#B91C1C,#EF4444)}
 
-.sw-card-total { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; margin-bottom: 12px; border-top: 1.5px dashed #EFEBE9; }
-.sw-card-total-label { font-size: 12px; color: #8D6E63; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-.sw-card-total-value { font-size: 24px; font-weight: 800; color: #D84315; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+/* CARD HEAD */
+.pay-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;margin-top:4px}
+.pay-card-dr{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#1A1A1A;font-family:ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;letter-spacing:-.01em}
+.pay-card-dr svg{color:#9E9E9E;flex-shrink:0}
+.pay-badge{display:inline-flex;padding:3px 9px;border-radius:100px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.pay-badge-pending{background:#FFF8E1;color:#B45309}
+.pay-badge-partial,
+.pay-badge-transit{background:#EFF6FF;color:#1D4ED8}
+.pay-badge-paid{background:#E8F5E9;color:#15803D}
+.pay-badge-rejected{background:#FFEBEE;color:#B91C1C}
 
-.sw-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sw-card-actions.single { grid-template-columns: 1fr; }
-.sw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 14px; border-radius: 11px; font-family: inherit; font-size: 12.5px; font-weight: 800; text-decoration: none; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; white-space: nowrap; }
-.sw-btn:active { transform: scale(0.97); }
-.sw-btn-primary { background: linear-gradient(135deg, #D84315, #BF360C); color: #FFFFFF; box-shadow: 0 6px 16px -6px rgba(216, 67, 21, 0.6); }
-.sw-btn-outline { background: transparent; border-color: #BBF7D0; color: #15803D; }
-.sw-btn-outline:hover { background: #F0FDF4; border-color: #86efac; }
+/* CARD META */
+.pay-card-meta{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#757575;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
+.pay-card-meta svg{color:#9E9E9E;flex-shrink:0}
 
-.sw-card-reference { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #FDFBF7; border: 1.5px solid #EFEBE9; border-radius: 8px; font-size: 11px; color: #8D6E63; font-weight: 600; margin-bottom: 12px; }
-.sw-card-reference span { color: #2D1A11; font-weight: 700; font-family: ui-monospace, monospace; }
+/* PROGRESS */
+.pay-progress-wrap{margin-bottom:12px}
+.pay-progress-info{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#757575;font-weight:600;margin-bottom:5px}
+.pay-progress-info strong{color:#1A1A1A;font-weight:800;font-variant-numeric:tabular-nums}
+.pay-progress-bar{width:100%;height:6px;background:#F5F5F5;border-radius:100px;overflow:hidden}
+.pay-progress-fill{height:100%;background:linear-gradient(90deg,#E8A33D,#F0B85A);border-radius:100px;transition:width .6s cubic-bezier(.4,0,.2,1);min-width:4px;box-shadow:0 0 8px rgba(232,163,61,.4)}
 
-.sw-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; border-top: 1.5px dashed #EFEBE9; }
-.sw-card-amount-row { display: flex; align-items: baseline; gap: 10px; }
-.sw-card-amount-lbl { font-size: 11.5px; color: #8D6E63; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-.sw-card-amount-val { font-size: 18px; font-weight: 800; color: #D84315; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.sw-card-arrow { color: #D7CCC8; transition: all 0.2s; }
-.sw-card:hover .sw-card-arrow { color: #D84315; transform: translateX(3px); }
+/* CARD AMOUNT */
+.pay-card-amount{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-top:10px;border-top:1px dashed #F0F0F0}
+.pay-card-amount-lbl{font-size:9.5px;font-weight:800;color:#757575;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.pay-card-amount-val{font-size:20px;font-weight:800;color:#D4901F;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.pay-card-arrow{color:#C0C0C0;transition:all .2s;display:grid;place-items:center}
+.pay-card:hover .pay-card-arrow{color:#D4901F;transform:translateX(3px)}
 
-/* ═══ CLICKABLE CARD (To Pay) ═══ */
-.sw-card-clickable { cursor: pointer; }
-.sw-card-clickable:active { transform: scale(0.99); }
-.sw-card-clickable:focus-visible { outline: 3px solid #D84315; outline-offset: 2px; }
+/* FORM */
+.pay-card-form{margin-top:10px;padding-top:10px;border-top:1px dashed #F0F0F0}
+.pay-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:42px;padding:0 16px;background:#FFFFFF;border:1.5px solid #BBF7D0;border-radius:100px;color:#15803D;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;transition:all .15s}
+.pay-btn-ghost:hover{background:#F0FDF4;border-color:#86efac}
+.pay-btn-ghost:active{transform:scale(.98)}
 
-/* ═══ SALES STATS (small cards) ═══ */
-.sw-sales-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.sw-sales-stat { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 14px; box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04); }
-.sw-sales-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; }
-.sw-sales-stat-icon.green { background: #DCFCE7; color: #15803D; }
-.sw-sales-stat-icon.amber { background: #FEF3C7; color: #B45309; }
-.sw-sales-stat-value { font-size: 15px; font-weight: 800; color: #2D1A11; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
-.sw-sales-stat-label { font-size: 10px; color: #8D6E63; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 3px; }
+/* SALES STATS */
+.pay-sales-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;animation:fadeIn .35s ease both}
+.pay-sales-stat{display:flex;align-items:center;gap:10px;padding:12px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:12px}
+.pay-sales-stat-icon{width:34px;height:34px;border-radius:9px;background:var(--bg,#F5F5F5);color:var(--c,#757575);display:grid;place-items:center;flex-shrink:0}
+.pay-sales-stat-info{flex:1;min-width:0}
+.pay-sales-stat-value{font-size:15px;font-weight:800;color:#1A1A1A;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.pay-sales-stat-label{font-size:9.5px;color:#757575;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:2px}
 
-.sw-empty { padding: 60px 20px; text-align: center; background: #FFFFFF; border: 1.5px dashed #D7CCC8; border-radius: 18px; }
-.sw-empty-illustration { width: 100px; height: 100px; margin: 0 auto 18px; border-radius: 24px; background: #FDFBF7; border: 1.5px solid #EFEBE9; color: #D7CCC8; display: grid; place-items: center; }
-.sw-empty-title { font-size: 16px; font-weight: 800; color: #2D1A11; margin-bottom: 6px; }
-.sw-empty-text { font-size: 13px; color: #8D6E63; margin-bottom: 20px; }
-.sw-empty-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px; background: linear-gradient(135deg, #D84315, #BF360C); color: #FFFFFF; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none; box-shadow: 0 8px 20px -8px rgba(216, 67, 21, 0.6); }
+/* EMPTY */
+.pay-empty{text-align:center;padding:48px 20px;background:#FFFFFF;border:1px dashed #E0E0E0;border-radius:14px;animation:fadeIn .35s ease both}
+.pay-empty-icon{width:64px;height:64px;margin:0 auto 14px;border-radius:16px;background:#FFF8EC;border:1px solid #F0E0C0;color:#D4901F;display:grid;place-items:center}
+.pay-empty-title{font-size:15px;font-weight:800;color:#1A1A1A;margin-bottom:5px}
+.pay-empty-text{font-size:12.5px;color:#757575;margin-bottom:18px;font-weight:500}
+.pay-empty-btn{display:inline-flex;align-items:center;gap:6px;padding:12px 20px;background:#E8A33D;border-radius:100px;color:#FFFFFF;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(232,163,61,.35);transition:all .15s}
+.pay-empty-btn:hover{background:#D4901F;transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,163,61,.45)}
+.pay-empty-btn:active{transform:scale(.97)}
 
-@media (max-width: 480px) {
-    .sw-wallet { padding: 20px 18px; border-radius: 18px; }
-    .sw-wallet-amount { font-size: 32px; }
-    .sw-stats { padding: 14px 8px; gap: 8px; }
-    .sw-stat-icon { width: 36px; height: 36px; }
-    .sw-card { padding: 14px; }
-    .sw-card-total-value { font-size: 22px; }
-    .sw-btn { min-height: 40px; font-size: 12px; }
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:480px){
+.pay-hero{padding:18px}
+.pay-hero-amount{font-size:30px}
+.pay-hero-amount span{font-size:19px}
+.pay-stat{padding:12px 6px}
+.pay-stat-icon{width:32px;height:32px}
+.pay-stat-value{font-size:13px}
+.pay-tab{padding:10px 10px;font-size:12px}
+.pay-card{padding:12px}
+.pay-card-amount-val{font-size:18px}
 }
 </style>
 @endpush

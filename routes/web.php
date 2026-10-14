@@ -88,7 +88,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('portal')->name('portal.')->group(function () {
 
-    // Portal Inventory — delivered products per store
+    // Portal Inventory â€” delivered products per store
     Route::get('inventory', [\App\Http\Controllers\Portal\PortalInventoryController::class, 'index'])
         ->name('inventory.index');
 
@@ -113,6 +113,10 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::delete('/profile/logo', [PortalProfileController::class, 'removeLogo'])->name('profile.logo.remove');
         Route::get('/profile/password', [PortalProfileController::class, 'passwordForm'])->name('profile.password');
         Route::put('/profile/password', [PortalProfileController::class, 'updatePassword'])->name('profile.password.update');
+
+                // ═══ TRACKING MODULE (Separate) ═══
+        Route::get('/tracking', [\App\Http\Controllers\Portal\PortalTrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/{id}', [\App\Http\Controllers\Portal\PortalTrackingController::class, 'show'])->name('tracking.show');
 
         // Orders
         Route::get('/orders', [PortalOrderController::class, 'index'])->name('orders.index');
@@ -159,7 +163,7 @@ Route::middleware('auth')->get('/nav/pending-orders', function () {
     ]);
 })->name('nav.pending-orders');
 
-// â•â•â•â•â•â•â•â•â•â•â• PAYMENT VERIFICATION â•â•â•â•â•â•â•â•â•â•â•
+// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â PAYMENT VERIFICATION Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 Route::middleware('auth')->prefix('consignment/payments')->name('consignment.payments.')->group(function () {
     Route::post('{id}/verify', [\App\Http\Controllers\ConsignmentPaymentController::class, 'verify'])->name('verify');
     Route::post('{id}/reject', [\App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('reject');

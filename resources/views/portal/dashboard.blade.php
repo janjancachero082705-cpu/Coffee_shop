@@ -1,4 +1,4 @@
-@extends('portal.layouts.app')
+﻿@extends('portal.layouts.app')
 
 @section('title', 'Dashboard')
 
@@ -6,7 +6,6 @@
 
 @php
     $store = Auth::guard('store')->user();
-
     $totalOrders     = \App\Models\ReorderRequest::where('store_id', $store->id)->count();
     $pendingOrders   = \App\Models\ReorderRequest::where('store_id', $store->id)->where('status', 'pending')->count();
     $totalDelivered  = (float) \App\Models\DeliveryReceipt::where('store_id', $store->id)->sum('total_amount');
@@ -14,38 +13,42 @@
     $balance         = max(0, $totalDelivered - $totalPaid);
     $deliveriesCount = \App\Models\DeliveryReceipt::where('store_id', $store->id)->count();
     $recentOrders    = \App\Models\ReorderRequest::where('store_id', $store->id)->latest()->take(3)->get();
+    $paidPercent     = $totalDelivered > 0 ? min(100, round(($totalPaid / $totalDelivered) * 100)) : 100;
+    $initials        = strtoupper(substr($store->store_name ?? 'ST', 0, 2));
+    $firstName       = explode(' ', trim($store->owner_name ?? $store->store_name))[0];
 @endphp
 
-{{-- ═══ GREETING ═══ --}}
-<div class="dash-greet">
-    <div class="dash-greet-left">
-        <div class="dash-greet-label">
-            {{ now()->hour < 12 ? 'Good Morning' : (now()->hour < 18 ? 'Good Afternoon' : 'Good Evening') }}
+{{-- ═══ WELCOME HERO ═══ --}}
+<div class="dash-hero">
+    <div class="dash-hero-glow"></div>
+    <div class="dash-hero-pattern"></div>
+
+    <div class="dash-hero-content">
+        <div class="dash-hero-greet">
+            {{ now()->hour < 12 ? 'Good Morning' : (now()->hour < 18 ? 'Good Afternoon' : 'Good Evening') }},
         </div>
-        <h1 class="dash-greet-title">{{ $store->store_name }}</h1>
-        <div class="dash-greet-sub">{{ now()->format('l, F j, Y') }}</div>
+        <div class="dash-hero-name">{{ $firstName }} 👋</div>
+        <div class="dash-hero-date">{{ now()->format('l, F j, Y') }}</div>
     </div>
-    <div class="dash-greet-badge">
-        <span class="dash-greet-dot"></span>
-        <span>Active</span>
+
+    <div class="dash-hero-avatar">
+        @if($store->logo_url)
+            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+        @else
+            {{ $initials }}
+        @endif
     </div>
 </div>
 
-{{-- ═══ BALANCE HERO ═══ --}}
+{{-- ═══ BALANCE CARD ═══ --}}
 <div class="dash-balance">
-    <div class="dash-balance-glow"></div>
-
-    <div class="dash-balance-top">
+    <div class="dash-balance-head">
         <div class="dash-balance-label">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-            </svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             Outstanding Balance
         </div>
         <span class="dash-balance-status {{ $balance > 0 ? 'pending' : 'paid' }}">
-            <span class="dash-status-dot"></span>
-            {{ $balance > 0 ? 'Pending' : 'Paid' }}
+            {{ $balance > 0 ? 'Pending' : 'All Paid' }}
         </span>
     </div>
 
@@ -54,810 +57,338 @@
         <span class="dash-balance-num">{{ number_format($balance, 2) }}</span>
     </div>
 
-    <div class="dash-balance-meta">
-        <div class="dash-balance-meta-item">
-            <span class="dash-meta-dot green"></span>
-            <span class="dash-meta-lbl">Paid</span>
-            <strong>₱{{ number_format($totalPaid, 0) }}</strong>
+    {{-- Progress Bar --}}
+    <div class="dash-progress-wrap">
+        <div class="dash-progress-info">
+            <span>Payment Progress</span>
+            <strong>{{ $paidPercent }}%</strong>
         </div>
-        <div class="dash-balance-meta-item">
-            <span class="dash-meta-dot gold"></span>
-            <span class="dash-meta-lbl">Delivered</span>
-            <strong>₱{{ number_format($totalDelivered, 0) }}</strong>
+        <div class="dash-progress-bar">
+            <div class="dash-progress-fill" style="width: {{ $paidPercent }}%;"></div>
         </div>
     </div>
 
+    {{-- Meta Grid --}}
+    <div class="dash-balance-meta">
+        <div class="dash-balance-meta-item">
+            <div class="dash-meta-icon green">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div class="dash-meta-content">
+                <div class="dash-meta-lbl">Total Paid</div>
+                <strong>₱{{ number_format($totalPaid, 0) }}</strong>
+            </div>
+        </div>
+        <div class="dash-balance-meta-item">
+            <div class="dash-meta-icon amber">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/></svg>
+            </div>
+            <div class="dash-meta-content">
+                <div class="dash-meta-lbl">Delivered</div>
+                <strong>₱{{ number_format($totalDelivered, 0) }}</strong>
+            </div>
+        </div>
+    </div>
+
+    {{-- Actions --}}
     <div class="dash-balance-actions">
-        <a href="{{ route('portal.orders.create') }}" class="dash-balance-btn primary">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
+        <a href="{{ route('portal.orders.create') }}" class="dash-btn-primary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
             New Order
         </a>
-        <a href="{{ route('portal.payments.index') }}" class="dash-balance-btn ghost">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
+        <a href="{{ route('portal.payments.index') }}" class="dash-btn-ghost">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
             Pay Now
         </a>
     </div>
 </div>
 
 {{-- ═══ QUICK STATS ═══ --}}
+<div class="dash-section-label">
+    <span>Overview</span>
+</div>
 <div class="dash-stats">
     <a href="{{ route('portal.orders.index') }}" class="dash-stat">
-        <div class="dash-stat-icon accent">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="1"/>
-            </svg>
+        <div class="dash-stat-icon" style="--c:#E8A33D;--bg:#FFF8EC;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/></svg>
         </div>
-        <div class="dash-stat-num">{{ $totalOrders }}</div>
-        <div class="dash-stat-lbl">Orders</div>
+        <div class="dash-stat-info">
+            <div class="dash-stat-num">{{ $totalOrders }}</div>
+            <div class="dash-stat-lbl">Orders</div>
+        </div>
     </a>
 
     <a href="{{ route('portal.orders.index', ['status' => 'pending']) }}" class="dash-stat">
-        <div class="dash-stat-icon amber">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-            </svg>
+        <div class="dash-stat-icon" style="--c:#F59E0B;--bg:#FFF8E1;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </div>
-        <div class="dash-stat-num">{{ $pendingOrders }}</div>
-        <div class="dash-stat-lbl">Pending</div>
+        <div class="dash-stat-info">
+            <div class="dash-stat-num">{{ $pendingOrders }}</div>
+            <div class="dash-stat-lbl">Pending</div>
+        </div>
     </a>
 
     <a href="{{ route('portal.deliveries.index') }}" class="dash-stat">
-        <div class="dash-stat-icon blue">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="1" y="3" width="15" height="13" rx="1"/>
-                <path d="M16 8h4l3 3v5h-7V8z"/>
-                <circle cx="5.5" cy="18.5" r="2.5"/>
-                <circle cx="18.5" cy="18.5" r="2.5"/>
-            </svg>
+        <div class="dash-stat-icon" style="--c:#2563EB;--bg:#EFF6FF;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         </div>
-        <div class="dash-stat-num">{{ $deliveriesCount }}</div>
-        <div class="dash-stat-lbl">Deliveries</div>
+        <div class="dash-stat-info">
+            <div class="dash-stat-num">{{ $deliveriesCount }}</div>
+            <div class="dash-stat-lbl">Delivered</div>
+        </div>
     </a>
 
-    <a href="{{ route('portal.profile') }}" class="dash-stat" data-modal="profile">
-        <div class="dash-stat-icon green">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
+    <a href="{{ route('portal.profile') }}" class="dash-stat">
+        <div class="dash-stat-icon" style="--c:#10B981;--bg:#E8F5E9;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <div class="dash-stat-num" style="font-size: 14px;">Profile</div>
-        <div class="dash-stat-lbl">Account</div>
+        <div class="dash-stat-info">
+            <div class="dash-stat-num" style="font-size:13px;">Profile</div>
+            <div class="dash-stat-lbl">Account</div>
+        </div>
     </a>
 </div>
+
+{{-- ═══ PERKS / TIPS BANNER ═══ --}}
+@if($pendingOrders > 0)
+<div class="dash-alert">
+    <div class="dash-alert-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    </div>
+    <div class="dash-alert-content">
+        <div class="dash-alert-title">{{ $pendingOrders }} order{{ $pendingOrders > 1 ? 's' : '' }} pending</div>
+        <div class="dash-alert-text">Waiting for approval from supplier</div>
+    </div>
+    <a href="{{ route('portal.orders.index', ['status' => 'pending']) }}" class="dash-alert-btn">
+        View
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+</div>
+@endif
 
 {{-- ═══ RECENT ORDERS ═══ --}}
-<div class="dash-section">
-    <div class="dash-section-head">
-        <div class="dash-section-icon">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="1"/>
-            </svg>
-        </div>
-        <div class="dash-section-title-wrap">
-            <div class="dash-section-title">Recent Orders</div>
-            <div class="dash-section-sub">Your latest stock requests</div>
-        </div>
-        <a href="{{ route('portal.orders.index') }}" class="dash-section-link">
-            View All
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M9 18l6-6-6-6"/>
-            </svg>
-        </a>
-    </div>
-
-    @if($recentOrders->isEmpty())
-        <div class="dash-empty">
-            <div class="dash-empty-icon">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                    <rect x="9" y="3" width="6" height="4" rx="1"/>
-                </svg>
-            </div>
-            <div class="dash-empty-title">No orders yet</div>
-            <div class="dash-empty-text">Start by creating your first stock request</div>
-            <a href="{{ route('portal.orders.create') }}" class="dash-empty-btn">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Create Order
-            </a>
-        </div>
-    @else
-        <div class="dash-orders">
-            @foreach($recentOrders as $order)
-                <a href="{{ route('portal.orders.show', $order->id) }}" class="dash-order">
-                    <div class="dash-order-icon">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                            <rect x="9" y="3" width="6" height="4" rx="1"/>
-                        </svg>
-                    </div>
-                    <div class="dash-order-info">
-                        <div class="dash-order-num">{{ $order->request_number }}</div>
-                        <div class="dash-order-meta">
-                            {{ $order->items->count() }} item{{ $order->items->count() != 1 ? 's' : '' }} · {{ $order->created_at->diffForHumans() }}
-                        </div>
-                    </div>
-                    <div class="dash-order-right">
-                        <div class="dash-order-amt">₱{{ number_format($order->total_amount, 0) }}</div>
-                        <span class="dash-order-badge {{ $order->status }}">{{ $order->status }}</span>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-    @endif
+<div class="dash-section-label">
+    <span>Recent Orders</span>
+    <a href="{{ route('portal.orders.index') }}" class="dash-section-more">
+        View All
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
 </div>
 
+@if($recentOrders->isEmpty())
+    <div class="dash-empty">
+        <div class="dash-empty-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/></svg>
+        </div>
+        <div class="dash-empty-title">No orders yet</div>
+        <div class="dash-empty-text">Start by creating your first stock request</div>
+        <a href="{{ route('portal.orders.create') }}" class="dash-btn-primary" style="display:inline-flex;width:auto;padding:0 20px;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Create Order
+        </a>
+    </div>
+@else
+    <div class="dash-list">
+        @foreach($recentOrders as $order)
+            <a href="{{ route('portal.orders.show', $order->id) }}" class="dash-row">
+                <div class="dash-row-icon" style="--c:#2563EB;--bg:#EFF6FF;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/></svg>
+                </div>
+                <div class="dash-row-content">
+                    <div class="dash-row-title">{{ $order->request_number }}</div>
+                    <div class="dash-row-sub">{{ $order->items->count() }} item{{ $order->items->count() != 1 ? 's' : '' }} · {{ $order->created_at->diffForHumans() }}</div>
+                </div>
+                <div class="dash-row-right">
+                    <div class="dash-row-amt">₱{{ number_format($order->total_amount, 0) }}</div>
+                    <span class="dash-row-badge {{ $order->status }}">{{ $order->status }}</span>
+                </div>
+            </a>
+        @endforeach
+    </div>
+@endif
+
 {{-- ═══ QUICK ACTIONS ═══ --}}
-<div class="dash-section">
-    <div class="dash-section-head">
-        <div class="dash-section-icon gold">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
+<div class="dash-section-label">
+    <span>Quick Actions</span>
+</div>
+<div class="dash-quick-grid">
+    <a href="{{ route('portal.orders.create') }}" class="dash-quick">
+        <div class="dash-quick-icon" style="--c:#E8A33D;--bg:#FFF8EC;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </div>
-        <div class="dash-section-title-wrap">
-            <div class="dash-section-title">Quick Actions</div>
-            <div class="dash-section-sub">Shortcuts para sa imong store</div>
+        <div class="dash-quick-label">New Order</div>
+    </a>
+    <a href="{{ route('portal.deliveries.index') }}" class="dash-quick">
+        <div class="dash-quick-icon" style="--c:#2563EB;--bg:#EFF6FF;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/></svg>
         </div>
-    </div>
-
-    <div class="dash-quick-grid">
-        <a href="{{ route('portal.orders.create') }}" class="dash-quick">
-            <div class="dash-quick-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round">
-                    <path d="M4 7h16M4 12h16M4 17h16"/>
-                </svg>
-            </div>
-            <div class="dash-quick-label">Browse</div>
-        </a>
-
-        <a href="{{ route('portal.deliveries.index') }}" class="dash-quick">
-            <div class="dash-quick-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <rect x="1" y="3" width="15" height="13" rx="1"/>
-                    <path d="M16 8h4l3 3v5h-7V8z"/>
-                    <circle cx="5.5" cy="18.5" r="2.5"/>
-                    <circle cx="18.5" cy="18.5" r="2.5"/>
-                </svg>
-            </div>
-            <div class="dash-quick-label">Deliveries</div>
-        </a>
-
-        <a href="{{ route('portal.reports.index') }}" class="dash-quick">
-            <div class="dash-quick-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/>
-                </svg>
-            </div>
-            <div class="dash-quick-label">Sales</div>
-        </a>
-
-        <a href="{{ route('portal.payments.index') }}" class="dash-quick">
-            <div class="dash-quick-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                    <path d="M2 10h20"/>
-                </svg>
-            </div>
-            <div class="dash-quick-label">Payments</div>
-        </a>
-    </div>
+        <div class="dash-quick-label">Deliveries</div>
+    </a>
+    <a href="{{ route('portal.reports.index') }}" class="dash-quick">
+        <div class="dash-quick-icon" style="--c:#10B981;--bg:#E8F5E9;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17V7M4 20h16M9 7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7z"/></svg>
+        </div>
+        <div class="dash-quick-label">Reports</div>
+    </a>
+    <a href="{{ route('portal.payments.index') }}" class="dash-quick">
+        <div class="dash-quick-icon" style="--c:#8B5CF6;--bg:#F3E8FF;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        </div>
+        <div class="dash-quick-label">Payments</div>
+    </a>
 </div>
 
 @endsection
 
 @push('styles')
 <style>
-/* ═══════════════════════════════════════════════════════════
-   DASHBOARD — PREMIUM ROAST STYLE
-   Elegant, warm, high-end coffee aesthetic
-   ═══════════════════════════════════════════════════════════ */
+/* ═══ DASHBOARD — ENHANCED FOODPANDA-STYLE ═══ */
 
-/* ═══ GREETING ═══ */
-.dash-greet {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 24px;
-    animation: dashIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-.dash-greet-left { flex: 1; min-width: 0; }
-.dash-greet-label {
-    font-size: 10.5px;
-    font-weight: 800;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    margin-bottom: 8px;
-}
-.dash-greet-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.035em;
-    line-height: 1.15;
-    margin: 0 0 6px 0;
-}
-.dash-greet-sub {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-.dash-greet-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    background: #DCFCE7;
-    border: 1px solid #BBF7D0;
-    border-radius: 100px;
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #15803D;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.dash-greet-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
-    animation: dashPulse 2s infinite;
-}
-@keyframes dashPulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.9); }
-    50% { box-shadow: 0 0 14px rgba(34, 197, 94, 1); }
-}
+/* WELCOME HERO */
+.dash-hero{position:relative;display:flex;align-items:center;gap:14px;padding:20px;background:linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 50%,#3D3D3D 100%);border-radius:16px;margin-bottom:20px;overflow:hidden;animation:fadeIn .3s ease both}
+.dash-hero-glow{position:absolute;top:-80px;right:-80px;width:220px;height:220px;background:radial-gradient(circle,rgba(232,163,61,.35),transparent 70%);pointer-events:none;animation:heroGlow 5s ease-in-out infinite}
+.dash-hero-pattern{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 80%,rgba(255,255,255,.03) 1px,transparent 1px);background-size:20px 20px;pointer-events:none}
+@keyframes heroGlow{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
+.dash-hero-content{flex:1;position:relative;z-index:1;min-width:0}
+.dash-hero-greet{font-size:12px;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.02em;margin-bottom:2px}
+.dash-hero-name{font-size:22px;color:#FFFFFF;font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-bottom:4px}
+.dash-hero-date{font-size:11px;color:rgba(255,255,255,.6);font-weight:500}
+.dash-hero-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#E8A33D,#D4901F);color:#FFFFFF;display:grid;place-items:center;font-size:18px;font-weight:800;letter-spacing:-.02em;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.15);position:relative;z-index:1;box-shadow:0 8px 20px -6px rgba(232,163,61,.5)}
+.dash-hero-avatar img{width:100%;height:100%;object-fit:cover}
 
-/* ═══ BALANCE HERO ═══ */
-.dash-balance {
-    position: relative;
-    padding: 28px 24px 24px;
-    background: linear-gradient(135deg, #FFFFFF 0%, #FDF8F3 100%);
-    border: 1.5px solid #EFE4D9;
-    border-radius: 24px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    animation: dashIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-    animation-delay: 0.06s;
-    box-shadow: 0 8px 24px -10px rgba(141, 110, 99, 0.15);
-}
-.dash-balance-glow {
-    position: absolute;
-    top: -60px;
-    right: -60px;
-    width: 240px;
-    height: 240px;
-    background: radial-gradient(circle, rgba(232, 168, 124, 0.15), transparent 65%);
-    pointer-events: none;
-    animation: dashGlow 6s ease-in-out infinite;
-}
-@keyframes dashGlow {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 1; }
-}
+/* BALANCE CARD */
+.dash-balance{position:relative;padding:20px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:16px;margin-bottom:20px;animation:fadeIn .35s ease both;animation-delay:.05s}
+.dash-balance-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.dash-balance-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#757575;text-transform:uppercase;letter-spacing:.1em}
+.dash-balance-label svg{color:#E8A33D}
+.dash-balance-status{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.dash-balance-status.pending{background:#FFF8E1;color:#B45309}
+.dash-balance-status.paid{background:#E8F5E9;color:#15803D}
+.dash-balance-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
 
-.dash-balance-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    position: relative;
-    z-index: 1;
-}
-.dash-balance-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #8D6E63;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-}
-.dash-balance-label svg { color: var(--accent-light); }
+.dash-balance-value{display:flex;align-items:baseline;gap:3px;margin-bottom:16px}
+.dash-balance-cur{font-size:20px;font-weight:800;color:#9E9E9E}
+.dash-balance-num{font-size:36px;font-weight:800;color:#1A1A1A;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
 
-.dash-balance-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border: 1px solid;
-}
-.dash-balance-status.pending {
-    background: #FEF3C7;
-    border-color: #FDE68A;
-    color: #B45309;
-}
-.dash-balance-status.paid {
-    background: #DCFCE7;
-    border-color: #BBF7D0;
-    color: #15803D;
-}
-.dash-status-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 8px currentColor;
-}
+/* PROGRESS BAR */
+.dash-progress-wrap{margin-bottom:16px}
+.dash-progress-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dash-progress-info span{font-size:11px;color:#757575;font-weight:600}
+.dash-progress-info strong{font-size:12px;color:#1A1A1A;font-weight:800}
+.dash-progress-bar{width:100%;height:6px;background:#F0F0F0;border-radius:100px;overflow:hidden}
+.dash-progress-fill{height:100%;background:linear-gradient(90deg,#E8A33D,#D4901F);border-radius:100px;transition:width .6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px rgba(232,163,61,.5)}
 
-.dash-balance-value {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
-}
-.dash-balance-cur {
-    font-size: 24px;
-    font-weight: 800;
-    color: #A1887F;
-}
-.dash-balance-num {
-    font-size: 44px;
-    font-weight: 800;
-    color: #2D1A11;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 2px 12px rgba(216, 67, 21, 0.15);
-}
+/* META GRID */
+.dash-balance-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.dash-balance-meta-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FAFAFA;border:1px solid #F0F0F0;border-radius:10px}
+.dash-meta-icon{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex-shrink:0}
+.dash-meta-icon.green{background:#E8F5E9;color:#15803D}
+.dash-meta-icon.amber{background:#FFF8E1;color:#B45309}
+.dash-meta-content{flex:1;min-width:0}
+.dash-meta-lbl{font-size:9.5px;color:#757575;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.dash-balance-meta-item strong{font-size:13px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
-.dash-balance-meta {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
-}
-.dash-balance-meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 14px;
-    background: #FDFBF7;
-    border: 1px solid #EFE4D9;
-    border-radius: 14px;
-    backdrop-filter: none;
-}
-.dash-meta-lbl {
-    font-size: 10px;
-    color: #8D6E63;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.dash-balance-meta-item strong {
-    font-size: 15px;
-    font-weight: 800;
-    color: #4E342E;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-}
-.dash-meta-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    display: inline-block;
-}
-.dash-meta-dot.green { background: #4ADE80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.8); }
-.dash-meta-dot.gold  { background: var(--accent-light); box-shadow: 0 0 8px rgba(255, 112, 67, 0.8); }
+/* BUTTONS */
+.dash-balance-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dash-btn-primary,.dash-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:100px;font-size:13px;font-weight:800;text-decoration:none;transition:all .15s;font-family:inherit;letter-spacing:-.01em}
+.dash-btn-primary{background:#E8A33D;color:#FFFFFF;box-shadow:0 4px 14px rgba(232,163,61,.35)}
+.dash-btn-primary:hover{background:#D4901F;box-shadow:0 6px 20px rgba(232,163,61,.45);transform:translateY(-1px)}
+.dash-btn-primary:active{transform:scale(.97)}
+.dash-btn-ghost{background:#FFFFFF;color:#1A1A1A;border:1.5px solid #1A1A1A}
+.dash-btn-ghost:hover{background:#1A1A1A;color:#FFFFFF}
+.dash-btn-ghost:active{transform:scale(.97)}
 
-.dash-balance-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    position: relative;
-    z-index: 1;
-}
-.dash-balance-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 50px;
-    padding: 0 18px;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 800;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-tap-highlight-color: transparent;
-    letter-spacing: -0.01em;
-}
-.dash-balance-btn.primary {
-    background: linear-gradient(135deg, #D84315, #BF360C);
-    color: #ffffff;
-    box-shadow: 0 8px 24px -6px rgba(216, 67, 21, 0.6);
-}
-.dash-balance-btn.primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px -6px rgba(216, 67, 21, 0.8);
-}
-.dash-balance-btn.primary:active { transform: scale(0.97); }
-.dash-balance-btn.ghost {
-    background: #FFFFFF;
-    color: #4E342E;
-    border: 1px solid #D7CCC8;
-}
-.dash-balance-btn.ghost:hover {
-    background: #FDFBF7;
-    border-color: #8D6E63;
-}
-.dash-balance-btn.ghost:active { transform: scale(0.97); }
+/* SECTION LABEL */
+.dash-section-label{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px}
+.dash-section-label span{font-size:13px;font-weight:800;color:#1A1A1A;letter-spacing:-.01em;text-transform:uppercase}
+.dash-section-more{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:700;color:#1A1A1A;text-decoration:none;transition:color .15s}
+.dash-section-more:hover{color:#D84315}
 
-/* ═══ QUICK STATS ═══ */
-.dash-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-}
-.dash-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-tap-highlight-color: transparent;
-    animation: dashIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-    box-shadow: var(--shadow-sm);
-}
-.dash-stat:nth-child(1) { animation-delay: 0.12s; }
-.dash-stat:nth-child(2) { animation-delay: 0.16s; }
-.dash-stat:nth-child(3) { animation-delay: 0.20s; }
-.dash-stat:nth-child(4) { animation-delay: 0.24s; }
-.dash-stat:hover {
-    border-color: var(--primary);
-    background: #FFFFFF;
-    transform: translateY(-3px);
-    box-shadow: 0 12px 24px -10px rgba(45, 26, 17, 0.15);
-}
-.dash-stat:active { transform: scale(0.96); }
+/* QUICK STATS */
+.dash-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;animation:fadeIn .4s ease both;animation-delay:.1s}
+.dash-stat{display:flex;align-items:center;gap:12px;padding:14px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:12px;text-decoration:none;transition:all .15s;position:relative;overflow:hidden}
+.dash-stat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,#E8A33D);transform:scaleY(0);transition:transform .25s}
+.dash-stat:hover{border-color:#D0D0D0;transform:translateY(-2px);box-shadow:0 6px 16px -6px rgba(0,0,0,.08)}
+.dash-stat:hover::before{transform:scaleY(1)}
+.dash-stat:active{transform:scale(.98)}
+.dash-stat-icon{width:40px;height:40px;border-radius:10px;background:var(--bg,#FFF8EC);color:var(--c,#D4901F);display:grid;place-items:center;flex-shrink:0}
+.dash-stat-info{flex:1;min-width:0}
+.dash-stat-num{font-size:18px;font-weight:800;color:#1A1A1A;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-bottom:3px}
+.dash-stat-lbl{font-size:10.5px;color:#757575;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 
-.dash-stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    border: 1px solid;
-    transition: transform 0.2s;
-}
-.dash-stat:hover .dash-stat-icon { transform: scale(1.1); }
-.dash-stat-icon.accent { background: #EFEBE9; border-color: #D7CCC8; color: var(--primary); }
-.dash-stat-icon.amber  { background: #FEF3C7; border-color: #FDE68A; color: #B45309; }
-.dash-stat-icon.blue   { background: #FDFBF7; border-color: #BFDBFE; color: #1D4ED8; }
-.dash-stat-icon.green  { background: #DCFCE7; border-color: #BBF7D0; color: #15803D; }
+/* ALERT BANNER */
+.dash-alert{display:flex;align-items:center;gap:12px;padding:14px;background:#FFF8E1;border:1px solid #FDE68A;border-radius:12px;margin-bottom:20px;animation:fadeIn .35s ease both}
+.dash-alert-icon{width:36px;height:36px;border-radius:10px;background:#FFE082;color:#B45309;display:grid;place-items:center;flex-shrink:0}
+.dash-alert-content{flex:1;min-width:0}
+.dash-alert-title{font-size:13px;font-weight:800;color:#78350F;margin-bottom:2px}
+.dash-alert-text{font-size:11.5px;color:#92400E;font-weight:500}
+.dash-alert-btn{display:inline-flex;align-items:center;gap:3px;padding:8px 12px;background:#FFFFFF;color:#B45309;border-radius:100px;font-size:11.5px;font-weight:800;text-decoration:none;flex-shrink:0;transition:all .15s;border:1px solid #FDE68A}
+.dash-alert-btn:hover{background:#B45309;color:#FFFFFF;border-color:#B45309}
 
-.dash-stat-num {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1;
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-}
-.dash-stat-lbl {
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 800;
-    text-align: center;
-}
+/* LIST */
+.dash-list{background:#FFF;border:1px solid #EEE;border-radius:12px;overflow:hidden;margin-bottom:20px;animation:fadeIn .4s ease both;animation-delay:.15s}
+.dash-row{display:flex;align-items:center;gap:12px;padding:14px;text-decoration:none;color:inherit;background:#FFF;border-bottom:1px solid #F5F5F5;transition:background .15s;position:relative}
+.dash-row:last-child{border-bottom:none}
+.dash-row:hover{background:#FAFAFA}
+.dash-row:hover .dash-row-right{transform:translateX(2px)}
+.dash-row-icon{width:36px;height:36px;border-radius:10px;background:var(--bg,#EFF6FF);color:var(--c,#2563EB);display:grid;place-items:center;flex-shrink:0}
+.dash-row-content{flex:1;min-width:0}
+.dash-row-title{font-size:13px;font-weight:800;color:#1A1A1A;font-family:ui-monospace,monospace;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-row-sub{font-size:11px;color:#757575;font-weight:500}
+.dash-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;transition:transform .15s}
+.dash-row-amt{font-size:13px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.dash-row-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:100px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.dash-row-badge.pending{background:#FFF8E1;color:#B45309}
+.dash-row-badge.approved{background:#E8F5E9;color:#15803D}
+.dash-row-badge.rejected{background:#FFEBEE;color:#B91C1C}
+.dash-row-badge.completed{background:#E8F5E9;color:#15803D}
 
-/* ═══ SECTION ═══ */
-.dash-section {
-    padding: 22px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 22px;
-    margin-bottom: 16px;
-    animation: dashIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-    animation-delay: 0.3s;
-    box-shadow: var(--shadow-sm);
-}
-.dash-section-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--border-light);
-}
-.dash-section-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: #EFEBE9;
-    border: 1px solid #D7CCC8;
-    display: grid;
-    place-items: center;
-    color: var(--primary);
-    flex-shrink: 0;
-}
-.dash-section-icon.gold {
-    background: #FFCCBC;
-    border-color: #FFAB91;
-    color: var(--accent);
-}
-.dash-section-title-wrap { flex: 1; min-width: 0; }
-.dash-section-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-}
-.dash-section-sub {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    margin-top: 3px;
-    font-weight: 500;
-}
-.dash-section-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 7px 12px;
-    background: #FDFBF7;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    color: var(--primary);
-    font-size: 11.5px;
-    font-weight: 800;
-    text-decoration: none;
-    flex-shrink: 0;
-    transition: all 0.15s;
-}
-.dash-section-link:hover {
-    background: #EFEBE9;
-    transform: translateX(2px);
-}
-.dash-section-link:active { background: #D7CCC8; }
+/* EMPTY STATE */
+.dash-empty{text-align:center;padding:32px 16px;background:#FFF;border:1px solid #EEE;border-radius:12px;margin-bottom:20px}
+.dash-empty-icon{width:56px;height:56px;margin:0 auto 12px;border-radius:14px;background:#FFF8EC;border:1px solid #F0E0C0;display:grid;place-items:center;color:#D4901F}
+.dash-empty-title{font-size:14px;font-weight:800;color:#1A1A1A;margin-bottom:4px}
+.dash-empty-text{font-size:12px;color:#757575;margin-bottom:16px;font-weight:500}
 
-/* ═══ ORDERS LIST ═══ */
-.dash-orders {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.dash-order {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border-radius: 14px;
-    background: #FDFBF7;
-    border: 1px solid var(--border-light);
-    text-decoration: none;
-    transition: all 0.2s;
-    -webkit-tap-highlight-color: transparent;
-}
-.dash-order:hover {
-    background: #FFFFFF;
-    border-color: var(--primary);
-    transform: translateX(3px);
-    box-shadow: 0 6px 16px -6px rgba(45, 26, 17, 0.1);
-}
-.dash-order:active {
-    background: #EFEBE9;
-    transform: scale(0.99);
-}
-.dash-order-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: #EFEBE9;
-    border: 1px solid #D7CCC8;
-    display: grid;
-    place-items: center;
-    color: var(--primary);
-    flex-shrink: 0;
-}
-.dash-order-info { flex: 1; min-width: 0; }
-.dash-order-num {
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--text-main);
-    font-family: ui-monospace, monospace;
-    margin-bottom: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.dash-order-meta {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-.dash-order-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    flex-shrink: 0;
-}
-.dash-order-amt {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-}
-.dash-order-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 9.5px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    border: 1px solid;
-}
-.dash-order-badge::before {
-    content: '';
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: currentColor;
-}
-.dash-order-badge.pending  { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
-.dash-order-badge.approved { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
-.dash-order-badge.rejected { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+/* QUICK ACTIONS */
+.dash-quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;animation:fadeIn .4s ease both;animation-delay:.2s}
+.dash-quick{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;background:#FFF;border:1px solid #EEE;border-radius:12px;text-decoration:none;transition:all .15s;position:relative;overflow:hidden}
+.dash-quick::before{content:'';position:absolute;top:0;left:50%;width:0;height:3px;background:var(--c,#E8A33D);transition:all .25s;transform:translateX(-50%)}
+.dash-quick:hover{border-color:#D0D0D0;transform:translateY(-2px);box-shadow:0 6px 16px -6px rgba(0,0,0,.08)}
+.dash-quick:hover::before{width:100%}
+.dash-quick:active{transform:scale(.97)}
+.dash-quick-icon{width:38px;height:38px;border-radius:10px;background:var(--bg,#FFF8EC);color:var(--c,#D4901F);display:grid;place-items:center;transition:transform .2s}
+.dash-quick:hover .dash-quick-icon{transform:scale(1.1)}
+.dash-quick-label{font-size:11px;font-weight:700;color:#1A1A1A;text-align:center;line-height:1.2}
 
-/* ═══ EMPTY STATE ═══ */
-.dash-empty {
-    text-align: center;
-    padding: 36px 16px;
-}
-.dash-empty-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 16px;
-    border-radius: 20px;
-    background: #EFEBE9;
-    border: 1px solid var(--border-color);
-    display: grid;
-    place-items: center;
-    color: var(--primary);
-}
-.dash-empty-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--text-main);
-    margin-bottom: 6px;
-    letter-spacing: -0.01em;
-}
-.dash-empty-text {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin-bottom: 18px;
-    font-weight: 500;
-}
-.dash-empty-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #2D1A11, #4E342E);
-    border-radius: 12px;
-    color: #fff;
-    font-size: 12.5px;
-    font-weight: 800;
-    text-decoration: none;
-    box-shadow: 0 8px 20px -6px rgba(45, 26, 17, 0.5);
-    transition: all 0.2s;
-}
-.dash-empty-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -6px rgba(45, 26, 17, 0.7); }
-.dash-empty-btn:active { transform: scale(0.97); }
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
-/* ═══ QUICK ACTIONS GRID ═══ */
-.dash-quick-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+@media(max-width:480px){
+.dash-hero{padding:16px}
+.dash-hero-name{font-size:19px}
+.dash-hero-avatar{width:48px;height:48px;font-size:16px}
+.dash-balance-num{font-size:30px}
+.dash-balance-cur{font-size:17px}
+.dash-stat{padding:12px}
+.dash-stat-num{font-size:16px}
+.dash-quick-grid{grid-template-columns:repeat(4,1fr)}
+.dash-quick{padding:12px 2px}
+.dash-quick-label{font-size:10px}
 }
-.dash-quick {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 6px;
-    background: #FDFBF7;
-    border: 1px solid var(--border-light);
-    border-radius: 14px;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-tap-highlight-color: transparent;
-}
-.dash-quick:hover {
-    background: #FFFFFF;
-    border-color: var(--primary);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px -8px rgba(45, 26, 17, 0.12);
-}
-.dash-quick:active {
-    transform: scale(0.96);
-}
-.dash-quick-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #EFEBE9;
-    border: 1px solid #D7CCC8;
-    display: grid;
-    place-items: center;
-    color: var(--primary);
-    transition: transform 0.2s;
-}
-.dash-quick:hover .dash-quick-icon {
-    transform: scale(1.1);
-    background: #D7CCC8;
-}
-.dash-quick-label {
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--text-main);
-    text-align: center;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-}
+</style>
+@endpush
 
-/* ═══ ANIMATIONS ═══ */
-@keyframes dashIn {
-    0% { opacity: 0; transform: translateY(14px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══ RESPONSIVE ═══ */
-@media (max-width: 480px) {
-    .dash-balance { padding: 24px 20px 20px; border-radius: 20px; }
-    .dash-balance-num { font-size: 36px; }
-    .dash-balance-cur { font-size: 20px; }
-    .dash-stat-num { font-size: 18px; }
-    .dash-section { padding: 18px; border-radius: 18px; }
-    .dash-quick-grid { grid-template-columns: repeat(4, 1fr); }
-    .dash-quick { padding: 14px 4px; }
-}
-
-@media (max-width: 380px) {
-    .dash-stats { grid-template-columns: repeat(2, 1fr); }
-    .dash-quick-grid { grid-template-columns: repeat(2, 1fr); }
-    .dash-greet-title { font-size: 22px; }
-    .dash-balance-num { font-size: 32px; }
-}
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var topbarInner = document.querySelector('.p-topbar-inner');
+    if (topbarInner) {
+        topbarInner.innerHTML = '<div class="p-topbar-store-text"><div class="p-topbar-store-name" style="font-size:16px;font-weight:800;">Dashboard</div></div><a href="{{ route('portal.profile') }}" class="dash-topbar-btn" aria-label="Profile"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>';
+    }
+});
+</script>
+<style>
+.dash-topbar-btn{display:grid;place-items:center;width:36px;height:36px;color:#1A1A1A;text-decoration:none;border-radius:50%;transition:background .15s;flex-shrink:0}
+.dash-topbar-btn:hover{background:#F5F5F5}
+.dash-topbar-btn svg{width:20px;height:20px}
 </style>
 @endpush

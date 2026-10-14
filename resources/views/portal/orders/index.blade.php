@@ -1,4 +1,4 @@
-@extends('portal.layouts.app')
+﻿@extends('portal.layouts.app')
 
 @section('title', 'My Orders')
 
@@ -11,159 +11,320 @@
     $approved = \App\Models\ReorderRequest::where('store_id', $store->id)->where('status', 'approved')->count();
     $rejected = \App\Models\ReorderRequest::where('store_id', $store->id)->where('status', 'rejected')->count();
     $status   = request('status', 'all');
+    $totalAmount = \App\Models\ReorderRequest::where('store_id', $store->id)->sum('total_amount');
+    $approvalRate = $total > 0 ? round(($approved / $total) * 100) : 0;
 @endphp
 
-<div class="po-head">
-    <div class="po-head-left">
-        <h1 class="po-title">My Orders</h1>
-        <p class="po-sub">Stock requests & status</p>
-        <div class="po-header-badges">
-            @if($pending > 0)<span class="po-hbadge pending">{{ $pending }} pending</span>@endif
-            @if($approved > 0)<span class="po-hbadge approved">{{ $approved }} approved</span>@endif
+{{-- PAGE HEADER --}}
+<div class="ord-head">
+    <div class="ord-head-text">
+        <div class="ord-title">My Orders</div>
+        <div class="ord-sub">Track your stock requests</div>
+    </div>
+    <a href="{{ route('portal.orders.create') }}" class="ord-cta">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New
+    </a>
+</div>
+
+{{-- HERO STATS CARD --}}
+<div class="ord-hero">
+    <div class="ord-hero-glow"></div>
+    <div class="ord-hero-content">
+        <div class="ord-hero-label">Total Orders</div>
+        <div class="ord-hero-value">{{ $total }}</div>
+        <div class="ord-hero-meta">
+            <span class="ord-hero-meta-item">
+                <span class="ord-hero-meta-dot green"></span>
+                {{ $approved }} approved
+            </span>
+            @if($pending > 0)
+            <span class="ord-hero-meta-item">
+                <span class="ord-hero-meta-dot amber"></span>
+                {{ $pending }} pending
+            </span>
+            @endif
         </div>
     </div>
-    <a href="{{ route('portal.orders.create') }}" class="po-cta">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        Browse
+    <div class="ord-hero-ring">
+        <svg viewBox="0 0 100 100" class="ord-hero-ring-svg">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="8"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#E8A33D" stroke-width="8" stroke-linecap="round"
+                    stroke-dasharray="264" stroke-dashoffset="{{ 264 - (264 * $approvalRate / 100) }}"
+                    transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="ord-hero-ring-text">
+            <div class="ord-hero-ring-num">{{ $approvalRate }}%</div>
+            <div class="ord-hero-ring-lbl">Approved</div>
+        </div>
+    </div>
+</div>
+
+{{-- MINI STATS --}}
+<div class="ord-mini-grid">
+    <div class="ord-mini">
+        <div class="ord-mini-icon" style="--c:#F59E0B;--bg:#FFF8E1;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="ord-mini-info">
+            <div class="ord-mini-num">{{ $pending }}</div>
+            <div class="ord-mini-lbl">Pending</div>
+        </div>
+    </div>
+    <div class="ord-mini">
+        <div class="ord-mini-icon" style="--c:#15803D;--bg:#E8F5E9;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        </div>
+        <div class="ord-mini-info">
+            <div class="ord-mini-num">{{ $approved }}</div>
+            <div class="ord-mini-lbl">Approved</div>
+        </div>
+    </div>
+    <div class="ord-mini">
+        <div class="ord-mini-icon" style="--c:#B91C1C;--bg:#FFEBEE;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        </div>
+        <div class="ord-mini-info">
+            <div class="ord-mini-num">{{ $rejected }}</div>
+            <div class="ord-mini-lbl">Rejected</div>
+        </div>
+    </div>
+</div>
+
+{{-- FILTER TABS --}}
+<div class="ord-tabs">
+    <a href="{{ route('portal.orders.index') }}" class="ord-tab {{ $status === 'all' ? 'active' : '' }}">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        All
+    </a>
+    <a href="{{ route('portal.orders.index', ['status' => 'pending']) }}" class="ord-tab {{ $status === 'pending' ? 'active' : '' }}">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Pending
+    </a>
+    <a href="{{ route('portal.orders.index', ['status' => 'approved']) }}" class="ord-tab {{ $status === 'approved' ? 'active' : '' }}">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+        Approved
+    </a>
+    <a href="{{ route('portal.orders.index', ['status' => 'rejected']) }}" class="ord-tab {{ $status === 'rejected' ? 'active' : '' }}">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        Rejected
     </a>
 </div>
 
-<div class="po-stats">
-    <a href="{{ route('portal.orders.index') }}" class="po-stat {{ $status === 'all' ? 'active' : '' }}">
-        <div class="po-stat-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
-        <div class="po-stat-value">{{ $total }}</div>
-        <div class="po-stat-label">Total</div>
-    </a>
-    <a href="{{ route('portal.orders.index', ['status' => 'pending']) }}" class="po-stat {{ $status === 'pending' ? 'active' : '' }}">
-        <div class="po-stat-icon amber"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-        <div class="po-stat-value">{{ $pending }}</div>
-        <div class="po-stat-label">Pending</div>
-    </a>
-    <a href="{{ route('portal.orders.index', ['status' => 'approved']) }}" class="po-stat {{ $status === 'approved' ? 'active' : '' }}">
-        <div class="po-stat-icon green"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>
-        <div class="po-stat-value">{{ $approved }}</div>
-        <div class="po-stat-label">Approved</div>
-    </a>
-    <a href="{{ route('portal.orders.index', ['status' => 'rejected']) }}" class="po-stat {{ $status === 'rejected' ? 'active' : '' }}">
-        <div class="po-stat-icon red"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg></div>
-        <div class="po-stat-value">{{ $rejected }}</div>
-        <div class="po-stat-label">Rejected</div>
-    </a>
-</div>
-
+{{-- ORDERS GRID --}}
 @if($orders->isEmpty())
-    <div class="po-empty">
-        <div class="po-empty-icon"><svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
-        <div class="po-empty-title">Walay orders</div>
-        <div class="po-empty-text">@if($status !== 'all')Walay {{ $status }} orders.@else Start by creating your first stock request.@endif</div>
-        <a href="{{ route('portal.orders.create') }}" class="po-empty-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Order</a>
+    <div class="ord-empty">
+        <div class="ord-empty-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/></svg>
+        </div>
+        <div class="ord-empty-title">
+            @if($status !== 'all') Walang {{ $status }} orders @else No orders yet @endif
+        </div>
+        <div class="ord-empty-text">
+            @if($status !== 'all') Try checking other status filters @else Start by creating your first stock request @endif
+        </div>
+        <a href="{{ route('portal.orders.create') }}" class="ord-empty-btn">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Create Order
+        </a>
     </div>
 @else
-    <div class="po-list">
+    <div class="ord-grid">
         @foreach($orders as $order)
             @php
                 $st = strtolower($order->status);
-                $badgeMap = ['pending' => ['label' => 'Pending', 'class' => 'pending'], 'approved' => ['label' => 'Approved', 'class' => 'approved'], 'rejected' => ['label' => 'Rejected', 'class' => 'rejected']];
-                $badge = $badgeMap[$st] ?? ['label' => ucfirst($st), 'class' => 'default'];
+                $badgeMap = [
+                    'pending' => ['label' => 'Pending', 'class' => 'pending', 'color' => '#F59E0B'],
+                    'approved' => ['label' => 'Approved', 'class' => 'approved', 'color' => '#15803D'],
+                    'rejected' => ['label' => 'Rejected', 'class' => 'rejected', 'color' => '#B91C1C'],
+                ];
+                $badge = $badgeMap[$st] ?? ['label' => ucfirst($st), 'class' => 'default', 'color' => '#757575'];
+                $itemCount = $order->items->count();
             @endphp
-            <a href="{{ route('portal.orders.show', $order->id) }}" class="po-card">
-                <div class="po-card-top">
-                    <div class="po-card-num">
-                        <div class="po-card-num-text">{{ $order->request_number }}</div>
-                        <div class="po-card-num-sub"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ $order->created_at->format('M d, Y') }}</div>
+            <a href="{{ route('portal.orders.show', $order->id) }}" class="ord-card" style="--sc:{{ $badge['color'] }};">
+                {{-- Status stripe sa taas --}}
+                <div class="ord-card-stripe" data-status="{{ $badge['class'] }}"></div>
+
+                {{-- Top section --}}
+                <div class="ord-card-top">
+                    <div class="ord-card-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/></svg>
                     </div>
-                    <span class="po-badge po-badge-{{ $badge['class'] }}"><span class="po-badge-dot"></span>{{ $badge['label'] }}</span>
+                    <span class="ord-card-badge ord-card-badge-{{ $badge['class'] }}">
+                        <span class="ord-card-badge-dot"></span>
+                        {{ $badge['label'] }}
+                    </span>
                 </div>
-                <div class="po-card-mid">
-                    <div class="po-card-metric"><div class="po-card-metric-label">Items</div><div class="po-card-metric-value">{{ $order->items->count() }}</div></div>
-                    <div class="po-card-metric-divider"></div>
-                    <div class="po-card-metric"><div class="po-card-metric-label">Total</div><div class="po-card-metric-value gold">₱{{ number_format($order->total_amount, 2) }}</div></div>
+
+                {{-- Order number --}}
+                <div class="ord-card-num">{{ $order->request_number }}</div>
+
+                {{-- Meta --}}
+                <div class="ord-card-meta">
+                    <span class="ord-card-meta-item">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        {{ $order->created_at->format('M d') }}
+                    </span>
+                    <span class="ord-card-meta-item">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        {{ $order->created_at->diffForHumans() }}
+                    </span>
                 </div>
-                <div class="po-card-bot">
-                    <div class="po-card-time"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{{ $order->created_at->diffForHumans() }}</div>
-                    <div class="po-card-arrow">View <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+                {{-- Bottom: amount + items --}}
+                <div class="ord-card-bottom">
+                    <div class="ord-card-amount">
+                        <span class="ord-card-amount-cur">₱</span>
+                        <span class="ord-card-amount-num">{{ number_format($order->total_amount, 2) }}</span>
+                    </div>
+                    <div class="ord-card-items">
+                        {{ $itemCount }} item{{ $itemCount != 1 ? 's' : '' }}
+                    </div>
                 </div>
             </a>
         @endforeach
     </div>
+
     @if(method_exists($orders, 'links') && $orders->hasPages())
-        <div style="margin-top: 18px;">{{ $orders->withQueryString()->links() }}</div>
+        <div style="margin-top: 20px;">{{ $orders->withQueryString()->links() }}</div>
     @endif
 @endif
 
+@endsection
+
 @push('styles')
 <style>
-/* ═══ ORDERS INDEX — PREMIUM COFFEE ═══ */
-.po-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.po-title { font-size: 24px; font-weight: 800; color: #2D1A11; letter-spacing: -0.03em; margin-bottom: 3px; }
-.po-sub { font-size: 12px; color: #64748b; }
-.po-cta { display: inline-flex; align-items: center; gap: 7px; padding: 12px 20px; background: linear-gradient(135deg, #D84315, #BF360C); border-radius: 13px; color: #FFFFFF; font-size: 13px; font-weight: 800; text-decoration: none; box-shadow: 0 8px 20px -8px rgba(216, 67, 21, 0.6); white-space: nowrap; }
-.po-cta:active { transform: scale(0.97); }
-.po-header-badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.po-hbadge { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 7px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid; }
-.po-hbadge.pending { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
-.po-hbadge.approved { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
+/* ═══ ORDERS — VISUAL CARD GRID ═══ */
 
-.po-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-.po-stat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 16px; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04); }
-.po-stat:hover { border-color: #D7CCC8; transform: translateY(-3px); }
-.po-stat.active { border-color: #2D1A11; background: #FDFBF7; box-shadow: 0 8px 20px -10px rgba(45, 26, 17, 0.2); }
-.po-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #EFEBE9; color: #2D1A11; }
-.po-stat-icon.amber { background: #FEF3C7; color: #B45309; }
-.po-stat-icon.green { background: #DCFCE7; color: #15803D; }
-.po-stat-icon.red { background: #FEE2E2; color: #B91C1C; }
-.po-stat-value { font-size: 20px; font-weight: 800; color: #2D1A11; font-variant-numeric: tabular-nums; line-height: 1; }
-.po-stat-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+/* HEADER */
+.ord-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:4px 4px 18px}
+.ord-head-text{flex:1;min-width:0}
+.ord-title{font-size:26px;font-weight:800;color:#1A1A1A;letter-spacing:-.035em;line-height:1.15;margin-bottom:3px}
+.ord-sub{font-size:13px;color:#757575;font-weight:500}
+.ord-cta{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#E8A33D;border-radius:100px;color:#FFFFFF;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(232,163,61,.35);white-space:nowrap;transition:all .15s;flex-shrink:0}
+.ord-cta:hover{background:#D4901F;transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,163,61,.45)}
 
-.po-list { display: flex; flex-direction: column; gap: 12px; }
-.po-card { display: block; padding: 18px; background: #FFFFFF; border: 1.5px solid #EFEBE9; border-radius: 18px; text-decoration: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 8px rgba(45, 26, 17, 0.04); position: relative; overflow: hidden; }
-.po-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #2D1A11, #4E342E); opacity: 0; transition: opacity 0.2s; }
-.po-card:hover { border-color: #D7CCC8; transform: translateY(-3px); box-shadow: 0 12px 28px -12px rgba(45, 26, 17, 0.15); }
-.po-card:hover::before { opacity: 1; }
-.po-card:active { transform: scale(0.99); }
-.po-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
-.po-card-num { min-width: 0; flex: 1; }
-.po-card-num-text { font-size: 15px; font-weight: 800; color: #2D1A11; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.po-card-num-sub { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; }
-.po-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid; flex-shrink: 0; }
-.po-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.po-badge-pending { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
-.po-badge-pending .po-badge-dot { background: #B45309; }
-.po-badge-approved { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
-.po-badge-approved .po-badge-dot { background: #15803D; }
-.po-badge-rejected { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
-.po-badge-rejected .po-badge-dot { background: #B91C1C; }
-.po-badge-default { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
-.po-badge-default .po-badge-dot { background: #475569; }
-.po-card-mid { display: flex; align-items: center; gap: 16px; padding: 12px 14px; background: #FDFBF7; border-radius: 12px; margin-bottom: 12px; }
-.po-card-metric { flex: 1; min-width: 0; }
-.po-card-metric-label { font-size: 9.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-.po-card-metric-value { font-size: 16px; font-weight: 800; color: #2D1A11; font-variant-numeric: tabular-nums; }
-.po-card-metric-value.gold { color: #D84315; }
-.po-card-metric-divider { width: 1px; height: 28px; background: #EFEBE9; }
-.po-card-bot { display: flex; justify-content: space-between; align-items: center; }
-.po-card-time { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; }
-.po-card-arrow { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 800; color: #D84315; }
-.po-empty { text-align: center; padding: 60px 20px; background: #FFFFFF; border: 1.5px dashed #D7CCC8; border-radius: 18px; }
-.po-empty-icon { width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 20px; background: #FDFBF7; border: 1.5px solid #EFEBE9; color: #D7CCC8; display: grid; place-items: center; }
-.po-empty-title { font-size: 17px; font-weight: 800; color: #2D1A11; margin-bottom: 6px; }
-.po-empty-text { font-size: 12.5px; color: #64748b; margin-bottom: 20px; }
-.po-empty-btn { display: inline-flex; align-items: center; gap: 7px; padding: 12px 22px; background: linear-gradient(135deg, #D84315, #BF360C); border-radius: 13px; color: #FFFFFF; font-size: 12.5px; font-weight: 800; text-decoration: none; box-shadow: 0 8px 20px -8px rgba(216, 67, 21, 0.6); }
-.po-empty-btn:active { transform: scale(0.97); }
+/* HERO STATS CARD */
+.ord-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;background:linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 50%,#3D3D3D 100%);border-radius:16px;margin-bottom:14px;overflow:hidden;animation:fadeIn .3s ease both}
+.ord-hero-glow{position:absolute;top:-80px;right:-80px;width:220px;height:220px;background:radial-gradient(circle,rgba(232,163,61,.35),transparent 70%);pointer-events:none;animation:heroGlow 5s ease-in-out infinite}
+@keyframes heroGlow{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
+.ord-hero-content{position:relative;z-index:1;flex:1;min-width:0}
+.ord-hero-label{font-size:11px;font-weight:800;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.ord-hero-value{font-size:42px;font-weight:800;color:#FFFFFF;letter-spacing:-.04em;line-height:1;margin-bottom:10px;font-variant-numeric:tabular-nums}
+.ord-hero-meta{display:flex;flex-direction:column;gap:4px}
+.ord-hero-meta-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:rgba(255,255,255,.75)}
+.ord-hero-meta-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ord-hero-meta-dot.green{background:#4ADE80;box-shadow:0 0 8px rgba(74,222,128,.8)}
+.ord-hero-meta-dot.amber{background:#FBBF24;box-shadow:0 0 8px rgba(251,191,36,.8)}
+.ord-hero-ring{position:relative;width:100px;height:100px;flex-shrink:0;z-index:1}
+.ord-hero-ring-svg{width:100%;height:100%;display:block}
+.ord-hero-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ord-hero-ring-num{font-size:20px;font-weight:800;color:#FFFFFF;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.ord-hero-ring-lbl{font-size:8.5px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
 
-@media (max-width: 480px) {
-    .po-title { font-size: 20px; }
-    .po-stats { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .po-stat { padding: 12px 4px; }
-    .po-stat-icon { width: 34px; height: 34px; }
-    .po-stat-value { font-size: 17px; }
-    .po-stat-label { font-size: 9px; }
-    .po-card { padding: 14px; }
+/* MINI STATS */
+.ord-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;animation:fadeIn .3s ease both;animation-delay:.05s}
+.ord-mini{display:flex;align-items:center;gap:10px;padding:12px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:12px;transition:all .15s}
+.ord-mini:hover{border-color:#D0D0D0;transform:translateY(-2px);box-shadow:0 6px 16px -6px rgba(0,0,0,.08)}
+.ord-mini-icon{width:32px;height:32px;border-radius:9px;background:var(--bg,#F5F5F5);color:var(--c,#757575);display:grid;place-items:center;flex-shrink:0}
+.ord-mini-info{flex:1;min-width:0}
+.ord-mini-num{font-size:17px;font-weight:800;color:#1A1A1A;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-bottom:2px}
+.ord-mini-lbl{font-size:10px;color:#757575;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+
+/* FILTER TABS */
+.ord-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;-ms-overflow-style:none}
+.ord-tabs::-webkit-scrollbar{display:none}
+.ord-tab{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:100px;font-size:12.5px;font-weight:700;color:#757575;text-decoration:none;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.ord-tab:hover{border-color:#D0D0D0;color:#1A1A1A}
+.ord-tab.active{background:#1A1A1A;color:#FFFFFF;border-color:#1A1A1A}
+.ord-tab svg{opacity:.7}
+.ord-tab.active svg{opacity:1}
+
+/* ORDERS GRID */
+.ord-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;animation:fadeIn .35s ease both;animation-delay:.1s}
+
+/* ORDER CARD */
+.ord-card{position:relative;display:flex;flex-direction:column;padding:14px;background:#FFFFFF;border:1px solid #EEEEEE;border-radius:14px;text-decoration:none;color:inherit;transition:all .2s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.ord-card::before{content:'';position:absolute;inset:0;border-radius:14px;box-shadow:0 0 0 0 var(--sc,#E8A33D);transition:box-shadow .2s;pointer-events:none}
+.ord-card:hover{transform:translateY(-3px);box-shadow:0 12px 24px -10px rgba(0,0,0,.12);border-color:transparent}
+.ord-card:hover::before{box-shadow:0 0 0 1.5px var(--sc,#E8A33D)}
+.ord-card:active{transform:scale(.98)}
+
+.ord-card-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.ord-card-stripe[data-status="pending"]{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.ord-card-stripe[data-status="approved"]{background:linear-gradient(90deg,#15803D,#4ADE80)}
+.ord-card-stripe[data-status="rejected"]{background:linear-gradient(90deg,#B91C1C,#EF4444)}
+.ord-card-stripe[data-status="default"]{background:linear-gradient(90deg,#757575,#9E9E9E)}
+
+.ord-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;margin-top:4px}
+.ord-card-icon{width:36px;height:36px;border-radius:10px;background:#F5F5F5;color:#1A1A1A;display:grid;place-items:center;flex-shrink:0}
+.ord-card-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.ord-card-badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:currentColor}
+.ord-card-badge-pending{background:#FFF8E1;color:#B45309}
+.ord-card-badge-approved{background:#E8F5E9;color:#15803D}
+.ord-card-badge-rejected{background:#FFEBEE;color:#B91C1C}
+.ord-card-badge-default{background:#F5F5F5;color:#757575}
+
+.ord-card-num{font-size:13px;font-weight:800;color:#1A1A1A;font-family:ui-monospace,monospace;letter-spacing:-.01em;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ord-card-meta{display:flex;flex-direction:column;gap:3px;margin-bottom:12px}
+.ord-card-meta-item{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:#757575;font-weight:600}
+.ord-card-meta-item svg{color:#9E9E9E;flex-shrink:0}
+
+.ord-card-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;padding-top:12px;border-top:1px dashed #F0F0F0}
+.ord-card-amount{display:flex;align-items:baseline;gap:1px}
+.ord-card-amount-cur{font-size:12px;font-weight:800;color:#9E9E9E}
+.ord-card-amount-num{font-size:16px;font-weight:800;color:#1A1A1A;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ord-card-items{font-size:10.5px;color:#757575;font-weight:700;padding:3px 8px;background:#F5F5F5;border-radius:100px}
+
+/* EMPTY STATE */
+.ord-empty{text-align:center;padding:48px 20px;background:#FFFFFF;border:1px dashed #E0E0E0;border-radius:14px}
+.ord-empty-icon{width:64px;height:64px;margin:0 auto 14px;border-radius:16px;background:#FFF8EC;border:1px solid #F0E0C0;color:#D4901F;display:grid;place-items:center}
+.ord-empty-title{font-size:15px;font-weight:800;color:#1A1A1A;margin-bottom:5px;letter-spacing:-.01em}
+.ord-empty-text{font-size:12.5px;color:#757575;margin-bottom:18px;font-weight:500}
+.ord-empty-btn{display:inline-flex;align-items:center;gap:6px;padding:12px 20px;background:#E8A33D;border-radius:100px;color:#FFFFFF;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(232,163,61,.35);transition:all .15s}
+.ord-empty-btn:hover{background:#D4901F;transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,163,61,.45)}
+.ord-empty-btn:active{transform:scale(.97)}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* RESPONSIVE */
+@media(max-width:520px){
+.ord-grid{grid-template-columns:1fr}
+.ord-hero-ring{width:88px;height:88px}
+.ord-hero-ring-num{font-size:18px}
 }
-@media (max-width: 380px) {
-    .po-stats { grid-template-columns: repeat(2, 1fr); }
+@media(max-width:480px){
+.ord-title{font-size:22px}
+.ord-hero{padding:16px}
+.ord-hero-value{font-size:36px}
+.ord-hero-ring{width:80px;height:80px}
+.ord-hero-ring-num{font-size:16px}
+.ord-hero-ring-lbl{font-size:8px}
+.ord-mini{padding:10px;gap:8px}
+.ord-mini-icon{width:28px;height:28px}
+.ord-mini-num{font-size:15px}
+.ord-mini-lbl{font-size:9px}
+.ord-tab{padding:7px 12px;font-size:12px}
+.ord-card{padding:12px}
+.ord-card-icon{width:32px;height:32px}
+.ord-card-num{font-size:12px}
+.ord-card-amount-num{font-size:15px}
 }
 </style>
 @endpush
 
-@endsection
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var topbarInner = document.querySelector('.p-topbar-inner');
+    if (topbarInner) {
+        topbarInner.innerHTML = '<div class="p-topbar-store-text"><div class="p-topbar-store-name" style="font-size:16px;font-weight:800;">My Orders</div></div><a href="{{ route('portal.orders.create') }}" class="ord-topbar-btn" aria-label="New Order"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>';
+    }
+});
+</script>
+<style>
+.ord-topbar-btn{display:grid;place-items:center;width:36px;height:36px;color:#D4901F;text-decoration:none;border-radius:50%;transition:background .15s;flex-shrink:0}
+.ord-topbar-btn:hover{background:#FFF8EC}
+.ord-topbar-btn svg{width:20px;height:20px}
+</style>
+@endpush

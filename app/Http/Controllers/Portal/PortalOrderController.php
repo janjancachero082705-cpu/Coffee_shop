@@ -13,6 +13,39 @@ use Illuminate\Support\Facades\DB;
 
 class PortalOrderController extends Controller
 {
+    public function trackingDetail($id)
+    {
+        $store = Auth::guard('store')->user();
+
+        $order = \App\Models\ReorderRequest::where('store_id', $store->id)
+            ->with(['items.product', 'deliveryReceipt'])
+            ->findOrFail($id);
+
+        return view('portal.orders.tracking-detail', compact('order'));
+    }
+    public function tracking()
+    {
+        $store = Auth::guard('store')->user();
+
+        $filter = request('filter', 'active');
+        $query = \App\Models\ReorderRequest::where('store_id', $store->id)->with('deliveryReceipt');
+
+        if ($filter === 'active') {
+            $query->whereIn('status', ['pending', 'approved']);
+        } elseif ($filter === 'rejected') {
+            $query->where('status', 'rejected');
+        }
+
+        $orders = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
+
+        $allCount = \App\Models\ReorderRequest::where('store_id', $store->id)->count();
+        $activeCount = \App\Models\ReorderRequest::where('store_id', $store->id)
+            ->whereIn('status', ['pending', 'approved'])->count();
+        $rejectedCount = \App\Models\ReorderRequest::where('store_id', $store->id)
+            ->where('status', 'rejected')->count();
+
+        return view('portal.orders.tracking', compact('orders', 'allCount', 'activeCount', 'rejectedCount'));
+    }
     public function index(Request $request)
     {
         $store = Auth::guard('store')->user();
