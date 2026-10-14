@@ -6,8 +6,11 @@
     <meta name="theme-color" content="#2D1A11">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="light only">
-    <title>@yield('title', 'Portal') - Coffee Beans</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>@yield('title', 'Portal') - RYS Farm Products Dealer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
+    
     
     <style>
         /* ═══════════════════════════════════════════════════════
@@ -1072,6 +1075,129 @@
         @media (max-width: 480px) {
             .toast-wrap { top: 16px; right: 16px; left: 16px; min-width: 0; max-width: none; }
         }
+    
+        /* ═══ BRAND STYLING — RYS FARM PRODUCTS DEALER ═══ */
+        .p-sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .p-sidebar-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: #FFFFFF;
+            padding: 4px;
+            border: 1.5px solid #EEEEEE;
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+        }
+        .p-sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+        .p-sidebar-brand-name {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #1A1A1A;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .p-sidebar-brand-line {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #1A1A1A;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+        .p-sidebar-brand-tag {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            color: #D4901F;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-top: 3px;
+            padding: 3px 6px;
+            background: #FFF8EC;
+            border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
+        }
+    
+        /* ═══ BRAND STYLING — RYS FARM PRODUCTS DEALER (Logo Style) ═══ */
+        .p-sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .p-sidebar-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: #FFFFFF;
+            padding: 4px;
+            border: 1.5px solid #EEEEEE;
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+        }
+        .p-sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        /* ═══ RYS — Cinzel Black (Roman serif, tulad ng logo) ═══ */
+        .p-sidebar-brand-name {
+            font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            color: #5D4037;
+            line-height: 1;
+            text-transform: uppercase;
+            text-shadow: 0 1px 0 rgba(212, 144, 31, 0.15);
+        }
+
+        /* ═══ FARM PRODUCTS DEALER — Marcellus (Roman serif) ═══ */
+        .p-sidebar-brand-line {
+            font-family: 'Marcellus', 'Cinzel', Georgia, serif;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            color: #5D4037;
+            line-height: 1.3;
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        /* ═══ WHOLESALE & RETAILER — Small caps style ═══ */
+        .p-sidebar-brand-tag {
+            font-family: 'Marcellus', 'Cinzel', Georgia, serif;
+            font-size: 8.5px;
+            font-weight: 400;
+            letter-spacing: 0.16em;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+            border-radius: 3px;
+            display: inline-block;
+            width: fit-content;
+            box-shadow: 0 2px 4px rgba(78, 52, 46, 0.2);
+        }
     </style>
         @stack('styles')
 </head>
@@ -1112,7 +1238,7 @@
     </main>
 
     <footer style="text-align: center; padding: 24px; font-size: 11.5px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">
-        &copy; {{ date('Y') }} COFFEE BEANS · STORE PORTAL
+        &copy; {{ date('Y') }} RYS FARM PRODUCTS DEALER · WHOLESALE &amp; RETAILER
     </footer>
 </div>
 
@@ -1122,10 +1248,11 @@
 <aside class="p-sidebar" id="pSidebar">
     <div class="p-sidebar-head">
         <div class="p-sidebar-brand">
-            <img src="{{ asset('images/logo.png') }}" class="p-sidebar-logo" alt="Coffee Beans">
-            <div>
-                <div class="p-sidebar-title">Coffee Beans</div>
-                <div class="p-sidebar-sub">Store Portal</div>
+            <img src="{{ asset('images/logo.png') }}" class="p-sidebar-logo" alt="RYS Farm Products Dealer">
+            <div class="p-sidebar-brand-text">
+                <div class="p-sidebar-brand-name">RYS</div>
+                <div class="p-sidebar-brand-line">Farm Products Dealer</div>
+                <div class="p-sidebar-brand-tag">Wholesale &amp; Retailer</div>
             </div>
         </div>
         <button type="button" class="p-sidebar-close" onclick="pToggleSidebar(false)" aria-label="Close menu">
@@ -1316,24 +1443,51 @@
                     return;
                 }
                 body.innerHTML = data.notifications.map(n => `
-                    <a href="${n.url || '#'}" class="pn-item unread" onclick="markRead(${n.id}, event)">
+                    <a href="${n.url || '#'}" class="pn-item unread" data-id="${n.id}" data-url="${n.url || ''}">
                         <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
-                        <div>
+                        <div style="flex:1;min-width:0;">
                             <div class="pn-title">${n.title}</div>
                             <div class="pn-message">${n.message}</div>
                             <div class="pn-time">${n.created_at}</div>
                         </div>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:#9E9E9E;flex-shrink:0;align-self:center;"><path d="M9 18l6-6-6-6"/></svg>
                     </a>
                 `).join('');
             }).catch(() => {});
         }
 
-        window.markRead = function(id, e) {
+        // ═══ NOTIFICATION CLICK — MARK READ THEN NAVIGATE ═══
+        document.addEventListener('click', function(e) {
+            var item = e.target.closest('.pn-item');
+            if (!item) return;
+            
             e.preventDefault();
-            fetch(`{{ route("portal.notifications.read", ":id") }}`.replace(':id', id), {
-                method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
-            }).then(() => fetchNotifications());
-        };
+            e.stopPropagation();
+            
+            var id = item.getAttribute('data-id');
+            var url = item.getAttribute('data-url');
+            
+            if (!id) return;
+            
+            // Mark as read via AJAX, then navigate
+            fetch('{{ route("portal.notifications.read", ":id") }}'.replace(':id', id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+            })
+            .then(function() {
+                if (url && url !== '' && url !== '#') {
+                    window.location.href = url;
+                } else {
+                    // Refresh notification list kung walang URL
+                    fetchNotifications();
+                }
+            })
+            .catch(function() {
+                if (url && url !== '' && url !== '#') {
+                    window.location.href = url;
+                }
+            });
+        });
 
         bell.addEventListener('click', () => {
             isOpen = !isOpen;

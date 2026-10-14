@@ -269,7 +269,8 @@ class DeliveryReceiptController extends Controller
                 'dr_number' => $delivery->dr_number,
                 'store_id' => $delivery->store_id,
                 'ship_note' => $shipNote,
-            ]
+            ],
+            $delivery->id
         );
 
         // Fire real-time event

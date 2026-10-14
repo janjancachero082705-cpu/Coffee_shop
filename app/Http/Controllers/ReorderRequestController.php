@@ -295,7 +295,8 @@ class ReorderRequestController extends Controller
                 'request_number' => $reorderRequest->request_number,
                 'dr_number' => $dr->dr_number ?? null,
                 'delivery_id' => $dr->id ?? null,
-            ]
+            ],
+            $reorderRequest->id
         );
         });
 
@@ -327,7 +328,8 @@ class ReorderRequestController extends Controller
             [
                 'reorder_id' => $reorderRequest->id,
                 'request_number' => $reorderRequest->request_number,
-            ]
+            ],
+            $reorderRequest->id
         );
 
         return redirect()->route('reorder-requests.show', $reorderRequest)->with('success', 'Rejected.');

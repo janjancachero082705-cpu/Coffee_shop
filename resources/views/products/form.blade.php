@@ -1,6 +1,5 @@
 @extends('layouts.admin')
 
-
 @php use Illuminate\Support\Facades\Storage; @endphp
 @php
     $productModel = $product ?? new \App\Models\Product();
@@ -99,16 +98,44 @@
                         {{-- UNIT --}}
                         <div class="pf-field">
                             <label class="pf-label" for="productUnit">
-                                Unit
-                                <span class="pf-optional">pcs, kg, box, etc.</span>
+                                Unit <span class="pf-req">*</span>
+                                <span class="pf-optional">pcs, seedling, tray, etc.</span>
                             </label>
-                            <input type="text"
-                                   id="productUnit"
-                                   name="unit"
-                                   value="{{ old('unit', $productModel->unit ?? '') }}"
-                                   class="pf-input"
-                                   placeholder="pcs"
-                                   maxlength="50">
+                            <select id="productUnit"
+                                    name="unit"
+                                    class="pf-input"
+                                    required>
+                                <option value="" disabled {{ old('unit', $productModel->unit ?? '') ? '' : 'selected' }}>— Pilia ang unit —</option>
+                                <optgroup label="Seedlings / Plants">
+                                    <option value="seedling" {{ old('unit', $productModel->unit ?? '') == 'seedling' ? 'selected' : '' }}>Seedling (per punoan)</option>
+                                    <option value="tray" {{ old('unit', $productModel->unit ?? '') == 'tray' ? 'selected' : '' }}>Tray</option>
+                                    <option value="pack" {{ old('unit', $productModel->unit ?? '') == 'pack' ? 'selected' : '' }}>Pack</option>
+                                    <option value="bundle" {{ old('unit', $productModel->unit ?? '') == 'bundle' ? 'selected' : '' }}>Bundle</option>
+                                </optgroup>
+                                <optgroup label="Weight">
+                                    <option value="kg" {{ old('unit', $productModel->unit ?? '') == 'kg' ? 'selected' : '' }}>Kilogram (kg)</option>
+                                    <option value="gram" {{ old('unit', $productModel->unit ?? '') == 'gram' ? 'selected' : '' }}>Gram (g)</option>
+                                    <option value="sack" {{ old('unit', $productModel->unit ?? '') == 'sack' ? 'selected' : '' }}>Sack</option>
+                                    <option value="ton" {{ old('unit', $productModel->unit ?? '') == 'ton' ? 'selected' : '' }}>Ton</option>
+                                </optgroup>
+                                <optgroup label="Count">
+                                    <option value="pc" {{ old('unit', $productModel->unit ?? '') == 'pc' ? 'selected' : '' }}>Piece (pc)</option>
+                                    <option value="pcs" {{ old('unit', $productModel->unit ?? '') == 'pcs' ? 'selected' : '' }}>Pieces (pcs)</option>
+                                    <option value="dozen" {{ old('unit', $productModel->unit ?? '') == 'dozen' ? 'selected' : '' }}>Dozen</option>
+                                </optgroup>
+                                <optgroup label="Packaging">
+                                    <option value="box" {{ old('unit', $productModel->unit ?? '') == 'box' ? 'selected' : '' }}>Box</option>
+                                    <option value="bag" {{ old('unit', $productModel->unit ?? '') == 'bag' ? 'selected' : '' }}>Bag</option>
+                                    <option value="bottle" {{ old('unit', $productModel->unit ?? '') == 'bottle' ? 'selected' : '' }}>Bottle</option>
+                                    <option value="can" {{ old('unit', $productModel->unit ?? '') == 'can' ? 'selected' : '' }}>Can</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="lot" {{ old('unit', $productModel->unit ?? '') == 'lot' ? 'selected' : '' }}>Lot</option>
+                                    <option value="set" {{ old('unit', $productModel->unit ?? '') == 'set' ? 'selected' : '' }}>Set</option>
+                                    <option value="unit" {{ old('unit', $productModel->unit ?? '') == 'unit' ? 'selected' : '' }}>Unit</option>
+                                    <option value="other" {{ old('unit', $productModel->unit ?? '') == 'other' ? 'selected' : '' }}>Other</option>
+                                </optgroup>
+                            </select>
                             @error('unit')
                                 <div class="pf-field-err">{{ $message }}</div>
                             @enderror
@@ -304,62 +331,10 @@
                 </div>
             </div>
 
-            {{-- ═══ ④ PRODUCT IMAGE ═══ --}}
+            {{-- ═══ ④ STATUS ═══ --}}
             <div class="pf-card">
                 <div class="pf-card-head">
                     <div class="pf-card-num">4</div>
-                    <div>
-                        <div class="pf-card-title">Product Image</div>
-                        <div class="pf-card-sub">JPG, PNG, or WebP · Max 2MB</div>
-                    </div>
-                </div>
-
-                <div class="pf-card-body">
-                    <div class="pf-image-upload">
-                        <input type="file"
-                               id="productImageInput"
-                               name="image"
-                               accept="image/jpeg,image/png,image/jpg,image/webp"
-                               onchange="pfPreviewImage(event)"
-                               style="display:none;">
-
-                        <div class="pf-image-drop" id="pfImageDrop" onclick="document.getElementById('productImageInput').click();">
-                            <div class="pf-image-drop-icon">
-                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                    <path d="M17 8l-5-5-5 5M12 3v12"/>
-                                </svg>
-                            </div>
-                            <div class="pf-image-drop-title">Click to upload image</div>
-                            <div class="pf-image-drop-sub">or drag and drop</div>
-                        </div>
-
-                        <div class="pf-image-preview" id="pfImagePreview" style="display:none;">
-                            <img id="pfImagePreviewImg" alt="Preview">
-                            <button type="button" class="pf-image-remove" onclick="pfRemoveImage(event)" title="Remove">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path d="M18 6L6 18M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </div>
-
-                        @if($isEdit && !empty($productModel->getRawOriginal('image')))
-                            <div class="pf-image-current">
-                                <div class="pf-image-current-lbl">Current image</div>
-                                <img src="{{ $productModel->image_url }}" alt="Current" class="pf-image-current-thumb">
-                            </div>
-                        @endif
-                    </div>
-                    @error('image')
-                        <div class="pf-field-err" style="margin-top:8px;">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-
-            {{-- ═══ ⑤ STATUS ═══ --}}
-            <div class="pf-card">
-                <div class="pf-card-head">
-                    <div class="pf-card-num">5</div>
                     <div>
                         <div class="pf-card-title">Status</div>
                         <div class="pf-card-sub">Active or inactive</div>
@@ -388,39 +363,60 @@
 
         {{-- ═════════ RIGHT COLUMN (SIDEBAR) ═════════ --}}
         <aside class="pf-sidebar">
-            <div class="pf-preview-card">
-                <div class="pf-preview-head">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <span>Live Preview</span>
-                </div>
 
-                <div class="pf-preview-image" id="pfPreviewImage">
-                    @if($isEdit && !empty($productModel->getRawOriginal('image')))
-                        <img src="{{ $productModel->image_url }}" alt="Preview">
-                    @else
-                        <div class="pf-preview-placeholder">
-                            <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <path d="M21 15l-5-5L5 21"/>
-                            </svg>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="pf-preview-info">
-                    <div class="pf-preview-name" id="pfPreviewName">{{ $productModel->name ?: 'Product Name' }}</div>
-                    <div class="pf-preview-sku">{{ $productModel->sku ?? 'CB-XXXXX' }}</div>
-                    <div class="pf-preview-price">
-                        <span class="currency">₱</span><span id="pfPreviewPrice">{{ number_format($productModel->price ?? 0, 2) }}</span>
+            {{-- ═══ PRODUCT IMAGE ═══ --}}
+            <div class="pf-card">
+                <div class="pf-card-head">
+                    <div class="pf-card-num">5</div>
+                    <div>
+                        <div class="pf-card-title">Product Image</div>
+                        <div class="pf-card-sub">JPG, PNG, or WebP · Max 2MB</div>
                     </div>
+                </div>
+
+                <div class="pf-card-body">
+                    <div class="pf-image-upload">
+                        <input type="file"
+                               id="productImageInput"
+                               name="image"
+                               accept="image/jpeg,image/png,image/jpg,image/webp"
+                               onchange="pfPreviewImage(event)"
+                               style="display:none;">
+
+                        <div class="pf-image-drop" id="pfImageDrop" onclick="document.getElementById('productImageInput').click();">
+                            <div class="pf-image-drop-icon">
+                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <path d="M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                            </div>
+                            <div class="pf-image-drop-title">Click to upload</div>
+                            <div class="pf-image-drop-sub">or drag and drop</div>
+                        </div>
+
+                        <div class="pf-image-preview" id="pfImagePreview" style="display:none;">
+                            <img id="pfImagePreviewImg" alt="Preview">
+                            <button type="button" class="pf-image-remove" onclick="pfRemoveImage(event)" title="Remove">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        @if($isEdit && !empty($productModel->getRawOriginal('image')))
+                            <div class="pf-image-current">
+                                <div class="pf-image-current-lbl">Current image</div>
+                                <img src="{{ $productModel->image_url }}" alt="Current" class="pf-image-current-thumb">
+                            </div>
+                        @endif
+                    </div>
+                    @error('image')
+                        <div class="pf-field-err" style="margin-top:8px;">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
 
-            {{-- SAVE ACTIONS --}}
+            {{-- ═══ SAVE ACTIONS ═══ --}}
             <div class="pf-actions-card">
                 <button type="submit" class="pf-btn pf-btn-primary">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -433,7 +429,7 @@
                 </a>
             </div>
 
-            {{-- TIPS --}}
+            {{-- ═══ TIPS ═══ --}}
             <div class="pf-tips">
                 <div class="pf-tips-head">
                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -487,9 +483,7 @@
         from { opacity: 0; transform: translateY(-12px) scale(0.98); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .pf-errors-head {
-        display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
-    }
+    .pf-errors-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .pf-errors-icon {
         width: 40px; height: 40px; border-radius: 11px;
         background: rgba(239, 68, 68, 0.18);
@@ -601,6 +595,27 @@
     }
     .pf-input::placeholder { color: #52525b; }
 
+    select.pf-input {
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9a961' stroke-width='2.5' stroke-linecap='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        background-size: 14px;
+        padding-right: 40px;
+    }
+    select.pf-input option,
+    select.pf-input optgroup {
+        background: #1E1A16;
+        color: #fafafa;
+    }
+    select.pf-input optgroup {
+        color: #c9a961;
+        font-weight: 800;
+        font-style: normal;
+    }
+
     .pf-textarea { resize: vertical; min-height: 80px; font-family: inherit; line-height: 1.55; }
 
     .pf-field-err {
@@ -626,10 +641,7 @@
         background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.4), transparent);
     }
 
-    .pf-profit-head {
-        display: flex; align-items: center; gap: 10px;
-        margin-bottom: 14px;
-    }
+    .pf-profit-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .pf-profit-head-icon {
         width: 28px; height: 28px; border-radius: 8px;
         background: rgba(34, 197, 94, 0.15);
@@ -641,19 +653,12 @@
         font-size: 11px; font-weight: 800; color: #22c55e;
         text-transform: uppercase; letter-spacing: 0.1em;
     }
-    .pf-profit-hint {
-        margin-left: auto;
-        font-size: 10.5px; font-weight: 700;
-        color: #71717a;
-    }
+    .pf-profit-hint { margin-left: auto; font-size: 10.5px; font-weight: 700; color: #71717a; }
     .pf-profit-hint.good { color: #22c55e; }
     .pf-profit-hint.low { color: #f59e0b; }
     .pf-profit-hint.bad { color: #ef4444; }
 
-    .pf-profit-grid {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-        margin-bottom: 12px;
-    }
+    .pf-profit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
     .pf-profit-cell {
         padding: 10px 12px;
         background: rgba(0, 0, 0, 0.25);
@@ -682,10 +687,7 @@
     .pf-profit-val.green { color: #22c55e; }
     .pf-profit-val.red { color: #ef4444; }
 
-    .pf-profit-bar {
-        height: 6px; background: rgba(255, 255, 255, 0.05);
-        border-radius: 3px; overflow: hidden;
-    }
+    .pf-profit-bar { height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden; }
     .pf-profit-bar-fill {
         height: 100%; width: 0%;
         background: linear-gradient(90deg, #22c55e, #16a34a);
@@ -785,63 +787,11 @@
         transform: translateX(22px);
         background: #fff;
     }
-    .pf-toggle-text strong {
-        display: block; font-size: 13px; font-weight: 800;
-        color: #fafafa; margin-bottom: 2px;
-    }
-    .pf-toggle-text em {
-        font-style: normal; font-size: 11px; color: #71717a;
-    }
+    .pf-toggle-text strong { display: block; font-size: 13px; font-weight: 800; color: #fafafa; margin-bottom: 2px; }
+    .pf-toggle-text em { font-style: normal; font-size: 11px; color: #71717a; }
 
     /* ═══ SIDEBAR ═══ */
-    .pf-sidebar {
-        display: flex; flex-direction: column; gap: 14px;
-        position: sticky; top: 90px;
-    }
-
-    .pf-preview-card {
-        padding: 16px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
-    }
-    .pf-preview-head {
-        display: flex; align-items: center; gap: 7px;
-        font-size: 10px; font-weight: 800;
-        color: #c9a961;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        margin-bottom: 14px;
-    }
-
-    .pf-preview-image {
-        width: 100%; aspect-ratio: 1;
-        border-radius: 12px;
-        overflow: hidden;
-        background: rgba(0, 0, 0, 0.3);
-        display: grid; place-items: center;
-        margin-bottom: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .pf-preview-image img { width: 100%; height: 100%; object-fit: cover; }
-    .pf-preview-placeholder { color: rgba(201, 169, 97, 0.35); }
-
-    .pf-preview-info { text-align: center; }
-    .pf-preview-name {
-        font-size: 14px; font-weight: 800; color: #fafafa;
-        margin-bottom: 4px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .pf-preview-sku {
-        font-size: 10.5px; color: #71717a;
-        font-family: ui-monospace, monospace;
-        margin-bottom: 10px;
-    }
-    .pf-preview-price {
-        font-size: 24px; font-weight: 800; color: #c9a961;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.02em;
-    }
-    .pf-preview-price .currency { font-size: 14px; margin-right: 2px; }
+    .pf-sidebar { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 90px; }
 
     .pf-actions-card {
         display: flex; flex-direction: column; gap: 10px;
@@ -875,10 +825,7 @@
         border-color: rgba(255, 255, 255, 0.1);
         color: #d4d4d8;
     }
-    .pf-btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: #fafafa;
-    }
+    .pf-btn-ghost:hover { background: rgba(255, 255, 255, 0.08); color: #fafafa; }
 
     .pf-tips {
         padding: 14px 16px;
@@ -893,10 +840,7 @@
         text-transform: uppercase; letter-spacing: 0.12em;
         margin-bottom: 10px;
     }
-    .pf-tips ul {
-        list-style: none; padding: 0; margin: 0;
-        display: flex; flex-direction: column; gap: 6px;
-    }
+    .pf-tips ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
     .pf-tips li {
         position: relative; padding-left: 16px;
         font-size: 11px; color: #a1a1aa; line-height: 1.5;
@@ -910,7 +854,6 @@
     @media (max-width: 1100px) {
         .pf-layout { grid-template-columns: 1fr; }
         .pf-sidebar { position: static; }
-        .pf-preview-card { display: none; }
     }
     @media (max-width: 700px) {
         .pf-row { grid-template-columns: 1fr; gap: 14px; }
@@ -1028,10 +971,6 @@
             document.getElementById('pfImageDrop').style.display = 'none';
             document.getElementById('pfImagePreview').style.display = 'block';
             document.getElementById('pfImagePreviewImg').src = e.target.result;
-
-            // Preview sidebar
-            var pImg = document.getElementById('pfPreviewImage');
-            pImg.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
         };
         reader.readAsDataURL(file);
     };

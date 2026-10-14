@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#FDF8F3">
-    <title>Admin Login - RYS Coffee Beans</title>
+    <title>Admin Login - RYS Farm Products Dealer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -63,7 +63,7 @@
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* ═══ LEFT — ROASTED COFFEE BEANS BACKGROUND ═══ */
+        /* ═══ LEFT — ROASTED RYS FARM PRODUCTS DEALER BACKGROUND ═══ */
         .login-left {
             position: relative;
             background-image: url('{{ asset('images/OIP.webp') }}');
@@ -626,7 +626,7 @@
 
 <div class="login-card">
 
-    {{-- ═══ LEFT — ROASTED COFFEE BEANS + OVERLAP CUP ═══ --}}
+    {{-- ═══ LEFT — ROASTED RYS FARM PRODUCTS DEALER + OVERLAP CUP ═══ --}}
     <div class="login-left">
 
         <div class="left-title">

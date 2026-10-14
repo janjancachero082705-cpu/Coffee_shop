@@ -631,7 +631,7 @@
             <img src="{{ asset('images/logo.png') }}" alt="RYS Farm Products Dealer">
         </div>
         <h1 class="welcome-title">Welcome to <span class="accent">RYS Coffee</span></h1>
-        <p class="welcome-sub">Your trusted wholesale &amp; retail partner for premium coffee beans.</p>
+        <p class="welcome-sub">Your trusted wholesale &amp; retail partner for premium farm products.</p>
     </div>
 
     <div class="swipe-hint" id="swipeHint">

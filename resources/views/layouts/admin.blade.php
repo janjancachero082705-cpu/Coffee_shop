@@ -840,7 +840,7 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
                     </svg>
                 </div>
                 <div>
-                    <div class="brand-name">Coffee Beans</div>
+                    <div class="brand-name">RYS Farm Products Dealer</div>
                     <div class="brand-role">Consignment</div>
                 </div>
             </div>
@@ -999,7 +999,7 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             </main>
 
             <footer class="foot">
-                <div>&copy; {{ date('Y') }} Coffee Beans - Consignment System</div>
+                <div>&copy; {{ date('Y') }} RYS Farm Products Dealer - Consignment System</div>
                 <div>v1.0</div>
             </footer>
         </div>
@@ -1119,18 +1119,61 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
                     amountHtml = '<span style="color:#3b82f6;font-weight:700;font-size:10px;">LOGIN</span>';
                 }
 
-                html += '<a href="' + o.url + '" class="notif-item" onclick="markRead(' + o.id + ')">';
+                html += '<a href="' + (o.url || '#') + '" class="notif-item" data-id="' + o.id + '" data-url="' + (o.url || '') + '">';
                 html += '<div class="notif-item-avatar">' + avatar + '</div>';
                 html += '<div class="notif-item-body">';
                 html += '<div class="notif-item-store">' + o.store_name + '</div>';
                 html += '<div class="notif-item-meta">';
                 html += '<span>' + label + ' - ' + o.ago + '</span>';
                 html += amountHtml;
-                html += '</div></div></a>';
+                html += '</div></div>';
+                html += '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:#7a7a85;flex-shrink:0;align-self:center;"><path d="M9 18l6-6-6-6"/></svg>';
+                html += '</a>';
             }
             body.innerHTML = html;
         }
 
+        // ═══ NOTIFICATION CLICK → MARK READ → NAVIGATE ═══
+        document.addEventListener('click', function(e) {
+            var item = e.target.closest('.notif-item');
+            if (!item) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var id = item.getAttribute('data-id');
+            var url = item.getAttribute('data-url');
+            
+            // Visual feedback
+            item.style.opacity = '0.6';
+            
+            // Mark as read via AJAX (fire and forget — don't wait)
+            if (id) {
+                fetch(markReadBase + '/' + id + '/read', {
+                    method: 'POST',
+                    headers: { 
+                        'X-CSRF-TOKEN': csrfToken, 
+                        'Accept': 'application/json', 
+                        'X-Requested-With': 'XMLHttpRequest' 
+                    },
+                    credentials: 'same-origin',
+                    keepalive: true
+                }).catch(function() {});
+            }
+            
+            // Navigate immediately (don't wait for AJAX)
+            if (url && url !== '' && url !== '#') {
+                window.location.href = url;
+            } else {
+                // Fallback: close dropdown, refresh list
+                var dd = document.getElementById('notifDropdown');
+                if (dd) dd.classList.remove('open');
+                item.style.opacity = '1';
+                poll();
+            }
+        });
+
+        // Keep backward compatibility
         function markRead(id) {
             fetch(markReadBase + '/' + id + '/read', {
                 method: 'POST',

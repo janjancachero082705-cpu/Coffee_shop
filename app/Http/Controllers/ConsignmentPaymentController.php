@@ -259,7 +259,8 @@ class ConsignmentPaymentController extends Controller
                     'total' => $total,
                     'paid' => $paid,
                     'amount' => (float) $payment->amount,
-                ]
+                ],
+                $payment->id
             );
         } catch (\Throwable $e) {
             \Log::warning('Notification failed: ' . $e->getMessage());
@@ -299,7 +300,8 @@ class ConsignmentPaymentController extends Controller
                 'payment_rejected',
                 'Payment Rejected',
                 "Ang imong bayad {$payment->payment_number} gi-reject. Reason: {$request->rejection_reason}",
-                ['payment_id' => $payment->id]
+                ['payment_id' => $payment->id],
+                $payment->id
             );
         } catch (\Throwable $e) {
             \Log::warning('Notification failed: ' . $e->getMessage());

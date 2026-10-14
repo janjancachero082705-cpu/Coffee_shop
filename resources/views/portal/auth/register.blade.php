@@ -32,7 +32,7 @@
             position: relative;
         }
 
-        /* ═══ HERO — COFFEE BEANS ═══ */
+        /* ═══ HERO — RYS FARM PRODUCTS DEALER ═══ */
         .hero {
             position: relative;
             height: 42vh;
