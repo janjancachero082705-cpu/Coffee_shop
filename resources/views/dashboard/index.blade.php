@@ -239,40 +239,50 @@
     </section>
 
     {{-- ORDERS STATUS LINE CHART --}}
-    <section class="db-section">
+    <section class="db-section db-trend-section">
         <div class="db-section-head">
             <div>
                 <div class="db-section-eyebrow">ORDER STATUS TREND</div>
-                <h3 class="db-section-title">Daily Breakdown (7 days)</h3>
+                <h3 class="db-section-title">Daily Breakdown <span class="db-trend-title-sub">· Last 7 days</span></h3>
             </div>
             <div class="db-section-meta">
-                <strong>{{ array_sum($orderStatus) }}</strong> total
+                <span class="db-trend-total-pill">
+                    <span class="db-trend-total-dot"></span>
+                    <strong>{{ array_sum($orderStatus) }}</strong> total
+                </span>
             </div>
         </div>
 
-        <div class="db-linechart">
-            <div class="db-linechart-y">
-                <div class="db-y-label">{{ $maxTrendValue }}</div>
-                <div class="db-y-label">{{ round($maxTrendValue / 2) }}</div>
-                <div class="db-y-label">0</div>
+        <div class="db-trend-chart">
+            <div class="db-trend-y">
+                <div class="db-trend-y-label">{{ $maxTrendValue }}</div>
+                <div class="db-trend-y-label">{{ round($maxTrendValue / 2) }}</div>
+                <div class="db-trend-y-label">0</div>
             </div>
 
-            <div class="db-linechart-area">
-                <div class="db-linechart-grid">
-                    <div class="db-grid-line"></div>
-                    <div class="db-grid-line"></div>
-                    <div class="db-grid-line"></div>
+            <div class="db-trend-area">
+                <div class="db-trend-grid">
+                    <div class="db-trend-grid-line"></div>
+                    <div class="db-trend-grid-line"></div>
+                    <div class="db-trend-grid-line"></div>
                 </div>
 
-                <svg class="db-linechart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg class="db-trend-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="dbApprovedGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#34d399" stop-opacity="0.28"/>
+                            <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+
                     @if($trendPaths['approved'])
-                        <path d="{{ $trendPaths['approved'] }} L100,100 L0,100 Z" fill="rgba(52,211,153,0.08)"/>
+                        <path d="{{ $trendPaths['approved'] }} L100,100 L0,100 Z" fill="url(#dbApprovedGrad)"/>
                     @endif
                     @if($trendPaths['pending'])
                         <path d="{{ $trendPaths['pending'] }}" fill="none" stroke="#fbbf24" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
                     @endif
                     @if($trendPaths['approved'])
-                        <path d="{{ $trendPaths['approved'] }}" fill="none" stroke="#34d399" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="{{ $trendPaths['approved'] }}" fill="none" stroke="#34d399" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
                     @endif
                     @if($trendPaths['rejected'])
                         <path d="{{ $trendPaths['rejected'] }}" fill="none" stroke="#f87171" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
@@ -282,50 +292,67 @@
                     @endif
                 </svg>
 
-                <div class="db-linechart-points">
+                <div class="db-trend-points">
                     @foreach($orderTrend as $i => $row)
                         @php
                             $xPct = $totalDays > 1 ? ($i / ($totalDays - 1)) * 100 : 50;
+                            $isToday = $i === $totalDays - 1;
                         @endphp
-                        <div class="db-point-group" style="left: {{ $xPct }}%;">
+                        <div class="db-trend-point-group {{ $isToday ? 'is-today' : '' }}" style="left: {{ $xPct }}%;">
                             @foreach(['pending' => '#fbbf24', 'approved' => '#34d399', 'rejected' => '#f87171', 'cancelled' => '#857e76'] as $status => $color)
-                                @php
-                                    $yPct = 100 - (($row[$status] / $maxTrendValue) * 85);
-                                @endphp
-                                <div class="db-point" style="top: {{ $yPct }}%; background: {{ $color }};" title="{{ ucfirst($status) }}: {{ $row[$status] }}"></div>
+                                @php $yPct = 100 - (($row[$status] / $maxTrendValue) * 85); @endphp
+                                <div class="db-trend-point {{ $row[$status] > 0 ? 'has-value' : '' }}" style="top: {{ $yPct }}%; --pt-color: {{ $color }};" title="{{ ucfirst($status) }}: {{ $row[$status] }}">
+                                    <span class="db-trend-point-glow" style="background: {{ $color }};"></span>
+                                    <span class="db-trend-point-dot" style="background: {{ $color }};"></span>
+                                    @if($row[$status] > 0)
+                                        <span class="db-trend-point-val" style="background: {{ $color }};">{{ $row[$status] }}</span>
+                                    @endif
+                                </div>
                             @endforeach
                         </div>
                     @endforeach
                 </div>
 
-                <div class="db-linechart-x">
-                    @foreach($orderTrend as $day)
-                        <div class="db-x-label">{{ $day['label'] }}</div>
+                <div class="db-trend-x">
+                    @foreach($orderTrend as $i => $day)
+                        @php $isToday = $i === $totalDays - 1; @endphp
+                        <div class="db-trend-x-label {{ $isToday ? 'is-today' : '' }}">
+                            <span class="db-trend-x-day">{{ $day['label'] }}</span>
+                            <span class="db-trend-x-date">{{ $day['day'] }}</span>
+                        </div>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        <div class="db-linechart-legend">
-            <div class="db-legend-item">
-                <span class="db-legend-line" style="background:#fbbf24;"></span>
-                Pending
-                <span class="db-legend-count">{{ $orderStatus['pending'] }}</span>
+        <div class="db-trend-legend">
+            <div class="db-trend-legend-card db-trend-card-pending">
+                <div class="db-trend-legend-top">
+                    <span class="db-trend-legend-dot"></span>
+                    <span class="db-trend-legend-name">Pending</span>
+                </div>
+                <div class="db-trend-legend-count">{{ $orderStatus['pending'] }}</div>
             </div>
-            <div class="db-legend-item">
-                <span class="db-legend-line" style="background:#34d399;"></span>
-                Approved
-                <span class="db-legend-count">{{ $orderStatus['approved'] }}</span>
+            <div class="db-trend-legend-card db-trend-card-approved">
+                <div class="db-trend-legend-top">
+                    <span class="db-trend-legend-dot"></span>
+                    <span class="db-trend-legend-name">Approved</span>
+                </div>
+                <div class="db-trend-legend-count">{{ $orderStatus['approved'] }}</div>
             </div>
-            <div class="db-legend-item">
-                <span class="db-legend-line" style="background:#f87171;"></span>
-                Rejected
-                <span class="db-legend-count">{{ $orderStatus['rejected'] }}</span>
+            <div class="db-trend-legend-card db-trend-card-rejected">
+                <div class="db-trend-legend-top">
+                    <span class="db-trend-legend-dot"></span>
+                    <span class="db-trend-legend-name">Rejected</span>
+                </div>
+                <div class="db-trend-legend-count">{{ $orderStatus['rejected'] }}</div>
             </div>
-            <div class="db-legend-item">
-                <span class="db-legend-line" style="background:#857e76;"></span>
-                Cancelled
-                <span class="db-legend-count">{{ $orderStatus['cancelled'] }}</span>
+            <div class="db-trend-legend-card db-trend-card-cancelled">
+                <div class="db-trend-legend-top">
+                    <span class="db-trend-legend-dot"></span>
+                    <span class="db-trend-legend-name">Cancelled</span>
+                </div>
+                <div class="db-trend-legend-count">{{ $orderStatus['cancelled'] }}</div>
             </div>
         </div>
     </section>
@@ -1444,6 +1471,335 @@
         animation: none !important;
         transition: none !important;
     }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* DB-TREND-PREMIUM — Order Status Trend redesign  */
+/* ═══════════════════════════════════════════════ */
+
+.db-trend-section { position: relative; }
+
+.db-trend-title-sub {
+    color: var(--db-ink-3, #857e76);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0;
+    margin-left: 4px;
+}
+
+/* ═══ Total pill sa section head ═══ */
+.db-trend-total-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 10px;
+    background: rgba(212, 179, 106, 0.1);
+    border: 1px solid rgba(212, 179, 106, 0.25);
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #a8a5a0;
+}
+.db-trend-total-pill strong {
+    color: #d4b36a;
+    font-weight: 800;
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", monospace;
+}
+.db-trend-total-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d4b36a;
+    box-shadow: 0 0 8px rgba(212, 179, 106, 0.7);
+    animation: dbTrendPulse 2.2s ease-in-out infinite;
+}
+@keyframes dbTrendPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.25); }
+}
+
+/* ═══ Chart wrapper ═══ */
+.db-trend-chart {
+    display: flex;
+    gap: 16px;
+    height: 220px;
+    padding: 8px 0 36px;
+    position: relative;
+}
+
+/* ═══ Y-axis ═══ */
+.db-trend-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 4px 0;
+}
+.db-trend-y-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #857e76;
+    font-family: ui-monospace, "SF Mono", monospace;
+    text-align: right;
+    min-width: 32px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 5px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+/* ═══ Chart area ═══ */
+.db-trend-area {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ═══ Grid lines ═══ */
+.db-trend-grid {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+}
+.db-trend-grid-line {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 80%, transparent);
+}
+
+/* ═══ SVG lines ═══ */
+.db-trend-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+/* ═══ Data points ═══ */
+.db-trend-points {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.db-trend-point-group {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    transform: translateX(-50%);
+}
+.db-trend-point-group.is-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(212, 179, 106, 0.35), transparent 90%);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.db-trend-point {
+    position: absolute;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 2;
+}
+.db-trend-point.has-value { z-index: 3; }
+
+/* Glow ring — hidden by default, visible sa has-value */
+.db-trend-point-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity 0.2s;
+}
+.db-trend-point.has-value .db-trend-point-glow {
+    opacity: 0.55;
+}
+
+.db-trend-point-dot {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid #1a1612;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s;
+}
+.db-trend-point.has-value .db-trend-point-dot {
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.08),
+        0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.db-trend-point:hover .db-trend-point-dot {
+    transform: scale(1.4);
+}
+
+/* Value label */
+.db-trend-point-val {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 9.5px;
+    font-weight: 800;
+    font-family: ui-monospace, "SF Mono", monospace;
+    color: #1a1612;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s, top 0.2s;
+}
+.db-trend-point.has-value .db-trend-point-val {
+    opacity: 1;
+}
+.db-trend-point:hover .db-trend-point-val {
+    top: -26px;
+}
+
+/* ═══ X-axis labels ═══ */
+.db-trend-x {
+    position: absolute;
+    bottom: -32px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+.db-trend-x-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+    transition: transform 0.15s;
+}
+.db-trend-x-day {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #857e76;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+}
+.db-trend-x-date {
+    font-size: 9px;
+    font-weight: 600;
+    color: #4a4540;
+    font-family: ui-monospace, "SF Mono", monospace;
+    line-height: 1;
+}
+.db-trend-x-label.is-today .db-trend-x-day {
+    color: #d4b36a;
+}
+.db-trend-x-label.is-today .db-trend-x-date {
+    color: #d4b36a;
+    opacity: 0.7;
+}
+
+/* ═══ Legend cards ═══ */
+.db-trend-legend {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    margin-top: 8px;
+}
+.db-trend-legend-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.2s;
+    min-width: 0;
+}
+.db-trend-legend-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+.db-trend-legend-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.db-trend-legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+}
+.db-trend-legend-name {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #a8a5a0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.db-trend-legend-count {
+    font-size: 20px;
+    font-weight: 800;
+    font-family: ui-monospace, "SF Mono", monospace;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: #fafafa;
+}
+
+/* Card color themes */
+.db-trend-card-pending .db-trend-legend-dot { background: #fbbf24; color: #fbbf24; }
+.db-trend-card-pending .db-trend-legend-count { color: #fbbf24; }
+.db-trend-card-approved .db-trend-legend-dot { background: #34d399; color: #34d399; }
+.db-trend-card-approved .db-trend-legend-count { color: #34d399; }
+.db-trend-card-rejected .db-trend-legend-dot { background: #f87171; color: #f87171; }
+.db-trend-card-rejected .db-trend-legend-count { color: #f87171; }
+.db-trend-card-cancelled .db-trend-legend-dot { background: #857e76; color: #857e76; }
+.db-trend-card-cancelled .db-trend-legend-count { color: #a8a5a0; }
+
+/* ═══ Responsive ═══ */
+@media (max-width: 900px) {
+    .db-trend-chart { height: 190px; padding: 6px 0 34px; }
+    .db-trend-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .db-trend-legend-count { font-size: 18px; }
+}
+@media (max-width: 520px) {
+    .db-trend-chart { height: 170px; }
+    .db-trend-y-label { font-size: 9px; min-width: 26px; padding: 2px 5px; }
+    .db-trend-x-day { font-size: 9.5px; }
+    .db-trend-x-date { font-size: 8px; }
+    .db-trend-legend-card { padding: 8px 10px; }
+    .db-trend-legend-name { font-size: 9.5px; }
+    .db-trend-legend-count { font-size: 16px; }
+    .db-trend-point-val { font-size: 8.5px; padding: 2px 5px; }
 }
 </style>
 @endpush

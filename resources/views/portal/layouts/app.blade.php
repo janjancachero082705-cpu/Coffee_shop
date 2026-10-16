@@ -1198,7 +1198,732 @@
             width: fit-content;
             box-shadow: 0 2px 4px rgba(78, 52, 46, 0.2);
         }
-    </style>
+    
+/* ═══════════════════════════════════════════════ */
+/* COMPACT-NAV-OVERRIDE                            */
+/* Icon-focused nav links — smaller text labels   */
+/* ═══════════════════════════════════════════════ */
+
+/* Nav links — reduced size */
+.p-sidebar-nav .p-sidebar-link {
+    padding: 10px 12px;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 42px;
+}
+
+.p-sidebar-nav .p-sidebar-link svg {
+    width: 18px;
+    height: 18px;
+    color: #B0B0B0;
+    transition: color 0.15s;
+}
+
+.p-sidebar-nav .p-sidebar-link span {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: var(--text-body);
+}
+
+/* Active state — mas compact */
+.p-sidebar-nav .p-sidebar-link.active {
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.p-sidebar-nav .p-sidebar-link.active svg {
+    color: #FFFFFF;
+}
+
+/* Section titles — mas subtle */
+.p-sidebar-nav .p-sidebar-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: #B0B0B0;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    padding-left: 12px;
+}
+
+/* Sidebar footer links — keep text, slightly smaller */
+.p-sidebar-foot .p-sidebar-foot-link {
+    padding: 11px 14px;
+    font-size: 14px;
+    gap: 12px;
+}
+
+.p-sidebar-foot .p-sidebar-foot-link svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ═══ SIDEBAR WIDTH — mas compact ═══ */
+.p-sidebar {
+    max-width: 300px;
+}
+
+/* ═══ BRAND — keep full size (logo + name) ═══ */
+.p-sidebar-head {
+    padding: 22px 18px;
+}
+
+.p-sidebar-brand-name {
+    font-size: 22px; /* keep prominent */
+}
+
+.p-sidebar-brand-line {
+    font-size: 9.5px;
+}
+
+.p-sidebar-brand-tag {
+    font-size: 8px;
+}
+
+/* ═══ MOBILE RESPONSIVE ═══ */
+@media (max-width: 480px) {
+    .p-sidebar-nav .p-sidebar-link {
+        padding: 9px 10px;
+        gap: 10px;
+        font-size: 12.5px;
+    }
+    .p-sidebar-nav .p-sidebar-link svg {
+        width: 17px;
+        height: 17px;
+    }
+    .p-sidebar-nav .p-sidebar-link span {
+        font-size: 12.5px;
+    }
+    .p-sidebar-section-title {
+        font-size: 9.5px;
+        padding-left: 10px;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* COMPACT-SIDEBAR-V2                              */
+/* Minimize nav + profile + logout + email         */
+/* Keep logo + business name at full size          */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ NAV LINKS — smaller ═══ */
+.p-sidebar-nav .p-sidebar-link {
+    padding: 9px 11px;
+    gap: 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    min-height: 40px;
+    border-radius: 10px;
+}
+
+.p-sidebar-nav .p-sidebar-link svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.p-sidebar-nav .p-sidebar-link span {
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.2;
+}
+
+/* ═══ SECTION TITLES — smaller ═══ */
+.p-sidebar-nav .p-sidebar-section-title {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    margin-top: 14px;
+    margin-bottom: 5px;
+    padding-left: 11px;
+    opacity: 0.7;
+}
+
+.p-sidebar-nav .p-sidebar-section:first-child .p-sidebar-section-title {
+    margin-top: 0;
+}
+
+/* ═══ USER CARD (avatar + name + email) ═══ */
+.p-sidebar-foot .p-sidebar-user {
+    padding: 10px 12px;
+    gap: 10px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+}
+
+.p-sidebar-foot .p-sidebar-user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+}
+
+.p-sidebar-foot .p-sidebar-user-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.p-sidebar-foot .p-sidebar-user-email {
+    font-size: 10.5px;
+    font-weight: 500;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+}
+
+/* ═══ PROFILE + LOGOUT BUTTONS — smaller ═══ */
+.p-sidebar-foot .p-sidebar-foot-link {
+    padding: 9px 11px;
+    gap: 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    min-height: 40px;
+    border-radius: 10px;
+    margin-bottom: 2px;
+}
+
+.p-sidebar-foot .p-sidebar-foot-link svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.p-sidebar-foot .p-sidebar-foot-link span {
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+/* ═══ SIDEBAR PADDING — tighter ═══ */
+.p-sidebar-nav {
+    padding: 14px 12px;
+}
+
+.p-sidebar-foot {
+    padding: 12px;
+}
+
+/* ═══ BRAND — keep prominent (logo + name) ═══ */
+.p-sidebar-head {
+    padding: 20px 18px;
+}
+
+.p-sidebar-brand-name {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+}
+
+.p-sidebar-brand-line {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+
+.p-sidebar-brand-tag {
+    font-size: 8.5px;
+    letter-spacing: 0.16em;
+    padding: 4px 8px;
+}
+
+.p-sidebar-logo {
+    width: 52px;
+    height: 52px;
+}
+
+/* ═══ MOBILE — extra compact ═══ */
+@media (max-width: 480px) {
+    .p-sidebar-nav .p-sidebar-link {
+        padding: 8px 10px;
+        gap: 10px;
+        font-size: 12px;
+        min-height: 38px;
+    }
+    .p-sidebar-nav .p-sidebar-link svg {
+        width: 16px;
+        height: 16px;
+    }
+    .p-sidebar-nav .p-sidebar-link span {
+        font-size: 12px;
+    }
+    .p-sidebar-section-title {
+        font-size: 9px;
+        padding-left: 10px;
+    }
+    .p-sidebar-foot .p-sidebar-foot-link {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-height: 38px;
+    }
+    .p-sidebar-foot .p-sidebar-foot-link svg {
+        width: 16px;
+        height: 16px;
+    }
+    .p-sidebar-foot .p-sidebar-user {
+        padding: 8px 10px;
+    }
+    .p-sidebar-foot .p-sidebar-user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
+    }
+    .p-sidebar-foot .p-sidebar-user-name {
+        font-size: 12px;
+    }
+    .p-sidebar-foot .p-sidebar-user-email {
+        font-size: 10px;
+    }
+    .p-sidebar-head {
+        padding: 16px 14px;
+    }
+    .p-sidebar-brand-name {
+        font-size: 20px;
+    }
+    .p-sidebar-brand-line {
+        font-size: 9px;
+    }
+    .p-sidebar-brand-tag {
+        font-size: 7.5px;
+        padding: 3px 6px;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* COMPACT-BELL-MOBILE                             */
+/* Smaller bell button sa mobile screens           */
+/* ═══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    /* Bell button — smaller */
+    .pn-bell {
+        width: 38px;
+        height: 38px;
+        top: 12px;
+        right: 12px;
+        border-radius: 10px;
+    }
+
+    /* Bell icon — smaller */
+    .pn-bell > svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    /* Notification badge — smaller */
+    .pn-bell .pn-badge {
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        font-size: 9px;
+        top: -5px;
+        right: -5px;
+        border-width: 2px;
+    }
+
+    /* Panel adjustments */
+    .pn-panel {
+        top: 58px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: none;
+        border-radius: 14px;
+    }
+
+    /* Hamburger — match ang bell size */
+    .p-float-hamburger {
+        width: 38px !important;
+        height: 38px !important;
+        top: 12px !important;
+        left: 12px !important;
+        border-radius: 10px !important;
+    }
+
+    .p-float-hamburger svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    /* Topbar padding adjust */
+    .p-topbar {
+        padding: 12px 60px 12px 60px !important;
+    }
+
+    .p-topbar-store-name {
+        font-size: 15px !important;
+    }
+
+    .p-topbar-store-code {
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small sa gamay nga phone */
+    .pn-bell {
+        width: 34px;
+        height: 34px;
+        top: 10px;
+        right: 10px;
+        border-radius: 9px;
+    }
+
+    .pn-bell > svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .pn-bell .pn-badge {
+        min-width: 14px;
+        height: 14px;
+        padding: 0 3px;
+        font-size: 8px;
+        border-width: 1.5px;
+    }
+
+    .pn-panel {
+        top: 52px;
+        right: 8px;
+        left: 8px;
+    }
+
+    .p-float-hamburger {
+        width: 34px !important;
+        height: 34px !important;
+        top: 10px !important;
+        left: 10px !important;
+        border-radius: 9px !important;
+    }
+
+    .p-float-hamburger svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .p-topbar {
+        padding: 10px 54px 10px 54px !important;
+    }
+
+    .p-topbar-store-name {
+        font-size: 14px !important;
+    }
+
+    .p-topbar-store-code {
+        font-size: 9.5px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL (iPhone SE, etc.) ═══ */
+@media (max-width: 360px) {
+    .pn-bell {
+        width: 32px;
+        height: 32px;
+    }
+
+    .pn-bell > svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .p-float-hamburger {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .p-float-hamburger svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .p-topbar {
+        padding: 10px 50px 10px 50px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HAMBURGER-POSITION-ADJUST                       */
+/* Move hamburger button down for better UX        */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ DESKTOP — move down from top ═══ */
+.p-float-hamburger {
+    top: 80px !important;
+}
+
+/* ═══ TABLET + MOBILE — move down ═══ */
+@media (max-width: 768px) {
+    .p-float-hamburger {
+        top: 80px !important;
+    }
+}
+
+/* ═══ MOBILE — move down matching bell ═══ */
+@media (max-width: 480px) {
+    .p-float-hamburger {
+        top: 72px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL ═══ */
+@media (max-width: 360px) {
+    .p-float-hamburger {
+        top: 68px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HAMBURGER-SIZE-BIG                              */
+/* Bigger hamburger button — easy to tap           */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ DESKTOP + GENERAL — bigger ═══ */
+.p-float-hamburger {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 14px !important;
+    top: 24px !important;
+    left: 24px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1) !important;
+}
+
+.p-float-hamburger svg {
+    width: 26px !important;
+    height: 26px !important;
+}
+
+/* ═══ TABLET + MOBILE — bigger pud ═══ */
+@media (max-width: 768px) {
+    .p-float-hamburger {
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 13px !important;
+        top: 20px !important;
+        left: 20px !important;
+    }
+    .p-float-hamburger svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
+}
+
+/* ═══ MOBILE — still bigger ═══ */
+@media (max-width: 480px) {
+    .p-float-hamburger {
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 12px !important;
+        top: 16px !important;
+        left: 16px !important;
+    }
+    .p-float-hamburger svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL ═══ */
+@media (max-width: 360px) {
+    .p-float-hamburger {
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 12px !important;
+        top: 14px !important;
+        left: 14px !important;
+    }
+    .p-float-hamburger svg {
+        width: 21px !important;
+        height: 21px !important;
+    }
+}
+
+/* ═══ TOPBAR PADDING — adjust para dili overlap ═══ */
+.p-topbar {
+    padding-left: 92px !important;
+}
+
+@media (max-width: 768px) {
+    .p-topbar {
+        padding-left: 84px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .p-topbar {
+        padding-left: 76px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .p-topbar {
+        padding-left: 72px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HAMBURGER-SIZE-SMALL                            */
+/* Smaller white hamburger button                  */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ DESKTOP + GENERAL — smaller ═══ */
+.p-float-hamburger {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 11px !important;
+    top: 22px !important;
+    left: 22px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+}
+
+.p-float-hamburger svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* ═══ TABLET ═══ */
+@media (max-width: 768px) {
+    .p-float-hamburger {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 11px !important;
+        top: 18px !important;
+        left: 18px !important;
+    }
+    .p-float-hamburger svg {
+        width: 19px !important;
+        height: 19px !important;
+    }
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    .p-float-hamburger {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        top: 14px !important;
+        left: 14px !important;
+    }
+    .p-float-hamburger svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL ═══ */
+@media (max-width: 360px) {
+    .p-float-hamburger {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        top: 12px !important;
+        left: 12px !important;
+    }
+    .p-float-hamburger svg {
+        width: 17px !important;
+        height: 17px !important;
+    }
+}
+
+/* ═══ TOPBAR PADDING — adjust para dili overlap ═══ */
+.p-topbar {
+    padding-left: 72px !important;
+}
+
+@media (max-width: 768px) {
+    .p-topbar {
+        padding-left: 66px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .p-topbar {
+        padding-left: 60px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .p-topbar {
+        padding-left: 56px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HAMBURGER-ICON-BIG                              */
+/* Bigger icon inside small hamburger button       */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ DESKTOP — bigger icon, same button ═══ */
+.p-float-hamburger svg {
+    width: 30px !important;
+    height: 30px !important;
+    stroke-width: 2 !important;
+}
+
+/* ═══ TABLET ═══ */
+@media (max-width: 768px) {
+    .p-float-hamburger svg {
+        width: 28px !important;
+        height: 28px !important;
+    }
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    .p-float-hamburger svg {
+        width: 26px !important;
+        height: 26px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL ═══ */
+@media (max-width: 360px) {
+    .p-float-hamburger svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HAMBURGER-MOVE-DOWN-V2                          */
+/* Move hamburger button down para align topbar    */
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ DESKTOP ═══ */
+.p-float-hamburger {
+    top: 52px !important;
+    left: 22px !important;
+}
+
+/* ═══ TABLET ═══ */
+@media (max-width: 768px) {
+    .p-float-hamburger {
+        top: 48px !important;
+        left: 18px !important;
+    }
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 480px) {
+    .p-float-hamburger {
+        top: 42px !important;
+        left: 14px !important;
+    }
+}
+
+/* ═══ EXTRA SMALL ═══ */
+@media (max-width: 360px) {
+    .p-float-hamburger {
+        top: 40px !important;
+        left: 12px !important;
+    }
+}
+</style>
         @stack('styles')
 </head>
 <body>

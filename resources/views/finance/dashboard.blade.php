@@ -112,6 +112,26 @@
 
 {{-- ========== REVENUE TREND ========== --}}
 @if($dailyTrend->count() > 0)
+@php
+    /* CHART-NICE-MAX-FIX — compute nice rounded max for scaling */
+    $chartMax = $maxDailyRevenue;
+    if ($chartMax > 0) {
+        $mag  = pow(10, floor(log10($chartMax)));
+        $norm = $chartMax / $mag;
+        if ($norm <= 1)        $nice = 1;
+        elseif ($norm <= 1.5)  $nice = 1.5;
+        elseif ($norm <= 2)    $nice = 2;
+        elseif ($norm <= 2.5)  $nice = 2.5;
+        elseif ($norm <= 3)    $nice = 3;
+        elseif ($norm <= 4)    $nice = 4;
+        elseif ($norm <= 5)    $nice = 5;
+        elseif ($norm <= 7.5)  $nice = 7.5;
+        else                   $nice = 10;
+        $chartMax = $nice * $mag;
+    } else {
+        $chartMax = 1000;
+    }
+@endphp
 <section class="fin-section">
     <div class="fin-section-head">
         <div>
@@ -125,8 +145,8 @@
 
     <div class="fin-chart">
         <div class="fin-chart-y">
-            <div class="fin-chart-y-label">₱{{ number_format($maxDailyRevenue, 0) }}</div>
-            <div class="fin-chart-y-label">₱{{ number_format($maxDailyRevenue / 2, 0) }}</div>
+            <div class="fin-chart-y-label">₱{{ number_format($chartMax, 0) }}</div>
+            <div class="fin-chart-y-label">₱{{ number_format($chartMax / 2, 0) }}</div>
             <div class="fin-chart-y-label">₱0</div>
         </div>
 
@@ -139,8 +159,12 @@
             <div class="fin-chart-bars">
                 @foreach($dailyTrend as $day)
                     @php
-                        $heightPct     = $maxDailyRevenue > 0 ? ($day['revenue'] / $maxDailyRevenue) * 100 : 0;
-                        $paidHeightPct = $maxDailyRevenue > 0 ? ($day['paid']    / $maxDailyRevenue) * 100 : 0;
+                        /* Bars proportional to revenue — hard cap at 90% */
+                        $rawH = $chartMax > 0 ? ($day['revenue'] / $chartMax) * 100 : 0;
+                        $rawP = $chartMax > 0 ? ($day['paid']    / $chartMax) * 100 : 0;
+
+                        $heightPct     = min(90, max(0, $rawH));
+                        $paidHeightPct = min(90, max(0, $rawP));
                     @endphp
                     <div class="fin-bar-group"
                          title="{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }} — Revenue ₱{{ number_format($day['revenue'], 2) }} · Paid ₱{{ number_format($day['paid'], 2) }}">
@@ -1191,6 +1215,198 @@
         animation: none !important;
         transition: none !important;
     }
+}
+
+/* ═══════════════════════════════════════════════ */
+
+/* ═══ Chart container — reduce padding, add overflow ═══ */
+.fin-chart {
+    height: 240px !important;
+    padding: 10px 0 28px !important;
+    overflow: hidden !important;
+}
+
+/* ═══ Chart bars wrap — constrain ═══ */
+.fin-chart-bars-wrap {
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+/* ═══ Chart bars — proper height constraint ═══ */
+.fin-chart-bars {
+    height: 100% !important;
+    overflow: hidden !important;
+    align-items: flex-end !important;
+}
+
+/* ═══ Bar group — proper flex ═══ */
+.fin-bar-group {
+    height: 100% !important;
+    overflow: hidden !important;
+    justify-content: flex-end !important;
+}
+
+/* ═══ Bar stack — constrain height ═══ */
+.fin-bar-stack {
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    overflow: hidden !important;
+}
+
+/* ═══ Bar — constrain ═══ */
+.fin-bar {
+    max-height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* ═══ Chart y-axis — align with new padding ═══ */
+.fin-chart-y {
+    padding: 10px 0 28px !important;
+    height: 240px !important;
+    box-sizing: border-box !important;
+}
+
+.fin-chart-y-label:first-child {
+    margin-top: -4px !important;
+}
+
+.fin-chart-y-label:last-child {
+    margin-bottom: -4px !important;
+}
+
+/* ═══════════════════════════════════════════════ */
+
+.fin-chart {
+    overflow: hidden !important;
+    padding: 14px 0 32px !important;
+    height: 240px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    gap: 14px !important;
+}
+
+.fin-chart-y {
+    padding: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.fin-chart-bars-wrap {
+    flex: 1 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.fin-chart-grid {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    pointer-events: none !important;
+}
+
+.fin-chart-bars {
+    position: relative !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+    padding: 0 4px !important;
+    box-sizing: border-box !important;
+}
+
+.fin-bar-group {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+.fin-bar-stack {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 34px !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    box-sizing: border-box !important;
+}
+
+.fin-bar {
+    flex: 1 !important;
+    min-height: 2px !important;
+    max-height: 100% !important;
+    border-radius: 3px 3px 0 0 !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    align-self: flex-end !important;
+}
+
+.fin-bar-group:hover .fin-bar {
+    filter: brightness(1.2) !important;
+}
+
+/* ═══ FINAL CHART FIX — minimal + safe ═══ */
+/* Bars proportional sa revenue, walay overflow */
+
+.fin-chart {
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.fin-chart-bars-wrap {
+    overflow: hidden !important;
+    position: relative !important;
+    height: 100% !important;
+}
+
+.fin-chart-bars {
+    height: 100% !important;
+    overflow: hidden !important;
+    align-items: flex-end !important;
+}
+
+.fin-bar-group {
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+/* KEY: bar-stack needs explicit height so bar % works */
+.fin-bar-stack {
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+}
+
+/* Bar max — never exceed stack height */
+.fin-bar {
+    max-height: 100% !important;
+    align-self: flex-end !important;
+    box-sizing: border-box !important;
 }
 </style>
 @endpush

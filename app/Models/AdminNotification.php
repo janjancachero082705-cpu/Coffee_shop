@@ -3,35 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdminNotification extends Model
 {
-    protected $fillable = [
-        'type',
-        'title',
-        'message',
-        'data',
-        'read_at',
-    ];
+    protected $fillable = ['type', 'title', 'message', 'data', 'read_at'];
 
     protected $casts = [
-        'data' => 'array',
+        'data'    => 'array',
         'read_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
-    /**
-     * Store relationship via data.store_id (JSON)
-     */
-    public function getStoreAttribute(): ?Store
-    {
-        $storeId = $this->data['store_id'] ?? null;
-        return $storeId ? Store::find($storeId) : null;
-    }
-
-    // Helpers
     public function markAsRead(): void
     {
         if (!$this->read_at) {
@@ -44,14 +25,39 @@ class AdminNotification extends Model
         return is_null($this->read_at);
     }
 
-    // Scopes
-    public function scopeUnread($query)
+    public function scopeUnread($q)
     {
-        return $query->whereNull('read_at');
+        return $q->whereNull('read_at');
     }
 
-    public function scopeRecent($query, int $limit = 20)
+    public function getIconAttribute(): string
     {
-        return $query->latest()->limit($limit);
+        return match($this->type) {
+            'delivery.confirmed' => '✓',
+            'delivery.created'   => '📦',
+            'order.placed'       => '🛒',
+            'payment.created'    => '💰',
+            default              => '🔔',
+        };
+    }
+
+    public function getColorAttribute(): string
+    {
+        return match($this->type) {
+            'delivery.confirmed' => '#22c55e',
+            'delivery.created'   => '#3b82f6',
+            'order.placed'       => '#f59e0b',
+            'payment.created'    => '#a855f7',
+            default              => '#6b7280',
+        };
+    }
+
+    /**
+     * Get the store from data.store_id.
+     */
+    public function getStoreAttribute()
+    {
+        $storeId = $this->data['store_id'] ?? null;
+        return $storeId ? Store::find($storeId) : null;
     }
 }

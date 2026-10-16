@@ -5,11 +5,52 @@ namespace App\Http\Controllers;
 use App\Models\Store;
 use App\Models\ConsignmentPayment;
 use App\Models\ReorderRequest;
+use App\Models\AdminNotification;
 
 class AdminNotificationController extends Controller
 {
     public function index()
     {
+        // ===== ADMIN NOTIFICATIONS (gikan sa notifyAdmin()) =====
+        $adminNotifs = AdminNotification::unread()
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get()
+            ->map(function ($n) {
+                $data = $n->data ?? [];
+                $store = !empty($data['store_id']) ? Store::find($data['store_id']) : null;
+
+                // Dynamic type mapping
+                $typeMap = [
+                    'delivery.confirmed' => 'delivery_confirmed',
+                    'delivery.created'   => 'delivery_created',
+                    'order.placed'       => 'order_placed',
+                    'payment.created'    => 'payment_created',
+                ];
+                $frontType = $typeMap[$n->type] ?? 'admin';
+
+                return [
+                    'type' => $frontType,
+                    'raw_type' => $n->type,
+                    'id' => $n->id,
+                    'code' => 'AN-' . $n->id,
+                    'store_name' => $store?->store_name ?? 'System',
+                    'store_logo' => $store?->logo_url,
+                    'store_initials' => strtoupper(substr($store?->store_name ?? 'SY', 0, 2)),
+                    'owner' => $store?->owner_name,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'total' => null,
+                    'items' => null,
+                    'ago' => $n->created_at->diffForHumans(),
+                    'url' => $data['url'] ?? null,
+                    'color' => $n->color,
+                    'icon' => $n->icon,
+                    'created_at' => $n->created_at,
+                    'is_admin_notif' => true,
+                ];
+            });
+
         // ===== REORDER REQUESTS =====
         $requests = ReorderRequest::with(['store', 'items'])
             ->where('is_read_by_admin', false)
@@ -58,7 +99,7 @@ class AdminNotificationController extends Controller
         // ===== RECENT LOGINS (last 24h) =====
         $recentLogins = Store::whereNotNull('last_login_at')
             ->where('last_login_at', '>=', now()->subHours(24))
-            ->where('login_count', '>', 1) // dili apil ang una nga login (register)
+            ->where('login_count', '>', 1)
             ->orderByDesc('last_login_at')
             ->limit(5)
             ->get()
@@ -110,16 +151,18 @@ class AdminNotificationController extends Controller
 
         // Combine + sort by created_at
         $all = collect()
+            ->merge($adminNotifs)
             ->merge($requests)
             ->merge($newStores)
             ->merge($recentLogins)
             ->merge($payments)
             ->sortByDesc('created_at')
-            ->take(15)
+            ->take(20)
             ->values();
 
         return response()->json([
-            'count' => ReorderRequest::where('is_read_by_admin', false)->count()
+            'count' => AdminNotification::unread()->count()
+                     + ReorderRequest::where('is_read_by_admin', false)->count()
                      + Store::where('is_read_by_admin', false)->count()
                      + ConsignmentPayment::where('is_read_by_admin', false)->count(),
             'orders' => $all,
@@ -128,6 +171,16 @@ class AdminNotificationController extends Controller
 
     public function markRead($id)
     {
+        // Try AdminNotification (with prefix 'an_')
+        if (is_string($id) && str_starts_with($id, 'an_')) {
+            $realId = (int) substr($id, 3);
+            $notif = AdminNotification::find($realId);
+            if ($notif) {
+                $notif->markAsRead();
+                return response()->json(['ok' => true, 'type' => 'admin_notif']);
+            }
+        }
+
         // Try reorder request
         $req = ReorderRequest::find($id);
         if ($req) {
@@ -149,11 +202,20 @@ class AdminNotificationController extends Controller
             return response()->json(['ok' => true, 'type' => 'payment']);
         }
 
+        // Try AdminNotification (plain id, no prefix)
+        $notif = AdminNotification::find($id);
+        if ($notif) {
+            $notif->markAsRead();
+            return response()->json(['ok' => true, 'type' => 'admin_notif']);
+        }
+
         return response()->json(['ok' => false], 404);
     }
 
     public function markAllRead()
     {
+        AdminNotification::unread()->update(['read_at' => now()]);
+
         ReorderRequest::where('is_read_by_admin', false)->update([
             'is_read_by_admin' => true,
             'is_read_at' => now(),

@@ -87,6 +87,22 @@ class PortalDeliveryController extends Controller
             \Log::warning('Event failed: ' . $e->getMessage());
         }
 
+        
+        // NOTIFY ADMIN — Order Received
+        try {
+            $storeName = $delivery->store->store_name ?? 'Store';
+            $drNumber  = $delivery->dr_number ?? ('DR-' . $delivery->id);
+            notifyAdmin(
+                'delivery.confirmed',
+                'Order Received',
+                $storeName . ' confirmed receipt of ' . $drNumber,
+                route('deliveries.show', $delivery->id),
+                $delivery->store_id
+            );
+            \Log::info('[OrderReceived] Admin notified for ' . $drNumber);
+        } catch (\Throwable $e) {
+            \Log::warning('[OrderReceived] notifyAdmin failed: ' . $e->getMessage());
+        }
         return redirect()
             ->route('portal.deliveries.show', $delivery->id)
             ->with('success', 'Delivery confirmed! Sales report auto-generated.');
