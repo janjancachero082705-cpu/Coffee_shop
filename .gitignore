@@ -92,3 +92,8 @@ tmp_*.php
 *.bak-scrollmaster
 *.bak-cleanslate-*
 *.bak-autofix-*
+
+# Temp files
+/*.txt
+!public/robots.txt
+
