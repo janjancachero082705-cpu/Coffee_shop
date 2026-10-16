@@ -1810,24 +1810,56 @@
                 return;
             }
             body.innerHTML = data.notifications.map(n => `
-                <a href="${n.url || '#'}" class="pn-item unread" onclick="markRead(${n.id}, event)">
+                <a href="${n.url || '#'}" class="pn-item unread" data-id="${n.id}" data-url="${n.url || ''}">
                     <div class="pn-icon" style="background:${n.color}22;color:${n.color};">${n.icon}</div>
-                    <div>
+                    <div style="flex:1;min-width:0;">
                         <div class="pn-title">${n.title}</div>
                         <div class="pn-message">${n.message}</div>
                         <div class="pn-time">${n.created_at}</div>
                     </div>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:#9E9E9E;flex-shrink:0;align-self:center;"><path d="M9 18l6-6-6-6"/></svg>
                 </a>
             `).join('');
         }).catch(() => {});
     }
 
-    window.markRead = function(id, e) {
+    /* ═══ NOTIFICATION CLICK → MARK READ → NAVIGATE ═══ */
+    document.addEventListener('click', function(e) {
+        var item = e.target.closest('.pn-item');
+        if (!item) return;
+
         e.preventDefault();
-        fetch(`{{ route("portal.notifications.read", ":id") }}`.replace(':id', id), {
-            method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
-        }).then(() => fetchNotifications());
-    };
+        e.stopPropagation();
+
+        var id = item.getAttribute('data-id');
+        var url = item.getAttribute('data-url');
+
+        /* Visual feedback */
+        item.style.opacity = '0.6';
+        item.style.pointerEvents = 'none';
+
+        /* Mark as read via AJAX (fire-and-forget) */
+        if (id) {
+            fetch(`{{ route("portal.notifications.read", ":id") }}`.replace(':id', id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                keepalive: true
+            }).catch(function() {});
+        }
+
+        /* Navigate AGAD — dili maghulat sa AJAX */
+        if (url && url !== '' && url !== '#') {
+            window.location.href = url;
+        } else {
+            /* Fallback: close panel, refresh list */
+            var panel = document.getElementById('pnPanel');
+            if (panel) panel.classList.remove('open');
+            item.style.opacity = '1';
+            item.style.pointerEvents = '';
+            fetchNotifications();
+        }
+    });
 
     if (panel) {
         /* Mark all read */
