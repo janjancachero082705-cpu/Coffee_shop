@@ -92,12 +92,12 @@ class PortalPaymentController extends Controller
         // =====================
 
         
-        // Handle linked DR (from Sales report "Pay" button)
+        // Handle linked DR (from Sales report "Pay" button or List View)
         $linkedDR = null;
-        if ($request->filled('delivery_receipt_id')) {
+        $reqDrId = $request->input('delivery_receipt_id') ?? $request->input('dr');
+        if ($reqDrId) {
             // Remove `customer_confirmed` filter — find by ID regardless
-            $linkedDR = $store->deliveryReceipts()
-                ->find($request->input('delivery_receipt_id'));
+            $linkedDR = $store->deliveryReceipts()->find($reqDrId);
         }
 
         // === COMPUTE BALANCE ===
