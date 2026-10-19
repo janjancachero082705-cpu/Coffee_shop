@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', $delivery->dr_number)
 
@@ -78,10 +78,25 @@
 
 {{-- PAY NOW CTA --}}
 @if($isConfirmed && !$isPaid)
-    <a href="{{ route('portal.payments.create', ['dr' => $delivery->id]) }}" class="dv-pay-btn">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        Pay Now — ₱{{ number_format($remaining, 2) }}
+    @php
+    $hasPendingPayment = \App\Models\ConsignmentPayment::where('delivery_receipt_id', $delivery->id)->where('verification_status', 'pending')->exists();
+@endphp
+
+@if($hasPendingPayment)
+    {{-- Disabled na kay naay pending --}}
+    <div class="dv-pay-btn" style="background: #FEF3C7; color: #D97706; border: 1.5px solid #FDE68A; cursor: not-allowed; justify-content: center; display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-radius: 100px; font-weight: 700; width: 100%;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Waiting for Approval
+    </div>
+@else
+    {{-- Clickable pero mo-disable dayon inig click --}}
+    <a href="{{ route('portal.payments.create', ['delivery_receipt_id' => $delivery->id]) }}" 
+       onclick="this.style.pointerEvents='none'; this.style.opacity='0.6'; this.innerHTML='<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' style=\'animation: spin 1s linear infinite; margin-right: 6px;\'><circle cx=\'12\' cy=\'12\' r=\'10\' opacity=\'0.3\'/><path d=\'M12 2a10 10 0 0 1 10 10\'/></svg> Processing...';"
+       class="dv-pay-btn" style="justify-content: center; display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-radius: 100px; font-weight: 700; width: 100%;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Record Payment
     </a>
+@endif
 @endif
 
 {{-- FULLY PAID BANNER --}}
@@ -372,3 +387,5 @@
 })();
 </script>
 @endpush
+
+<style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>

@@ -206,7 +206,7 @@ class TransactionController extends Controller
                     'amount' => (float) $p->amount,
                     'status' => 'paid',
                     'description' => "{$methodLabel}" . ($p->reference_number ? " · Ref: {$p->reference_number}" : '') . ($p->deliveryReceipt ? " · DR: {$p->deliveryReceipt->dr_number}" : ''),
-                    'url' => route('consignment.payments.show', $p->id),
+                    'url' => route('consignment.payments.index'),
                     'created_at' => $p->created_at,
                 ]);
             });

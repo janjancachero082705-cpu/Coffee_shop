@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', 'Payments')
 
@@ -147,7 +147,38 @@
                     $payUrl = route('portal.payments.create', ['dr' => $dr->id]);
                     $statusKey = $isReceived ? 'paid' : 'transit';
                 @endphp
-                <a href="{{ $payUrl }}" class="pay-card">
+                @php
+    $hasPendingPayment = \App\Models\ConsignmentPayment::where('delivery_receipt_id', $dr->id)->where('verification_status', 'pending')->exists();
+@endphp
+
+@if($hasPendingPayment)
+    {{-- Waiting for Approval --}}
+    <div style="position: relative; background: #FFF; border: 1.5px solid #FDE68A; border-radius: 16px; padding: 16px; opacity: 0.8; pointer-events: none; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 15px; font-weight: 800; color: #1A1A1A; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/></svg>
+                    {{ $dr->dr_number }}
+                </div>
+                <div style="font-size: 11.5px; color: #757575; margin-top: 4px;">
+                    {{ \Carbon\Carbon::parse($dr->delivery_date)->format('M d, Y') }} · {{ $dr->items->count() }} item(s)
+                </div>
+            </div>
+            <div style="background: #FEF3C7; color: #D97706; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 100px;">
+                WAITING FOR APPROVAL
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #757575; border-top: 1px dashed #EEEEEE; padding-top: 10px;">
+            <div>₱{{ number_format($dr->amount_paid, 2) }} paid</div>
+            <div>{{ $dr->total_amount > 0 ? number_format(($dr->amount_paid / $dr->total_amount) * 100, 0) : 0 }}%</div>
+        </div>
+        <div style="margin-top: 10px;">
+            <div style="font-size: 10px; font-weight: 800; color: #757575; margin-bottom: 4px; letter-spacing: 0.05em;">AMOUNT TO PAY</div>
+            <div style="font-size: 20px; font-weight: 800; color: #D97706;">₱{{ number_format($dr->balance, 2) }}</div>
+        </div>
+    </div>
+@else
+    <a href="{{ $payUrl }}" class="pay-card">
                     <div class="pay-card-stripe" data-status="{{ $statusKey }}"></div>
 
                     <div class="pay-card-head">
@@ -195,6 +226,7 @@
                         </form>
                     @endif
                 </a>
+@endif
             @endforeach
         </div>
     @endif
@@ -493,3 +525,4 @@
 }
 </style>
 @endpush
+

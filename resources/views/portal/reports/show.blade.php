@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', $report->report_number)
 
@@ -180,10 +180,22 @@
         <div class="rs-pay-amt">₱{{ number_format($report->balance, 2) }}</div>
 
         <div class="rs-pay-btns">
-            <a href="{{ route('portal.payments.create', ['delivery_receipt_id' => $report->delivery_receipt_id, 'amount' => number_format($report->balance, 2, '.', ''), 'report_id' => $report->id]) }}" class="rs-pay-btn rs-pay-btn-full">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                Full — ₱{{ number_format($report->balance, 2) }}
-            </a>
+            @php
+    $hasPendingPayment = \App\Models\ConsignmentPayment::where('delivery_receipt_id', $report->delivery_receipt_id)->where('verification_status', 'pending')->exists();
+@endphp
+
+@if($hasPendingPayment)
+    <div class="rs-pay-btn rs-pay-btn-full" style="background: #FEF3C7; color: #D97706; border: 1.5px solid #FDE68A; cursor: not-allowed; justify-content: center; display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-radius: 100px; font-weight: 700; width: 100%;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Waiting for Approval
+    </div>
+@else
+    <a href="{{ route('portal.payments.create', ['delivery_receipt_id' => $report->delivery_receipt_id, 'amount' => number_format($report->balance, 2, '.', ''), 'report_id' => $report->id]) }}" 
+       onclick="this.style.pointerEvents='none'; this.style.opacity='0.6'; this.innerHTML='<svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' style=\'animation: spin 1s linear infinite; margin-right: 6px;\'><circle cx=\'12\' cy=\'12\' r=\'10\' opacity=\'0.3\'/><path d=\'M12 2a10 10 0 0 1 10 10\'/></svg> Processing...';"
+       class="rs-pay-btn rs-pay-btn-full" style="justify-content: center; display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-radius: 100px; font-weight: 700; width: 100%;">
+        Record Payment
+    </a>
+@endif
             <div class="rs-pay-row">
                 <a href="{{ route('portal.payments.create', ['delivery_receipt_id' => $report->delivery_receipt_id, 'amount' => number_format($report->balance / 2, 2, '.', ''), 'report_id' => $report->id]) }}" class="rs-pay-btn rs-pay-btn-half">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20"/></svg>

@@ -12,7 +12,22 @@ class PortalPaymentController extends Controller
     public function index(Request $request)
     {
         $store = Auth::guard('store')->user();
-        $payments = $store->consignmentPayments()->latest()->paginate(15);
+
+        // PER-ORDER HARD BLOCK
+        $drId = $request->input('delivery_receipt_id');
+        if ($drId) {
+            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
+                ->where('delivery_receipt_id', $drId)
+                ->where('verification_status', 'pending')
+                ->exists();
+
+            if ($hasPending) {
+                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
+            }
+        }
+        // =====================
+
+                $payments = $store->consignmentPayments()->latest()->paginate(15);
 
         $stats = [
             'total'      => $store->consignmentPayments()->count(),
@@ -39,7 +54,22 @@ class PortalPaymentController extends Controller
     public function show($id)
     {
         $store = Auth::guard('store')->user();
-        $payment = $store->consignmentPayments()->findOrFail($id);
+
+        // PER-ORDER HARD BLOCK
+        $drId = $request->input('delivery_receipt_id');
+        if ($drId) {
+            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
+                ->where('delivery_receipt_id', $drId)
+                ->where('verification_status', 'pending')
+                ->exists();
+
+            if ($hasPending) {
+                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
+            }
+        }
+        // =====================
+
+                $payment = $store->consignmentPayments()->findOrFail($id);
         return view('portal.payments.show', compact('store', 'payment'));
     }
 
@@ -47,6 +77,21 @@ class PortalPaymentController extends Controller
     {
         $store = Auth::guard('store')->user();
 
+        // PER-ORDER HARD BLOCK
+        $drId = $request->input('delivery_receipt_id');
+        if ($drId) {
+            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
+                ->where('delivery_receipt_id', $drId)
+                ->where('verification_status', 'pending')
+                ->exists();
+
+            if ($hasPending) {
+                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
+            }
+        }
+        // =====================
+
+        
         // Handle linked DR (from Sales report "Pay" button)
         $linkedDR = null;
         if ($request->filled('delivery_receipt_id')) {
@@ -83,6 +128,21 @@ class PortalPaymentController extends Controller
     {
         $store = Auth::guard('store')->user();
 
+        // PER-ORDER HARD BLOCK
+        $drId = $request->input('delivery_receipt_id');
+        if ($drId) {
+            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
+                ->where('delivery_receipt_id', $drId)
+                ->where('verification_status', 'pending')
+                ->exists();
+
+            if ($hasPending) {
+                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
+            }
+        }
+        // =====================
+
+        
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'method' => 'required|in:cash,gcash,maya,bank_transfer,check,online',
@@ -158,7 +218,7 @@ class PortalPaymentController extends Controller
         }
 
         return redirect()
-            ->route('portal.payments.show', $payment->id)
+            ->route('portal.payments.index')
             ->with('success', 'Payment submitted! Waiting for admin approval. Ma-count ra sa imong balance kung ma-approve na.');
     }
 

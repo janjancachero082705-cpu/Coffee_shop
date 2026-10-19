@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', 'Record Payment')
 
@@ -376,8 +376,8 @@
     form.addEventListener('submit', function(e) {
         validateAmount();
         if (!isValid) { e.preventDefault(); amountInput.focus(); amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-        submitBtn.disabled = true;
-        submitText.textContent = 'Saving...';
+        submitBtn.disabled = true; submitBtn.style.pointerEvents = 'none'; submitBtn.style.opacity = '0.6';
+        submitText.textContent = 'Processing...';
     });
 
     const segments = document.querySelectorAll('.pc-segment');
@@ -410,3 +410,4 @@
 })();
 </script>
 @endpush
+

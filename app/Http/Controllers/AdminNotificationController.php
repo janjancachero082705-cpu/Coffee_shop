@@ -144,7 +144,7 @@ class AdminNotificationController extends Controller
                     'total' => number_format($p->amount, 2),
                     'items' => null,
                     'ago' => $p->created_at->diffForHumans(),
-                    'url' => route('consignment.payments.show', $p->id),
+                    'url' => route('consignment.payments.index'),
                     'created_at' => $p->created_at,
                 ];
             });
