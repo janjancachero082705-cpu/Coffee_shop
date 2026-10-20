@@ -268,50 +268,7 @@ class ConsignmentPaymentController extends Controller
 
         return back()->with('success', 'Payment verified successfully. Amount is now counted sa sales report.');
     }
-
-    public function reject(Request $request, $id)
-    {
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ]);
-
-        $payment = \App\Models\ConsignmentPayment::findOrFail($id);
-
-        if (!$payment->isPending()) {
-            return back()->with('error', 'Payment is already ' . $payment->verification_status . '.');
-        }
-
-        // Explicit reject — set status + reason
-        $payment->update([
-            'verification_status' => 'rejected',
-            'verified_by' => auth()->id(),
-            'verified_at' => now(),
-            'rejection_reason' => $request->rejection_reason,
-        ]);
-        $payment->refresh();
-
-        // Recompute DR + SalesReport (rejected = dili counted)
-        $this->recalculateFromVerified($payment);
-
-        // Notify store
-        try {
-            $this->notifyStore(
-                $payment->store_id,
-                'payment_rejected',
-                'Payment Rejected',
-                "Ang imong bayad {$payment->payment_number} gi-reject. Reason: {$request->rejection_reason}",
-                ['payment_id' => $payment->id],
-                $payment->id
-            );
-        } catch (\Throwable $e) {
-            \Log::warning('Notification failed: ' . $e->getMessage());
-        }
-
-        return back()->with('success', 'Payment rejected. Store notified.');
-    }
-
-
-    // ═══════════ RECALCULATE FROM VERIFIED PAYMENTS ONLY ═══════════
+// ═══════════ RECALCULATE FROM VERIFIED PAYMENTS ONLY ═══════════
     protected function recalculateFromVerified($payment): void
     {
         // ═══════════════════════════════════════════════
@@ -365,5 +322,55 @@ class ConsignmentPaymentController extends Controller
                 }
             }
         }
+    }
+public function approve(Request $request, ConsignmentPayment $payment)
+    {
+        $payment->update([
+            'verification_status' => 'verified',
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+        ]);
+
+        // RECALCULATE DELIVERY RECEIPT BALANCE (Para mawala ang Record Payment sa Mobile)
+        if ($payment->delivery_receipt_id) {
+            $dr = \App\Models\DeliveryReceipt::find($payment->delivery_receipt_id);
+            if ($dr) {
+                $verifiedPaid = \App\Models\ConsignmentPayment::where('delivery_receipt_id', $dr->id)
+                    ->where('verification_status', 'verified')
+                    ->sum('amount');
+                
+                $dr->update([
+                    'amount_paid' => $verifiedPaid,
+                    'balance' => max(0, $dr->total_amount - $verifiedPaid)
+                ]);
+            }
+        }
+
+        // RECALCULATE SALES REPORT BALANCE
+        if ($payment->sales_report_id) {
+            $sr = \App\Models\SalesReport::find($payment->sales_report_id);
+            if ($sr) {
+                $verifiedPaid = \App\Models\ConsignmentPayment::where('sales_report_id', $sr->id)
+                    ->where('verification_status', 'verified')
+                    ->sum('amount');
+                
+                $sr->update([
+                    'amount_paid' => $verifiedPaid,
+                    'balance' => max(0, $sr->total_amount - $verifiedPaid)
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Payment approved successfully. Balances updated.');
+    }
+public function reject(Request $request, ConsignmentPayment $payment)
+    {
+        $payment->update([
+            'verification_status' => 'rejected',
+            'rejection_reason' => $request->input('reason', 'Rejected by admin'),
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+        ]);
+        return redirect()->back()->with('success', 'Payment rejected.');
     }
 }

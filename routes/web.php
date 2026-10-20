@@ -184,3 +184,15 @@ Route::middleware(['auth'])->get('reports/store/{store}', [SalesReportController
 // ===== Store-specific Transactions page =====
 Route::middleware(['auth'])->get('transactions/store/{store}', [\App\Http\Controllers\TransactionController::class, 'storeTransactions'])
     ->name('transactions.store-transactions');
+// GCash Settings
+Route::get('/admin/settings/gcash', [App\Http\Controllers\AdminSettingController::class, 'index'])->name('admin.settings.gcash');
+Route::post('/admin/settings/gcash', [App\Http\Controllers\AdminSettingController::class, 'update'])->name('admin.settings.gcash.update');
+
+// Auto-added routes for Consignment Payment Approval
+Route::middleware(['auth'])->group(function () {
+    Route::post('/consignment/payments/{payment}/approve', [App\Http\Controllers\ConsignmentPaymentController::class, 'approve'])->name('consignment.payments.approve');
+    Route::post('/consignment/payments/{payment}/reject', [App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('consignment.payments.reject');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/consignment/payments/{payment}', [App\Http\Controllers\ConsignmentPaymentController::class, 'show'])->name('consignment.payments.show');
+});

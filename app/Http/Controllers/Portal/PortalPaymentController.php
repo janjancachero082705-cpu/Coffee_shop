@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ConsignmentPayment;
+use App\Models\PaymentSetting;
+use App\Models\DeliveryReceipt;
 
 class PortalPaymentController extends Controller
 {
@@ -13,266 +14,79 @@ class PortalPaymentController extends Controller
     {
         $store = Auth::guard('store')->user();
 
-        // PER-ORDER HARD BLOCK
-        $drId = $request->input('delivery_receipt_id');
-        if ($drId) {
-            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
-                ->where('delivery_receipt_id', $drId)
-                ->where('verification_status', 'pending')
-                ->exists();
-
-            if ($hasPending) {
-                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
-            }
-        }
-        // =====================
-
-                $payments = $store->consignmentPayments()->latest()->paginate(15);
+        $payments = ConsignmentPayment::where('store_id', $store->id)->latest()->paginate(15);
 
         $stats = [
-            'total'      => $store->consignmentPayments()->count(),
-            'all_amount' => (float) $store->consignmentPayments()->sum('amount'),
-            'this_month' => (float) $store->consignmentPayments()->where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
+            'all_amount' => ConsignmentPayment::where('store_id', $store->id)->sum('amount'),
+            'total'      => ConsignmentPayment::where('store_id', $store->id)->count(),
+            'this_month' => ConsignmentPayment::where('store_id', $store->id)
+                                ->whereMonth('payment_date', now()->month)
+                                ->whereYear('payment_date', now()->year)
+                                ->sum('amount'),
+            'pending'    => ConsignmentPayment::where('store_id', $store->id)->where('verification_status', 'pending')->count(),
+            'verified'   => ConsignmentPayment::where('store_id', $store->id)->where('verification_status', 'verified')->count(),
+            'rejected'   => ConsignmentPayment::where('store_id', $store->id)->where('verification_status', 'rejected')->count(),
         ];
 
-        // PENDING DELIVERIES (out for delivery + partial unpaid)
-        $pendingDeliveries = $store->deliveryReceipts()
-            ->whereRaw('total_amount > amount_paid')
-            ->orderByDesc('created_at')
-            ->get();
+        $unpaidDRs = DeliveryReceipt::where('store_id', $store->id)
+                        ->whereColumn('total_amount', '>', 'amount_paid')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
 
-        // SALES REPORTS — for merged Finance tab
-        $salesReports = \App\Models\SalesReport::where('store_id', $store->id)
-            ->latest()
-            ->paginate(15, ['*'], 'reports_page');
-        $reportCount = \App\Models\SalesReport::where('store_id', $store->id)->count();
-        $reportTotal = (float) \App\Models\SalesReport::where('store_id', $store->id)->sum('total_sales');
-
-        return view('portal.payments.index', compact('store', 'payments', 'stats', 'salesReports', 'reportCount', 'reportTotal', 'pendingDeliveries'));
-    }
-
-    public function show($id)
-    {
-        $store = Auth::guard('store')->user();
-
-        // PER-ORDER HARD BLOCK
-        $drId = $request->input('delivery_receipt_id');
-        if ($drId) {
-            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
-                ->where('delivery_receipt_id', $drId)
-                ->where('verification_status', 'pending')
-                ->exists();
-
-            if ($hasPending) {
-                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
-            }
-        }
-        // =====================
-
-                $payment = $store->consignmentPayments()->findOrFail($id);
-        return view('portal.payments.show', compact('store', 'payment'));
+        return view('portal.payments.index', compact('store', 'payments', 'stats', 'unpaidDRs'));
     }
 
     public function create(Request $request)
     {
         $store = Auth::guard('store')->user();
+        $drId  = $request->input('delivery_receipt_id') ?? $request->input('dr');
+        $paymentSetting = PaymentSetting::first();
 
-        // PER-ORDER HARD BLOCK
-        $drId = $request->input('delivery_receipt_id');
         if ($drId) {
-            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
-                ->where('delivery_receipt_id', $drId)
-                ->where('verification_status', 'pending')
-                ->exists();
-
-            if ($hasPending) {
-                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
+            $linkedDR = DeliveryReceipt::where('store_id', $store->id)->find($drId);
+            if ($linkedDR) {
+                $displayBalance = (float) max(0, $linkedDR->balance);
+                $presetAmount   = $displayBalance;
+                $totalBalance   = $displayBalance;
+                return view('portal.payments.create', compact('store', 'linkedDR', 'displayBalance', 'presetAmount', 'totalBalance', 'paymentSetting'));
             }
         }
-        // =====================
 
-        
-        // Handle linked DR (from Sales report "Pay" button or List View)
-        $linkedDR = null;
-        $reqDrId = $request->input('delivery_receipt_id') ?? $request->input('dr');
-        if ($reqDrId) {
-            // Remove `customer_confirmed` filter — find by ID regardless
-            $linkedDR = $store->deliveryReceipts()->find($reqDrId);
-        }
-
-        // === COMPUTE BALANCE ===
-        if ($linkedDR) {
-            // Specific DR balance (para sa "Bayad Full ₱145" gikan reports)
-            $displayBalance = (float) max(0, $linkedDR->balance);
-        } else {
-            // Total unpaid across ALL DRs
-            $displayBalance = (float) $store->deliveryReceipts()
-                ->where('customer_confirmed', true)
-                ->get()
-                ->sum(fn($dr) => max(0, $dr->balance));
-        }
-
-        // Pre-fill amount — PRIORITY: URL amount > displayBalance
-        $presetAmount = $request->input('amount');
-        if ($presetAmount === null || $presetAmount === '') {
-            $presetAmount = number_format($displayBalance, 2, '.', '');
-        }
-
-        // Legacy support
-        $totalBalance = $displayBalance;
-
-        return view('portal.payments.create', compact('store', 'totalBalance', 'displayBalance', 'linkedDR', 'presetAmount'));
+        $totalBalance = (float) DeliveryReceipt::where('store_id', $store->id)->sum('balance');
+        return view('portal.payments.create', compact('store', 'totalBalance', 'paymentSetting'));
     }
 
     public function store(Request $request)
     {
         $store = Auth::guard('store')->user();
+        $drId  = $request->input('delivery_receipt_id') ?? $request->input('dr');
 
-        // PER-ORDER HARD BLOCK
-        $drId = $request->input('delivery_receipt_id');
-        if ($drId) {
-            $hasPending = \App\Models\ConsignmentPayment::where('store_id', $store->id)
-                ->where('delivery_receipt_id', $drId)
-                ->where('verification_status', 'pending')
-                ->exists();
-
-            if ($hasPending) {
-                return back()->with('error', 'You already have a pending payment for this specific order. Please wait for admin approval.');
-            }
-        }
-        // =====================
-
-        
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|in:cash,gcash,maya,bank_transfer,check,online',
-            'reference_number' => 'nullable|string|max:100',
-            'payment_date' => 'required|date',
-            'delivery_receipt_id' => 'nullable|integer|exists:delivery_receipts,id',
-            'notes' => 'nullable|string|max:500',
+        $request->validate([
+            'amount'            => 'required|numeric|min:1',
+            'method'            => 'required|string',
+            'payment_date'      => 'required|date',
+            'reference_number'  => 'required_if:method,gcash|nullable|string',
+            'proof_of_payment'  => 'required_if:method,gcash|nullable|image|max:10240',
         ]);
 
-        // === OVERPAY CHECK ===
-        $linkedDR = null;
-        if (!empty($validated['delivery_receipt_id'])) {
-            $linkedDR = $store->deliveryReceipts()->find($validated['delivery_receipt_id']);
+        $proofPath = null;
+        if ($request->hasFile('proof_of_payment')) {
+            $proofPath = $request->file('proof_of_payment')->store('receipts', 'public');
         }
 
-        if ($linkedDR) {
-            $allowedMax = (float) max(0, $linkedDR->balance);
-        } else {
-            $allowedMax = (float) $store->deliveryReceipts()
-                ->where('customer_confirmed', true)
-                ->get()
-                ->sum(fn($dr) => max(0, $dr->balance));
-        }
-
-        if ($validated['amount'] > $allowedMax + 0.01) {
-            return back()
-                ->withErrors(['amount' => 'Sobra ang gibayad. Maximum: ₱' . number_format($allowedMax, 2)])
-                ->withInput();
-        }
-
-        if (in_array($validated['method'], ['gcash', 'maya', 'bank_transfer', 'online'])
-            && empty($validated['reference_number'])) {
-            return back()
-                ->withErrors(['reference_number' => 'Reference number is required for online payments.'])
-                ->withInput();
-        }
-
-        // === AUTO-LINK TO OLDEST UNPAID DR ===
-        // Priority 1: Use linked DR (from Sales "Pay" button)
-        $targetDR = null;
-        if (!empty($validated['delivery_receipt_id'])) {
-            $targetDR = $store->deliveryReceipts()
-                ->where('customer_confirmed', true)
-                ->find($validated['delivery_receipt_id']);
-        }
-
-        // Priority 2: Auto-pick oldest unpaid DR
-        if (!$targetDR) {
-            $targetDR = $store->deliveryReceipts()
-                ->where('customer_confirmed', true)
-                ->whereRaw('total_amount > (SELECT COALESCE(SUM(amount),0) FROM consignment_payments WHERE delivery_receipt_id = delivery_receipts.id)')
-                ->orderBy('delivery_date', 'asc')
-                ->first();
-        }
-
-        $payment = ConsignmentPayment::create([
-            'verification_status' => 'pending',
-            'payment_number' => ConsignmentPayment::generateNumber(),
-            'store_id' => $store->id,
-            'delivery_receipt_id' => $targetDR?->id,
-            'user_id' => null,
-            'amount' => $validated['amount'],
-            'method' => $validated['method'],
-            'reference_number' => $validated['reference_number'] ?? null,
-            'payment_date' => $validated['payment_date'],
-            'notes' => $validated['notes'] ?? null,
-            'is_read_by_admin' => false,
+        ConsignmentPayment::create([
+            'store_id'           => $store->id,
+            'delivery_receipt_id'=> $drId,
+            'payment_number'     => 'PMT-' . date('Ymd') . '-' . strtoupper(uniqid()),
+            'amount'             => $request->amount,
+            'method'             => $request->method,
+            'reference_number'   => $request->reference_number,
+            'proof_of_payment'   => $proofPath,
+            'payment_date'       => $request->payment_date,
+            'notes'              => $request->notes,
+            'verification_status'=> 'pending',
         ]);
 
-        if ($targetDR) {
-            $this->recalculateDR($targetDR);
-            $this->syncSalesReport($targetDR);
-        }
-
-        return redirect()
-            ->route('portal.payments.index')
-            ->with('success', 'Payment submitted! Waiting for admin approval. Ma-count ra sa imong balance kung ma-approve na.');
-    }
-
-    protected function recalculateDR($dr): void
-    {
-        $totalPaid = (float) $dr->payments()->verified()->sum('amount');
-        $balance = max(0, (float) $dr->total_amount - $totalPaid);
-
-        $newStatus = $dr->status;
-        if (!in_array($dr->status, ['out_for_delivery', 'delivered'])) {
-            if ($balance <= 0.01) {
-                $newStatus = 'paid';
-            } elseif ($totalPaid > 0) {
-                $newStatus = 'partial';
-            } else {
-                $newStatus = 'pending';
-            }
-        }
-
-        $dr->update([
-            'amount_paid' => $totalPaid,
-            'balance' => $balance,
-            'status' => $newStatus,
-        ]);
-    }
-
-    protected function syncSalesReport($dr): void
-    {
-        // SYNC VIA DR LINK — use $dr->sales_report_id (not delivery_receipt_id column)
-        try {
-            $sr = $dr->sales_report_id
-                ? \App\Models\SalesReport::find($dr->sales_report_id)
-                : null;
-            if (!$sr) {
-                \Log::info('syncSalesReport: walay SalesReport para sa DR ' . $dr->id);
-                return;
-            }
-
-            // ⚠️ Use VERIFIED payments only — pending/rejected dili counted
-            $verifiedPaid = (float) \App\Models\ConsignmentPayment::where('delivery_receipt_id', $dr->id)
-                ->verified()
-                ->sum('amount');
-
-            $sr->amount_paid = $verifiedPaid;
-            if (method_exists($sr, 'recalculate')) {
-                $sr->recalculate();
-            } else {
-                $sr->balance = max(0, (float) $sr->total_sales - $verifiedPaid);
-                $sr->save();
-            }
-
-            \Log::info('syncSalesReport OK (verified only): SR ' . $sr->report_number . ' | Paid: ' . $sr->amount_paid);
-        } catch (\Exception $e) {
-            \Log::warning('syncSalesReport failed: ' . $e->getMessage());
-        }
+        return redirect()->route('portal.payments.index')->with('success', 'Payment submitted! Waiting for admin approval.');
     }
 }

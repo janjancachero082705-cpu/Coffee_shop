@@ -66,7 +66,7 @@ class PortalDeliveryController extends Controller
                 'amount_paid'     => 0,
                 'balance'         => $delivery->total_amount,
                 'status'          => 'pending',
-                'created_by'      => null,
+                'user_id' => \App\Models\User::first()->id ?? 1,
             ]);
 
             // Link sa delivery

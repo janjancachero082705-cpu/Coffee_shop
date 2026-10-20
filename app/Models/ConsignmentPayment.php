@@ -1,27 +1,24 @@
 <?php
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ConsignmentPayment extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'payment_number', 'store_id', 'delivery_receipt_id', 'sales_report_id',
-        'user_id', 'amount', 'method', 'reference_number', 'payment_date', 'notes',
-        'is_read_by_admin', 'verification_status', 'verified_by', 'verified_at', 'rejection_reason',
-        'is_read_at',
+        'store_id', 'delivery_receipt_id', 'sales_report_id', 'user_id',
+        'payment_number', 'amount', 'method', 'reference_number',
+        'proof_of_payment', 'payment_date', 'notes', 'is_read_by_admin',
+        'is_read_at', 'verification_status', 'verified_by', 'verified_at',
+        'rejection_reason'
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'payment_date' => 'date',
-        'is_read_by_admin', 'verification_status', 'verified_by', 'verified_at', 'rejection_reason' => 'boolean',
-        'is_read_at' => 'datetime',
-        'verified_at' => 'datetime',
+        'is_read_by_admin' => 'boolean',
+        'is_read_at'       => 'datetime',
+        'verified_at'      => 'datetime',
+        'payment_date'     => 'date',
+        'amount'           => 'decimal:2',
     ];
 
     public function store()
@@ -44,111 +41,23 @@ class ConsignmentPayment extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function getCreatedByLabelAttribute(): string
+    public function verifiedBy()
     {
-        if ($this->user_id && $this->user) {
-            return $this->user->name ?? 'Admin';
-        }
-        return 'Store (self-service)';
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
-    public static function generateNumber(): string
+    public function scopeVerified($q)
     {
-        $last = static::max('id') ?? 0;
-        return 'PMT-' . date('Y') . '-' . str_pad($last + 1, 4, '0', STR_PAD_LEFT);
+        return $q->where('verification_status', 'verified');
     }
 
-    // ===== METHOD ACCESSORS =====
-    public function getMethodLabelAttribute(): string
+    public function scopePending($q)
     {
-        return match ($this->method) {
-            'cash' => 'Cash',
-            'gcash' => 'GCash',
-            'maya' => 'Maya',
-            'bank_transfer' => 'Bank Transfer',
-            'check' => 'Check',
-            'online' => 'Online',
-            default => ucfirst($this->method ?? 'cash'),
-        };
+        return $q->where('verification_status', 'pending');
     }
 
-    public function getMethodIconAttribute(): string
+    public function scopeRejected($q)
     {
-        return match ($this->method) {
-            'cash' => '💵',
-            'gcash' => '📱',
-            'maya' => '💜',
-            'bank_transfer' => '🏦',
-            'check' => '📝',
-            'online' => '🌐',
-            default => '💵',
-        };
+        return $q->where('verification_status', 'rejected');
     }
-
-    public function getMethodColorAttribute(): string
-    {
-        return match ($this->method) {
-            'cash' => '#22c55e',
-            'gcash' => '#3b82f6',
-            'maya' => '#a855f7',
-            'bank_transfer' => '#f59e0b',
-            'check' => '#8a8378',
-            'online' => '#c9a961',
-            default => '#8a8378',
-        };
-    }
-
-    public function getIsOnlineAttribute(): bool
-    {
-        return in_array($this->method, ['gcash', 'maya', 'bank_transfer', 'online']);
-    }
-
-
-    // ═══════════ VERIFICATION HELPERS ═══════════
-
-    public function isPending(): bool
-    {
-        return $this->verification_status === 'pending';
-    }
-
-    public function isVerified(): bool
-    {
-        return $this->verification_status === 'verified';
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->verification_status === 'rejected';
-    }
-
-    public function verify(int $userId = null): void
-    {
-        $this->update([
-            'verification_status' => 'verified',
-            'verified_by' => $userId ?? auth()->id(),
-            'verified_at' => now(),
-            'rejection_reason' => null,
-        ]);
-    }
-
-    public function reject(string $reason, int $userId = null): void
-    {
-        $this->update([
-            'verification_status' => 'rejected',
-            'verified_by' => $userId ?? auth()->id(),
-            'verified_at' => now(),
-            'rejection_reason' => $reason,
-        ]);
-    }
-
-    // Relationships
-    public function verifier()
-    {
-        return $this->belongsTo(\App\Models\User::class, 'verified_by');
-    }
-
-    // Scopes
-    public function scopePending($q) { return $q->where('verification_status', 'pending'); }
-    public function scopeVerified($q) { return $q->where('verification_status', 'verified'); }
-    public function scopeRejected($q) { return $q->where('verification_status', 'rejected'); }
 }

@@ -1,660 +1,387 @@
 @extends('layouts.admin')
 
 @section('title', $payment->payment_number)
-@section('subtitle', 'Payment details')
+@section('subtitle', 'Payment Details')
 
 @section('content')
 
 @php
-    $vStatus = $payment->verification_status ?? 'pending';
-    $isPending = $vStatus === 'pending';
-    $isVerified = $vStatus === 'verified';
-    $isRejected = $vStatus === 'rejected';
-
-    // Hero color based on verification status
-    if ($isPending) {
-        $heroColor = '#f59e0b';
-        $heroBg = 'rgba(245,158,11,0.12)';
-        $heroLabel = 'Waiting for Approval';
-    } elseif ($isRejected) {
-        $heroColor = '#ef4444';
-        $heroBg = 'rgba(239,68,68,0.12)';
-        $heroLabel = 'Payment Rejected';
-    } else {
-        $heroColor = '#22c55e';
-        $heroBg = 'rgba(34,197,94,0.12)';
-        $heroLabel = 'Payment Verified';
+    $statusConfig = [
+        'label' => 'Pending Verification',
+        'color' => '#fbbf24', // Amber
+        'bg' => 'rgba(251, 191, 36, 0.1)',
+        'border' => 'rgba(251, 191, 36, 0.3)',
+        'icon'  => '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    ];
+    if ($payment->verification_status === 'verified') {
+        $statusConfig = [
+            'label' => 'Payment Verified',
+            'color' => '#4ade80', // Green
+            'bg' => 'rgba(74, 222, 128, 0.1)',
+            'border' => 'rgba(74, 222, 128, 0.3)',
+            'icon'  => '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',
+        ];
+    } elseif ($payment->verification_status === 'rejected') {
+        $statusConfig = [
+            'label' => 'Payment Rejected',
+            'color' => '#ef4444', // Red
+            'bg' => 'rgba(239, 68, 68, 0.1)',
+            'border' => 'rgba(239, 68, 68, 0.3)',
+            'icon'  => '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+        ];
     }
-
-    $method = $payment->method ?? 'cash';
-    $methodConfig = match($method) {
-        'cash' => [
-            'label' => 'Cash',
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>',
-            'color' => '#22c55e',
-            'bg' => 'rgba(34,197,94,0.12)',
-        ],
-        'gcash' => [
-            'label' => 'GCash',
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
-            'color' => '#3b82f6',
-            'bg' => 'rgba(59,130,246,0.12)',
-        ],
-        'maya' => [
-            'label' => 'Maya',
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
-            'color' => '#a855f7',
-            'bg' => 'rgba(168,85,247,0.12)',
-        ],
-        'bank_transfer' => [
-            'label' => 'Bank Transfer',
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v10M19 10v10M9 10v10M15 10v10M2 20h20"/></svg>',
-            'color' => '#f59e0b',
-            'bg' => 'rgba(245,158,11,0.12)',
-        ],
-        'check' => [
-            'label' => 'Check',
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
-            'color' => '#8a8378',
-            'bg' => 'rgba(138,131,120,0.12)',
-        ],
-        default => [
-            'label' => ucfirst($method),
-            'icon' => '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
-            'color' => '#c9a961',
-            'bg' => 'rgba(201,169,97,0.12)',
-        ],
-    };
 @endphp
 
-{{-- ========== HERO ========== --}}
-<div class="pay-hero" style="--method-color: {{ $methodConfig['color'] }};">
-    <div class="pay-hero-icon" style="background: {{ $methodConfig['bg'] }}; color: {{ $methodConfig['color'] }};">
-        {!! $methodConfig['icon'] !!}
-    </div>
+<div class="pro-wrapper">
 
-    <div class="pay-hero-content">
-        <div class="pay-hero-label" style="color: {{ $heroColor }};">{{ $heroLabel }}</div>
-        <div class="pay-hero-title">{{ $payment->payment_number }}</div>
-        <div class="pay-hero-meta">
-            <span class="pay-hero-method" style="background: {{ $methodConfig['bg'] }}; color: {{ $methodConfig['color'] }}; border-color: {{ $methodConfig['color'] }}33;">
-                <span class="pay-method-dot" style="background: {{ $methodConfig['color'] }};"></span>
-                {{ $methodConfig['label'] }}
-            </span>
-            <span class="pay-hero-store">{{ $payment->store->store_name ?? '-' }}</span>
-            @if($payment->store->code ?? null)
-                <span class="pay-hero-dot">·</span>
-                <span class="pay-hero-code">{{ $payment->store->code }}</span>
-            @endif
-        </div>
-    </div>
+    <!-- Back Button -->
+    <a href="{{ route('consignment.payments.index') }}" class="pro-back">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Payments</span>
+    </a>
 
-    <div class="pay-hero-amount">
-        <div class="pay-hero-amount-label">Amount Paid</div>
-        <div class="pay-hero-amount-value" style="color: {{ $heroColor }};">&#8369;{{ number_format($payment->amount, 2) }}</div>
-    </div>
-</div>
+    <!-- Hero Section -->
+    <div class="pro-hero">
+        <div class="pro-hero-glow" style="background: {{ $statusConfig['color'] }};"></div>
+        <div class="pro-hero-border" style="background: {{ $statusConfig['color'] }};"></div>
 
-{{-- ═══════════ VERIFICATION STATUS ═══════════ --}}
-<div class="vfy-status-banner" style="--vfy-color: {{ $heroColor }};">
-    <div class="vfy-status-icon">
-        @if($isPending)
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-            </svg>
-        @elseif($isVerified)
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M5 12l5 5L20 7"/>
-            </svg>
-        @else
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-        @endif
-    </div>
-    <div class="vfy-status-body">
-        <div class="vfy-status-title">{{ $heroLabel }}</div>
-        <div class="vfy-status-desc">
-            @if($isPending)
-                Gi-submit na ni nga bayad pero <strong>wala pa ma-approve sa admin</strong>. Dili pa ma-count sa store balance ug sales report hangtud ma-verify.
-            @elseif($isVerified)
-                Gi-approve na sa admin. Na-count na sa sales report ug store balance.
-                @if($payment->verified_at)
-                    · {{ \Carbon\Carbon::parse($payment->verified_at)->format('M d, Y g:i A') }}
-                @endif
-            @else
-                <strong>Reason:</strong> {{ $payment->rejection_reason ?? 'Walay reason' }}
-            @endif
-        </div>
-    </div>
-</div>
-
-{{-- ========== GRID ========== --}}
-<div class="pay-grid">
-
-    {{-- LEFT: Details --}}
-    <div class="pay-card">
-        <div class="pay-card-head">
-            <div class="pay-card-icon">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                    <rect x="9" y="3" width="6" height="4" rx="1"/>
-                </svg>
-            </div>
-            <div class="pay-card-title">Payment Details</div>
-        </div>
-
-        <div class="pay-rows">
-            <div class="pay-row">
-                <span class="pay-row-label">Payment #</span>
-                <span class="pay-row-value mono">{{ $payment->payment_number }}</span>
+        <div class="pro-hero-content">
+            <div class="pro-hero-left">
+                <div class="pro-hero-icon" style="color: {{ $statusConfig['color'] }}; background: {{ $statusConfig['bg'] }}; border-color: {{ $statusConfig['border'] }};">
+                    {!! $statusConfig['icon'] !!}
+                </div>
+                <div class="pro-hero-info">
+                    <div class="pro-hero-eyebrow" style="color: {{ $statusConfig['color'] }};">{{ $statusConfig['label'] }}</div>
+                    <h1 class="pro-hero-title">{{ $payment->payment_number }}</h1>
+                    <div class="pro-hero-meta">
+                        <span class="pro-meta-item">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            {{ $payment->store->store_name ?? '-' }}
+                        </span>
+                        <span class="pro-meta-dot">•</span>
+                        <span class="pro-meta-item">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                            {{ \Carbon\Carbon::parse($payment->created_at)->format('M d, Y · g:i A') }}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div class="pay-row">
-                <span class="pay-row-label">Store</span>
-                <span class="pay-row-value">
-                    @if($payment->store)
-                        <a href="{{ route('stores.show', $payment->store_id) }}" class="pay-link">
-                            {{ $payment->store->store_name }}
-                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                        </a>
+            <div class="pro-hero-right">
+                <div class="pro-stat">
+                    <div class="pro-stat-label">Total Amount</div>
+                    <div class="pro-stat-value text-gold">₱{{ number_format($payment->amount, 2) }}</div>
+                </div>
+                <div class="pro-stat-divider"></div>
+                <div class="pro-stat">
+                    <div class="pro-stat-label">Payment Method</div>
+                    <div class="pro-stat-value">{{ strtoupper($payment->method) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="pro-grid">
+        
+        <!-- Left Column (Receipt / Notes) -->
+        <div class="pro-col">
+            @if(strtolower($payment->method) !== 'cash')
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon text-blue">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="pro-card-title">Proof of Payment</h3>
+                        <p class="pro-card-sub">Uploaded receipt for this transaction</p>
+                    </div>
+                </div>
+                
+                <div class="pro-receipt-wrapper">
+                    @if($payment->proof_of_payment)
+                        <img src="{{ asset('storage/' . $payment->proof_of_payment) }}" alt="Receipt" class="pro-receipt-img">
                     @else
-                        -
+                        <div class="pro-empty-state">
+                            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>No Receipt Uploaded</span>
+                        </div>
                     @endif
-                </span>
-            </div>
-
-            <div class="pay-row">
-                <span class="pay-row-label">Payment Date</span>
-                <span class="pay-row-value">{{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}</span>
-            </div>
-
-            <div class="pay-row">
-                <span class="pay-row-label">Method</span>
-                <span class="pay-row-value">
-                    <span class="pay-inline-method" style="color: {{ $methodConfig['color'] }};">
-                        {!! $methodConfig['icon'] !!}
-                        {{ $methodConfig['label'] }}
-                    </span>
-                </span>
-            </div>
-
-            @if($payment->reference_number)
-                <div class="pay-row">
-                    <span class="pay-row-label">Reference #</span>
-                    <span class="pay-row-value mono">{{ $payment->reference_number }}</span>
                 </div>
+            </div>
             @endif
 
-            @if($payment->deliveryReceipt)
-                <div class="pay-row">
-                    <span class="pay-row-label">Linked Delivery</span>
-                    <span class="pay-row-value">
-                        <a href="{{ route('deliveries.show', $payment->deliveryReceipt->id) }}" class="pay-link">
-                            {{ $payment->deliveryReceipt->dr_number }}
-                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                        </a>
-                    </span>
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon text-gray">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="pro-card-title">Payment Notes</h3>
+                        <p class="pro-card-sub">Additional details from the store</p>
+                    </div>
                 </div>
-            @endif
+                <div class="pro-notes">{{ $payment->notes ?: 'No notes provided.' }}</div>
+            </div>
+        </div>
 
-            @if($payment->notes)
-                <div class="pay-row pay-row-notes">
-                    <span class="pay-row-label">Notes</span>
-                    <span class="pay-row-value">{{ $payment->notes }}</span>
+        <!-- Right Column (Details & Actions) -->
+        <div class="pro-col">
+            
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon text-green">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="pro-card-title">Transaction Details</h3>
+                    </div>
                 </div>
-            @endif
+
+                <div class="pro-details-list">
+                    <div class="pro-detail-row">
+                        <span class="pro-detail-label">Reference Number</span>
+                        <span class="pro-detail-value">{{ $payment->reference_number ?: 'N/A' }}</span>
+                    </div>
+                    <div class="pro-detail-row">
+                        <span class="pro-detail-label">Payment Date</span>
+                        <span class="pro-detail-value">{{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}</span>
+                    </div>
+                    <div class="pro-detail-row">
+                        <span class="pro-detail-label">Date Submitted</span>
+                        <span class="pro-detail-value">{{ \Carbon\Carbon::parse($payment->created_at)->format('M d, Y · g:i A') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div class="pro-card-icon text-gold">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="pro-card-title">Administrative Actions</h3>
+                    </div>
+                </div>
+
+                <div class="pro-actions">
+                    @if($payment->verification_status === 'pending')
+                        <form method="POST" action="{{ route('consignment.payments.approve', $payment->id) }}" style="flex: 1;">
+                            @csrf
+                            <button type="submit" class="pro-btn pro-btn-approve">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                                Approve
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('consignment.payments.reject', $payment->id) }}" style="flex: 1;">
+                            @csrf
+                            <button type="submit" class="pro-btn pro-btn-reject">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                Reject
+                            </button>
+                        </form>
+                    @else
+                        <div class="pro-status-badge" style="color: {{ $statusConfig['color'] }}; background: {{ $statusConfig['bg'] }}; border-color: {{ $statusConfig['border'] }};">
+                            {!! $statusConfig['icon'] !!}
+                            {{ $statusConfig['label'] }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+
         </div>
     </div>
-
-    {{-- RIGHT: Amount + Meta --}}
-    <div>
-        <div class="pay-amount-card" style="--accent: {{ $methodConfig['color'] }};">
-            <div class="pay-amount-label">Amount</div>
-            <div class="pay-amount-value" style="color: {{ $heroColor }};">
-                <span class="pay-amount-symbol">&#8369;</span>{{ number_format($payment->amount, 2) }}
-            </div>
-            <div class="pay-amount-meta">
-                <span class="pay-method-dot" style="background: {{ $methodConfig['color'] }};"></span>
-                Received via {{ $methodConfig['label'] }}
-            </div>
-        </div>
-
-        <div class="pay-meta-card">
-            <div class="pay-meta-head">Recorded By</div>
-            <div class="pay-meta-row">
-                <span class="pay-meta-label">User</span>
-                <span class="pay-meta-value">{{ $payment->user->name ?? $payment->created_by_label ?? 'System' }}</span>
-            </div>
-            <div class="pay-meta-row">
-                <span class="pay-meta-label">Created</span>
-                <span class="pay-meta-value">{{ \Carbon\Carbon::parse($payment->created_at)->format('M d, Y · g:i A') }}</span>
-            </div>
-        </div>
-
-        <div class="pay-actions-card">
-            <div class="pay-meta-head">Actions</div>
-            <a href="{{ route('consignment.payments.index') }}" class="pay-btn pay-btn-ghost">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Back to Payments
-            </a>
-        </div>
-    </div>
-
 </div>
-
 @endsection
 
 @push('styles')
 <style>
-    /* ============================================================
-       PAYMENT DETAIL — PROFESSIONAL REDESIGN
-       ============================================================ */
-
-    /* ========== HERO ========== */
-    .pay-hero {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        padding: 22px 26px;
-        margin-bottom: 18px;
-        background: linear-gradient(135deg, color-mix(in srgb, var(--method-color) 10%, transparent) 0%, rgba(30, 26, 22, 0.5) 100%);
-        border: 1px solid color-mix(in srgb, var(--method-color) 25%, transparent);
-        border-radius: 18px;
-        overflow: hidden;
-    }
-    .pay-hero::before {
-        content: '';
-        position: absolute;
-        top: -80px; right: -80px;
-        width: 240px; height: 240px;
-        background: radial-gradient(circle, color-mix(in srgb, var(--method-color) 15%, transparent), transparent 70%);
-        pointer-events: none;
-    }
-    .pay-hero-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 16px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        border: 1px solid color-mix(in srgb, var(--method-color) 30%, transparent);
-        position: relative;
-        z-index: 1;
-    }
-    .pay-hero-content {
-        flex: 1;
-        min-width: 0;
-        position: relative;
-        z-index: 1;
-    }
-    .pay-hero-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #71717a;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 6px;
-    }
-    .pay-hero-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.02em;
-        font-family: ui-monospace, monospace;
-        line-height: 1.1;
-        margin-bottom: 10px;
-    }
-    .pay-hero-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .pay-hero-method {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 9px;
-        border-radius: 100px;
-        font-size: 10.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: 1px solid;
-    }
-    .pay-method-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-    .pay-hero-store {
-        font-size: 12px;
-        font-weight: 700;
-        color: #d4d4d8;
-    }
-    .pay-hero-dot { color: #52525b; }
-    .pay-hero-code {
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
-        color: #71717a;
-    }
-    .pay-hero-amount {
-        text-align: right;
-        position: relative;
-        z-index: 1;
-        flex-shrink: 0;
-        padding-left: 20px;
-        border-left: 1px solid color-mix(in srgb, var(--method-color) 20%, transparent);
-    }
-    .pay-hero-amount-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #71717a;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 6px;
-    }
-    .pay-hero-amount-value {
-        font-size: 30px;
-        font-weight: 800;
-        color: var(--method-color);
-        letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-        line-height: 1;
-    }
-
-    /* ========== GRID ========== */
-    .pay-grid {
-        display: grid;
-        grid-template-columns: 1fr 320px;
-        gap: 16px;
-    }
-
-    /* ========== DETAILS CARD ========== */
-    .pay-card {
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
+    /* PRO UI DESIGN SYSTEM */
+    .pro-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
         padding: 20px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    .pay-card-head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding-bottom: 14px;
-        margin-bottom: 14px;
+
+    /* Back Button */
+    .pro-back {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 16px; margin-bottom: 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 100px; color: #A1A1AA;
+        font-size: 13px; font-weight: 600; text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .pro-back:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #FFF; transform: translateX(-3px);
+    }
+
+    /* Hero Card */
+    .pro-hero {
+        position: relative; overflow: hidden;
+        background: rgba(24, 24, 27, 0.6);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px; padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    }
+    .pro-hero-glow {
+        position: absolute; top: -100px; left: -100px;
+        width: 300px; height: 300px; border-radius: 50%;
+        filter: blur(100px); opacity: 0.15; pointer-events: none;
+    }
+    .pro-hero-border {
+        position: absolute; left: 0; top: 0; bottom: 0;
+        width: 4px; opacity: 0.8;
+    }
+    .pro-hero-content {
+        display: flex; justify-content: space-between; align-items: center; gap: 32px; flex-wrap: wrap;
+        position: relative; z-index: 1;
+    }
+    
+    .pro-hero-left { display: flex; align-items: center; gap: 20px; }
+    .pro-hero-icon {
+        width: 72px; height: 72px; border-radius: 20px;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid; flex-shrink: 0;
+    }
+    .pro-hero-eyebrow {
+        font-size: 11px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 1.5px; margin-bottom: 8px;
+    }
+    .pro-hero-title {
+        font-size: 32px; font-weight: 800; color: #FFF;
+        margin: 0 0 12px 0; letter-spacing: -0.5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .pro-hero-meta {
+        display: flex; align-items: center; gap: 12px;
+        font-size: 13px; font-weight: 500; color: #A1A1AA;
+    }
+    .pro-meta-item { display: flex; align-items: center; gap: 6px; }
+    .pro-meta-dot { color: #52525B; }
+
+    .pro-hero-right {
+        display: flex; align-items: center; gap: 32px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 16px 24px; border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .pro-stat { text-align: right; }
+    .pro-stat-label {
+        font-size: 10px; font-weight: 700; color: #A1A1AA;
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .pro-stat-value {
+        font-size: 20px; font-weight: 800; color: #FFF;
+        font-variant-numeric: tabular-nums;
+    }
+    .pro-stat-value.text-gold { color: #E8A33D; }
+    .pro-stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.1); }
+
+    /* Grid Layout */
+    .pro-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    @media (max-width: 900px) { .pro-grid { grid-template-columns: 1fr; } }
+    .pro-col { display: flex; flex-direction: column; gap: 24px; }
+
+    /* Cards */
+    .pro-card {
+        background: rgba(24, 24, 27, 0.5);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px; padding: 24px;
+        transition: border-color 0.3s ease;
+    }
+    .pro-card:hover { border-color: rgba(232, 163, 61, 0.2); }
+
+    .pro-card-header {
+        display: flex; align-items: flex-start; gap: 16px;
+        padding-bottom: 20px; margin-bottom: 20px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .pay-card-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: rgba(201, 169, 97, 0.12);
-        color: #c9a961;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
+    .pro-card-icon {
+        width: 40px; height: 40px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); flex-shrink: 0;
     }
-    .pay-card-title {
-        font-size: 14px;
-        font-weight: 800;
-        color: #fafafa;
-        letter-spacing: -0.01em;
+    .pro-card-icon.text-blue { color: #60A5FA; background: rgba(96, 165, 250, 0.1); }
+    .pro-card-icon.text-green { color: #4ADE80; background: rgba(74, 222, 128, 0.1); }
+    .pro-card-icon.text-gold { color: #E8A33D; background: rgba(232, 163, 61, 0.1); }
+    .pro-card-icon.text-gray { color: #A1A1AA; background: rgba(161, 161, 170, 0.1); }
+
+    .pro-card-title { font-size: 16px; font-weight: 700; color: #FFF; margin: 0 0 4px 0; }
+    .pro-card-sub { font-size: 12px; color: #A1A1AA; margin: 0; }
+
+    /* Receipt Image */
+    .pro-receipt-wrapper {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 16px; padding: 20px;
+        display: flex; justify-content: center; align-items: center;
+        min-height: 300px; overflow: hidden;
+    }
+    .pro-receipt-img {
+        max-width: 100%; max-height: 500px;
+        object-fit: contain; border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        transition: transform 0.3s ease;
+    }
+    .pro-receipt-img:hover { transform: scale(1.02); }
+    .pro-empty-state {
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+        color: #52525B; font-size: 14px; font-weight: 600;
     }
 
-    .pay-rows { display: flex; flex-direction: column; }
-    .pay-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .pay-row:last-child { border-bottom: none; }
-    .pay-row-notes { display: block; }
-    .pay-row-notes .pay-row-value { display: block; margin-top: 6px; text-align: left; }
-
-    .pay-row-label {
-        font-size: 12px;
-        color: #71717a;
-        font-weight: 600;
-        flex-shrink: 0;
-    }
-    .pay-row-value {
-        font-size: 13px;
-        font-weight: 700;
-        color: #fafafa;
-        text-align: right;
-        font-variant-numeric: tabular-nums;
-    }
-    .pay-row-value.mono {
-        font-family: ui-monospace, monospace;
-        color: #d4d4d8;
-        font-size: 12.5px;
+    /* Notes */
+    .pro-notes {
+        font-size: 14px; color: #D4D4D8; line-height: 1.6;
+        background: rgba(255, 255, 255, 0.02);
+        padding: 16px; border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
     }
 
-    .pay-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        color: #c9a961;
-        text-decoration: none;
-        font-weight: 700;
-        transition: color 0.15s;
+    /* Details List */
+    .pro-details-list { display: flex; flex-direction: column; gap: 16px; }
+    .pro-detail-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: 12px; border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
     }
-    .pay-link:hover { color: #d4b673; }
-    .pay-link svg { opacity: 0.6; }
+    .pro-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .pro-detail-label { font-size: 13px; font-weight: 600; color: #A1A1AA; }
+    .pro-detail-value { font-size: 14px; font-weight: 700; color: #F3F4F6; text-align: right; }
 
-    .pay-inline-method {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 100px;
-        font-size: 11.5px;
-        font-weight: 700;
+    /* Actions */
+    .pro-actions { display: flex; gap: 16px; margin-top: 8px; }
+    .pro-btn {
+        width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 16px 24px; border-radius: 12px; font-size: 14px; font-weight: 700;
+        cursor: pointer; border: none; transition: all 0.2s ease;
     }
-    .pay-inline-method svg { width: 12px; height: 12px; opacity: 0.8; }
-
-    /* ========== AMOUNT CARD ========== */
-    .pay-amount-card {
-        position: relative;
-        padding: 20px;
-        margin-bottom: 14px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-        border-radius: 16px;
-        text-align: center;
-        overflow: hidden;
+    .pro-btn-approve {
+        background: #10B981; color: #FFF;
+        box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.5);
     }
-    .pay-amount-card::before {
-        content: '';
-        position: absolute;
-        top: -50px; right: -50px;
-        width: 160px; height: 160px;
-        background: radial-gradient(circle, color-mix(in srgb, var(--accent) 15%, transparent), transparent 70%);
-        pointer-events: none;
+    .pro-btn-approve:hover {
+        background: #059669; transform: translateY(-2px);
+        box-shadow: 0 12px 25px -6px rgba(16, 185, 129, 0.6);
     }
-    .pay-amount-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #71717a;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 10px;
-        position: relative;
-        z-index: 1;
+    .pro-btn-reject {
+        background: rgba(239, 68, 68, 0.1); color: #EF4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
-    .pay-amount-value {
-        display: flex;
-        align-items: baseline;
-        justify-content: center;
-        gap: 3px;
-        font-size: 32px;
-        font-weight: 800;
-        color: var(--accent);
-        letter-spacing: -0.03em;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-        margin-bottom: 12px;
-        position: relative;
-        z-index: 1;
+    .pro-btn-reject:hover {
+        background: rgba(239, 68, 68, 0.2); transform: translateY(-2px);
     }
-    .pay-amount-symbol { font-size: 22px; opacity: 0.7; }
-    .pay-amount-meta {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 100px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #a1a1aa;
-        position: relative;
-        z-index: 1;
-    }
-
-    /* ========== META CARD ========== */
-    .pay-meta-card {
-        padding: 18px;
-        margin-bottom: 14px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
-    }
-    .pay-meta-head {
-        font-size: 10px;
-        font-weight: 800;
-        color: #c9a961;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 12px;
-    }
-    .pay-meta-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 0;
-        font-size: 12px;
-    }
-    .pay-meta-row + .pay-meta-row {
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .pay-meta-label { color: #71717a; font-weight: 600; }
-    .pay-meta-value { color: #fafafa; font-weight: 700; text-align: right; }
-
-    /* ========== ACTIONS CARD ========== */
-    .pay-actions-card {
-        padding: 18px;
-        background: linear-gradient(165deg, rgba(30, 26, 22, 0.9), rgba(21, 18, 15, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
-    }
-    .pay-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: 11px 16px;
-        border-radius: 10px;
-        font-size: 12.5px;
-        font-weight: 800;
-        text-decoration: none;
-        transition: all 0.15s;
-        border: 1px solid;
-        font-family: inherit;
-    }
-    .pay-btn-ghost {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.08);
-        color: #d4d4d8;
-    }
-    .pay-btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.15);
-        color: #fafafa;
-        transform: translateY(-1px);
-    }
-
-    /* ========== RESPONSIVE ========== */
-    @media (max-width: 900px) {
-        .pay-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 700px) {
-        .pay-hero {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 18px 20px;
-        }
-        .pay-hero-amount {
-            padding-left: 0;
-            padding-top: 16px;
-            border-left: none;
-            border-top: 1px solid color-mix(in srgb, var(--method-color) 20%, transparent);
-            width: 100%;
-            text-align: left;
-        }
-        .pay-hero-title { font-size: 18px; }
-        .pay-hero-amount-value { font-size: 26px; }
-        .pay-amount-value { font-size: 28px; }
-        .pay-amount-symbol { font-size: 20px; }
-    }
-
-    /* ═══════════ VERIFICATION STATUS BANNER ═══════════ */
-    .vfy-status-banner {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 16px 20px;
-        margin: 16px 0;
-        border-radius: 16px;
-        background: linear-gradient(135deg, color-mix(in srgb, var(--vfy-color) 12%, transparent), color-mix(in srgb, var(--vfy-color) 3%, transparent));
-        border: 1px solid color-mix(in srgb, var(--vfy-color) 30%, transparent);
-        border-left: 3px solid var(--vfy-color);
-        animation: vfyBannerIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    @keyframes vfyBannerIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .vfy-status-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: color-mix(in srgb, var(--vfy-color) 15%, transparent);
-        color: var(--vfy-color);
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        border: 1px solid color-mix(in srgb, var(--vfy-color) 35%, transparent);
-        box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--vfy-color) 50%, transparent);
-    }
-    .vfy-status-body { flex: 1; min-width: 0; }
-    .vfy-status-title {
-        font-size: 14px;
-        font-weight: 800;
-        color: var(--vfy-color);
-        margin-bottom: 4px;
-        letter-spacing: -0.01em;
-    }
-    .vfy-status-desc {
-        font-size: 12px;
-        color: #a1a1aa;
-        line-height: 1.55;
-    }
-    .vfy-status-desc strong {
-        color: var(--vfy-color);
-        font-weight: 800;
+    .pro-status-badge {
+        width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 18px; border-radius: 12px; border: 1px solid;
+        font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
     }
 </style>
 @endpush
