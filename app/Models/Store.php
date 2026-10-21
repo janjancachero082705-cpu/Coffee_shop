@@ -143,4 +143,16 @@ class Store extends Authenticatable
     {
         return $this->hasMany(StoreNotification::class)->whereNull('read_at')->latest();
     }
+
+    
+
+    public function getAvatarUrlAttribute()
+    {
+        $path = $this->profile_image ?: $this->logo;
+        if ($path && \Storage::disk('public')->exists($path)) {
+            $time = $this->updated_at ? $this->updated_at->timestamp : time();
+            return asset('storage/' . $path) . '?v=' . $time;
+        }
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->store_name ?? 'ST') . '&background=E8A33D&color=fff';
+    }
 }

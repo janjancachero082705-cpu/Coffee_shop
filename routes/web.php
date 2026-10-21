@@ -196,3 +196,15 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/consignment/payments/{payment}', [App\Http\Controllers\ConsignmentPaymentController::class, 'show'])->name('consignment.payments.show');
 });
+// Route for Portal Profile
+Route::middleware(['auth:store'])->group(function () {
+    Route::get('/portal/profile', function () {
+        return view('portal.profile.index'); 
+    })->name('portal.profile');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/e-wallets', [App\Http\Controllers\AdminEWalletController::class, 'index'])->name('admin.e-wallets.index');
+    Route::post('/admin/e-wallets', [App\Http\Controllers\AdminEWalletController::class, 'store'])->name('admin.e-wallets.store');
+    Route::delete('/admin/e-wallets/{id}', [App\Http\Controllers\AdminEWalletController::class, 'destroy'])->name('admin.e-wallets.destroy');
+    Route::post('/admin/e-wallets/{id}/toggle', [App\Http\Controllers\AdminEWalletController::class, 'toggle'])->name('admin.e-wallets.toggle');
+});

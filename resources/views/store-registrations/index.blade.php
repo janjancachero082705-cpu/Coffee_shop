@@ -470,7 +470,7 @@
                                 <div class="sr-store-cell">
                                     <div class="sr-store-avatar">
                                         @if($store->logo_url)
-                                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                                            <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
                                         @else
                                             {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
                                         @endif

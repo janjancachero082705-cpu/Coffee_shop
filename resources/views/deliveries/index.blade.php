@@ -147,7 +147,7 @@
                 <div class="dv-group-head" data-toggle-group="{{ $storeId }}">
                     <div class="dv-group-avatar">
                         @if($store->logo_url ?? null)
-                            <img src="{{ $store->logo_url }}" alt="">
+                            <img src="{{ $store->avatar_url }}" alt="">
                         @else
                             {{ $initials }}
                         @endif

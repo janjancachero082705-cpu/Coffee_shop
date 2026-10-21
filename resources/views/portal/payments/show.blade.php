@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', $payment->payment_number)
 
@@ -62,11 +62,21 @@
         </div>
     </div>
 @elseif($vStatus === 'rejected')
-    <div class="pys-status pys-status-rejected">
-        <div class="pys-status-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
-        <div class="pys-status-body">
-            <div class="pys-status-title">Payment Rejected</div>
-            <div class="pys-status-desc">@if($payment->rejection_reason)Reason: {{ $payment->rejection_reason }}@else Wala gi-approve sa admin.@endif</div>
+    <div class="pys-status pys-status-rejected" style="flex-direction: column; gap: 12px; padding: 16px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+            <div class="pys-status-icon" style="margin-top: 2px;"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+            <div class="pys-status-body">
+                <div class="pys-status-title" style="font-size: 14px; margin-bottom: 4px;">Payment Rejected</div>
+                <div class="pys-status-desc">Your payment was rejected by the admin. Please review the reason below and submit a new payment.</div>
+            </div>
+        </div>
+        @if($payment->rejection_reason)
+            <div style="width: 100%; background: #FEE2E2; border: 1px solid #FECACA; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #991B1B;">
+                Reason: {{ $payment->rejection_reason }}
+            </div>
+        @endif
+    </div>
+@endif</div>
         </div>
     </div>
 @endif

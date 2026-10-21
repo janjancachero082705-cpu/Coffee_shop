@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PaymentSetting;
+use App\Models\EWallet;
 use Illuminate\Support\Facades\Storage;
 
 class AdminSettingController extends Controller
 {
     public function index()
     {
+        $wallets = \App\Models\EWallet::latest()->get();
         $setting = PaymentSetting::first() ?? new PaymentSetting();
-        return view('admin.settings.payment', compact('setting'));
+        return view('admin.settings.payment', compact('setting', 'wallets'));
     }
 
     public function update(Request $request)

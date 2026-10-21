@@ -176,7 +176,7 @@
                 <div class="sr-group-head">
                     <div class="sr-store-avatar">
                         @if($store->logo_url)
-                            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                            <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
                         @else
                             {{ $initials }}
                         @endif

@@ -222,7 +222,7 @@
         <div class="rr-store-header">
             <div class="rr-store-header-avatar">
                 @if($currentStore->logo_url)
-                    <img src="{{ $currentStore->logo_url }}" alt="{{ $currentStore->store_name }}">
+                    <img src="{{ $currentStore->avatar_url }}" alt="{{ $currentStore->store_name }}">
                 @else
                     {{ strtoupper(substr($currentStore->store_name ?? 'S', 0, 2)) }}
                 @endif
@@ -335,7 +335,7 @@
                         <div class="rr-group-head">
                             <div class="rr-store-avatar">
                                 @if($store && $store->logo_url)
-                                    <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                                    <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
                                 @else
                                     {{ $initials }}
                                 @endif

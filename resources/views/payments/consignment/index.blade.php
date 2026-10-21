@@ -22,6 +22,220 @@
 
 
 
+
+
+
+<!-- ULTIMATE DECISION MODAL (SHIP ACTION STYLE) -->
+<style>
+    .dv-mo-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 999999; padding: 20px; }
+    .dv-mo-backdrop.active { display: flex; }
+    .dv-mo { background: #16161d; border: 1px solid rgba(255,255,255,.08); border-radius: 22px; width: 100%; max-width: 520px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.9); display: flex; flex-direction: column; overflow: hidden; }
+    
+    .dv-mo-header { position: relative; display: flex; align-items: center; gap: 16px; padding: 24px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .dv-mo-header-glow { position: absolute; top: -80px; right: -80px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(245,158,11,.22), transparent 65%); pointer-events: none; }
+    .dv-mo-icon { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; flex-shrink: 0; border: 1px solid; position: relative; z-index: 1; }
+    .dv-mo-icon.approve { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: #22c55e; box-shadow: 0 8px 24px -8px rgba(34,197,94,.5); }
+    .dv-mo-icon.reject { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4); color: #ef4444; box-shadow: 0 8px 24px -8px rgba(239,68,68,.5); }
+    
+    .dv-mo-header-body { flex: 1; min-width: 0; position: relative; z-index: 1; }
+    .dv-mo-eyebrow { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; margin-bottom: 5px; }
+    .dv-mo-eyebrow.approve { color: #4ade80; }
+    .dv-mo-eyebrow.reject { color: #f87171; }
+    .dv-mo-title { font-size: 18px; font-weight: 800; color: #f5f3f0; letter-spacing: -.02em; margin-bottom: 4px; }
+    .dv-mo-sub { font-size: 11.5px; color: #7a7a85; font-family: ui-monospace, monospace; }
+    
+    .dv-mo-close { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #a8a5a0; display: grid; place-items: center; cursor: pointer; transition: .15s; position: relative; z-index: 1; }
+    .dv-mo-close:hover { background: rgba(255,255,255,.08); color: #f5f3f0; transform: rotate(90deg); }
+    
+    .dv-mo-body { padding: 24px; overflow-y: auto; }
+    
+    .dv-mo-alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 14px; margin-bottom: 18px; border: 1px solid; }
+    .dv-mo-alert.approve { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.25); color: #bbf7d0; }
+    .dv-mo-alert.reject { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.25); color: #fecaca; }
+    .dv-mo-alert-icon { flex-shrink: 0; }
+    
+    .dv-mo-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .dv-mo-fact { padding: 12px; background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.05); border-radius: 12px; }
+    .dv-mo-fact-label { font-size: 9px; font-weight: 800; color: #7a7a85; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+    .dv-mo-fact-value { font-size: 13px; font-weight: 800; color: #f5f3f0; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .dv-mo-field { margin-top: 4px; }
+    .dv-mo-field-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #d4d1cc; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    .dv-mo-textarea { width: 100%; padding: 12px 14px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; color: #f5f3f0; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; transition: .15s; }
+    .dv-mo-textarea:focus { border-color: rgba(245,158,11,.5); background: rgba(245,158,11,.04); box-shadow: 0 0 0 4px rgba(245,158,11,.1); }
+    
+    .dv-mo-footer { display: flex; gap: 10px; padding: 20px 24px; border-top: 1px solid rgba(255,255,255,.05); background: rgba(0,0,0,.12); }
+    .dv-mo-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 13px 18px; border-radius: 12px; font-size: 12.5px; font-weight: 800; border: 1px solid; cursor: pointer; font-family: inherit; transition: .18s; min-height: 48px; flex: 1; }
+    .dv-mo-btn-ghost { flex: 0 0 auto; padding: 13px 20px; background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); color: #d4d1cc; }
+    .dv-mo-btn-ghost:hover { background: rgba(255,255,255,.08); color: #f5f3f0; }
+    
+    .dv-mo-btn.approve { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: #fff; box-shadow: 0 8px 24px -8px rgba(34,197,94,.7); }
+    .dv-mo-btn.approve:hover { transform: translateY(-2px); }
+    
+    .dv-mo-btn.reject { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; color: #fff; box-shadow: 0 8px 24px -8px rgba(239,68,68,.7); }
+    .dv-mo-btn.reject:hover { transform: translateY(-2px); }
+</style>
+
+<div id="decisionModal" class="dv-mo-backdrop">
+    <div class="dv-mo">
+        <!-- HEADER -->
+        <div class="dv-mo-header">
+            <div class="dv-mo-header-glow"></div>
+            <div id="decisionIcon" class="dv-mo-icon"></div>
+            <div class="dv-mo-header-body">
+                <div id="decisionEyebrow" class="dv-mo-eyebrow"></div>
+                <div id="decisionTitle" class="dv-mo-title"></div>
+                <div id="decisionSub" class="dv-mo-sub"></div>
+            </div>
+            <button type="button" class="dv-mo-close" onclick="closeDecisionModal()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- BODY -->
+        <div class="dv-mo-body">
+            <div id="decisionAlert" class="dv-mo-alert">
+                <div class="dv-mo-alert-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                </div>
+                <div id="decisionAlertText" style="flex:1; font-size:13px; line-height:1.5; padding-top:2px;"></div>
+            </div>
+
+            <!-- FACTS GRID -->
+            <div class="dv-mo-facts">
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Payment No.</div>
+                    <div class="dv-mo-fact-value" id="decisionPayNo">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Amount</div>
+                    <div class="dv-mo-fact-value" id="decisionAmount" style="color:#E8A33D;">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Store</div>
+                    <div class="dv-mo-fact-value" id="decisionStore">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Method</div>
+                    <div class="dv-mo-fact-value" id="decisionMethod">-</div>
+                </div>
+            </div>
+
+            <!-- REASON FIELD (Hidden on Approve) -->
+            <div id="decisionReasonContainer" class="dv-mo-field" style="display:none;">
+                <label class="dv-mo-field-label">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                    Rejection Reason <span style="color:#EF4444;">*</span>
+                </label>
+                <textarea id="decisionReason" class="dv-mo-textarea" placeholder="e.g., Invalid reference number, blurry receipt, etc..." oninput="this.style.borderColor='rgba(255,255,255,.08)'; document.getElementById('reasonError').style.display='none';"></textarea>
+                <div id="reasonError" style="display: none; color: #ef4444; font-size: 11.5px; font-weight: 600; margin-top: 6px;">
+                    Please provide a rejection reason.
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="dv-mo-footer">
+            <button type="button" class="dv-mo-btn dv-mo-btn-ghost" onclick="closeDecisionModal()">Cancel</button>
+            <button type="button" id="decisionConfirmBtn" class="dv-mo-btn" onclick="confirmDecision()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAction = '';
+
+    function openDecisionModal(action) {
+        currentAction = action;
+        const modal = document.getElementById('decisionModal');
+        
+        // Kunin ang data mula sa main review modal
+        const payNo = document.getElementById('modal-payment-number').textContent;
+        const amount = document.getElementById('modal-amount').textContent;
+        const store = document.getElementById('modal-store-name').textContent;
+        const method = document.getElementById('modal-method').textContent;
+
+        // I-populate ang mga fields
+        document.getElementById('decisionPayNo').textContent = payNo;
+        document.getElementById('decisionAmount').textContent = amount;
+        document.getElementById('decisionStore').textContent = store;
+        document.getElementById('decisionMethod').textContent = method;
+
+        const icon = document.getElementById('decisionIcon');
+        const eyebrow = document.getElementById('decisionEyebrow');
+        const title = document.getElementById('decisionTitle');
+        const sub = document.getElementById('decisionSub');
+        const alertBox = document.getElementById('decisionAlert');
+        const alertText = document.getElementById('decisionAlertText');
+        const reasonBox = document.getElementById('decisionReasonContainer');
+        const confirmBtn = document.getElementById('decisionConfirmBtn');
+
+        if (action === 'approve') {
+            icon.className = 'dv-mo-icon approve';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+            eyebrow.className = 'dv-mo-eyebrow approve';
+            eyebrow.textContent = 'APPROVE ACTION';
+            title.textContent = 'Confirm Payment Approval';
+            sub.textContent = 'Payment will be marked as verified.';
+            
+            alertBox.className = 'dv-mo-alert approve';
+            alertText.innerHTML = 'Are you sure you want to <strong>APPROVE</strong> this payment? This will update the store\'s balance immediately.';
+            
+            reasonBox.style.display = 'none';
+            document.getElementById('decisionReason').value = '';
+            
+            confirmBtn.className = 'dv-mo-btn approve';
+            confirmBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg> Yes, Approve';
+        } else {
+            icon.className = 'dv-mo-icon reject';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+            eyebrow.className = 'dv-mo-eyebrow reject';
+            eyebrow.textContent = 'REJECT ACTION';
+            title.textContent = 'Confirm Payment Rejection';
+            sub.textContent = 'Customer will be notified to re-submit.';
+            
+            alertBox.className = 'dv-mo-alert reject';
+            alertText.innerHTML = 'Are you sure you want to <strong>REJECT</strong> this payment? The customer will see the reason you provide below.';
+            
+            reasonBox.style.display = 'block';
+            
+            confirmBtn.className = 'dv-mo-btn reject';
+            confirmBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg> Yes, Reject';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeDecisionModal() {
+        document.getElementById('decisionModal').classList.remove('active');
+    }
+
+    function confirmDecision() {
+        if (currentAction === 'approve') {
+            document.getElementById('modal-approve-form').submit();
+        } else {
+            const reason = document.getElementById('decisionReason').value.trim();
+            if (!reason) {
+            document.getElementById('decisionReason').style.borderColor = '#ef4444';
+            document.getElementById('reasonError').style.display = 'block';
+            return;
+        }
+            
+            const rejectForm = document.getElementById('modal-reject-form');
+            
+            const oldInput = rejectForm.querySelector('input[name="reason"]');
+            if(oldInput) oldInput.remove();
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'reason';
+            hiddenInput.value = reason;
+            rejectForm.appendChild(hiddenInput);
+
+            rejectForm.submit();
+        }
+    }
+</script>
 @endsection
 
 @section('content')
@@ -159,7 +373,7 @@
                                 <div class="py-store">
                                     <div class="py-store-avatar">
                                         @if($payment->store && $payment->store->logo_url)
-                                            <img src="{{ $payment->store->logo_url }}" alt="">
+                                            <img src="{{ $payment->store->avatar_url }}" alt="">
                                         @else
                                             {{ strtoupper(substr($payment->store->store_name ?? 'ST', 0, 2)) }}
                                         @endif
@@ -224,6 +438,220 @@
 
 
 
+
+
+
+<!-- ULTIMATE DECISION MODAL (SHIP ACTION STYLE) -->
+<style>
+    .dv-mo-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 999999; padding: 20px; }
+    .dv-mo-backdrop.active { display: flex; }
+    .dv-mo { background: #16161d; border: 1px solid rgba(255,255,255,.08); border-radius: 22px; width: 100%; max-width: 520px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.9); display: flex; flex-direction: column; overflow: hidden; }
+    
+    .dv-mo-header { position: relative; display: flex; align-items: center; gap: 16px; padding: 24px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .dv-mo-header-glow { position: absolute; top: -80px; right: -80px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(245,158,11,.22), transparent 65%); pointer-events: none; }
+    .dv-mo-icon { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; flex-shrink: 0; border: 1px solid; position: relative; z-index: 1; }
+    .dv-mo-icon.approve { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: #22c55e; box-shadow: 0 8px 24px -8px rgba(34,197,94,.5); }
+    .dv-mo-icon.reject { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4); color: #ef4444; box-shadow: 0 8px 24px -8px rgba(239,68,68,.5); }
+    
+    .dv-mo-header-body { flex: 1; min-width: 0; position: relative; z-index: 1; }
+    .dv-mo-eyebrow { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; margin-bottom: 5px; }
+    .dv-mo-eyebrow.approve { color: #4ade80; }
+    .dv-mo-eyebrow.reject { color: #f87171; }
+    .dv-mo-title { font-size: 18px; font-weight: 800; color: #f5f3f0; letter-spacing: -.02em; margin-bottom: 4px; }
+    .dv-mo-sub { font-size: 11.5px; color: #7a7a85; font-family: ui-monospace, monospace; }
+    
+    .dv-mo-close { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #a8a5a0; display: grid; place-items: center; cursor: pointer; transition: .15s; position: relative; z-index: 1; }
+    .dv-mo-close:hover { background: rgba(255,255,255,.08); color: #f5f3f0; transform: rotate(90deg); }
+    
+    .dv-mo-body { padding: 24px; overflow-y: auto; }
+    
+    .dv-mo-alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 14px; margin-bottom: 18px; border: 1px solid; }
+    .dv-mo-alert.approve { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.25); color: #bbf7d0; }
+    .dv-mo-alert.reject { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.25); color: #fecaca; }
+    .dv-mo-alert-icon { flex-shrink: 0; }
+    
+    .dv-mo-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .dv-mo-fact { padding: 12px; background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.05); border-radius: 12px; }
+    .dv-mo-fact-label { font-size: 9px; font-weight: 800; color: #7a7a85; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+    .dv-mo-fact-value { font-size: 13px; font-weight: 800; color: #f5f3f0; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .dv-mo-field { margin-top: 4px; }
+    .dv-mo-field-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #d4d1cc; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    .dv-mo-textarea { width: 100%; padding: 12px 14px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; color: #f5f3f0; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; transition: .15s; }
+    .dv-mo-textarea:focus { border-color: rgba(245,158,11,.5); background: rgba(245,158,11,.04); box-shadow: 0 0 0 4px rgba(245,158,11,.1); }
+    
+    .dv-mo-footer { display: flex; gap: 10px; padding: 20px 24px; border-top: 1px solid rgba(255,255,255,.05); background: rgba(0,0,0,.12); }
+    .dv-mo-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 13px 18px; border-radius: 12px; font-size: 12.5px; font-weight: 800; border: 1px solid; cursor: pointer; font-family: inherit; transition: .18s; min-height: 48px; flex: 1; }
+    .dv-mo-btn-ghost { flex: 0 0 auto; padding: 13px 20px; background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); color: #d4d1cc; }
+    .dv-mo-btn-ghost:hover { background: rgba(255,255,255,.08); color: #f5f3f0; }
+    
+    .dv-mo-btn.approve { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: #fff; box-shadow: 0 8px 24px -8px rgba(34,197,94,.7); }
+    .dv-mo-btn.approve:hover { transform: translateY(-2px); }
+    
+    .dv-mo-btn.reject { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; color: #fff; box-shadow: 0 8px 24px -8px rgba(239,68,68,.7); }
+    .dv-mo-btn.reject:hover { transform: translateY(-2px); }
+</style>
+
+<div id="decisionModal" class="dv-mo-backdrop">
+    <div class="dv-mo">
+        <!-- HEADER -->
+        <div class="dv-mo-header">
+            <div class="dv-mo-header-glow"></div>
+            <div id="decisionIcon" class="dv-mo-icon"></div>
+            <div class="dv-mo-header-body">
+                <div id="decisionEyebrow" class="dv-mo-eyebrow"></div>
+                <div id="decisionTitle" class="dv-mo-title"></div>
+                <div id="decisionSub" class="dv-mo-sub"></div>
+            </div>
+            <button type="button" class="dv-mo-close" onclick="closeDecisionModal()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- BODY -->
+        <div class="dv-mo-body">
+            <div id="decisionAlert" class="dv-mo-alert">
+                <div class="dv-mo-alert-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                </div>
+                <div id="decisionAlertText" style="flex:1; font-size:13px; line-height:1.5; padding-top:2px;"></div>
+            </div>
+
+            <!-- FACTS GRID -->
+            <div class="dv-mo-facts">
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Payment No.</div>
+                    <div class="dv-mo-fact-value" id="decisionPayNo">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Amount</div>
+                    <div class="dv-mo-fact-value" id="decisionAmount" style="color:#E8A33D;">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Store</div>
+                    <div class="dv-mo-fact-value" id="decisionStore">-</div>
+                </div>
+                <div class="dv-mo-fact">
+                    <div class="dv-mo-fact-label">Method</div>
+                    <div class="dv-mo-fact-value" id="decisionMethod">-</div>
+                </div>
+            </div>
+
+            <!-- REASON FIELD (Hidden on Approve) -->
+            <div id="decisionReasonContainer" class="dv-mo-field" style="display:none;">
+                <label class="dv-mo-field-label">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                    Rejection Reason <span style="color:#EF4444;">*</span>
+                </label>
+                <textarea id="decisionReason" class="dv-mo-textarea" placeholder="e.g., Invalid reference number, blurry receipt, etc..." oninput="this.style.borderColor='rgba(255,255,255,.08)'; document.getElementById('reasonError').style.display='none';"></textarea>
+                <div id="reasonError" style="display: none; color: #ef4444; font-size: 11.5px; font-weight: 600; margin-top: 6px;">
+                    Please provide a rejection reason.
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="dv-mo-footer">
+            <button type="button" class="dv-mo-btn dv-mo-btn-ghost" onclick="closeDecisionModal()">Cancel</button>
+            <button type="button" id="decisionConfirmBtn" class="dv-mo-btn" onclick="confirmDecision()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAction = '';
+
+    function openDecisionModal(action) {
+        currentAction = action;
+        const modal = document.getElementById('decisionModal');
+        
+        // Kunin ang data mula sa main review modal
+        const payNo = document.getElementById('modal-payment-number').textContent;
+        const amount = document.getElementById('modal-amount').textContent;
+        const store = document.getElementById('modal-store-name').textContent;
+        const method = document.getElementById('modal-method').textContent;
+
+        // I-populate ang mga fields
+        document.getElementById('decisionPayNo').textContent = payNo;
+        document.getElementById('decisionAmount').textContent = amount;
+        document.getElementById('decisionStore').textContent = store;
+        document.getElementById('decisionMethod').textContent = method;
+
+        const icon = document.getElementById('decisionIcon');
+        const eyebrow = document.getElementById('decisionEyebrow');
+        const title = document.getElementById('decisionTitle');
+        const sub = document.getElementById('decisionSub');
+        const alertBox = document.getElementById('decisionAlert');
+        const alertText = document.getElementById('decisionAlertText');
+        const reasonBox = document.getElementById('decisionReasonContainer');
+        const confirmBtn = document.getElementById('decisionConfirmBtn');
+
+        if (action === 'approve') {
+            icon.className = 'dv-mo-icon approve';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+            eyebrow.className = 'dv-mo-eyebrow approve';
+            eyebrow.textContent = 'APPROVE ACTION';
+            title.textContent = 'Confirm Payment Approval';
+            sub.textContent = 'Payment will be marked as verified.';
+            
+            alertBox.className = 'dv-mo-alert approve';
+            alertText.innerHTML = 'Are you sure you want to <strong>APPROVE</strong> this payment? This will update the store\'s balance immediately.';
+            
+            reasonBox.style.display = 'none';
+            document.getElementById('decisionReason').value = '';
+            
+            confirmBtn.className = 'dv-mo-btn approve';
+            confirmBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg> Yes, Approve';
+        } else {
+            icon.className = 'dv-mo-icon reject';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+            eyebrow.className = 'dv-mo-eyebrow reject';
+            eyebrow.textContent = 'REJECT ACTION';
+            title.textContent = 'Confirm Payment Rejection';
+            sub.textContent = 'Customer will be notified to re-submit.';
+            
+            alertBox.className = 'dv-mo-alert reject';
+            alertText.innerHTML = 'Are you sure you want to <strong>REJECT</strong> this payment? The customer will see the reason you provide below.';
+            
+            reasonBox.style.display = 'block';
+            
+            confirmBtn.className = 'dv-mo-btn reject';
+            confirmBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg> Yes, Reject';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeDecisionModal() {
+        document.getElementById('decisionModal').classList.remove('active');
+    }
+
+    function confirmDecision() {
+        if (currentAction === 'approve') {
+            document.getElementById('modal-approve-form').submit();
+        } else {
+            const reason = document.getElementById('decisionReason').value.trim();
+            if (!reason) {
+            document.getElementById('decisionReason').style.borderColor = '#ef4444';
+            document.getElementById('reasonError').style.display = 'block';
+            return;
+        }
+            
+            const rejectForm = document.getElementById('modal-reject-form');
+            
+            const oldInput = rejectForm.querySelector('input[name="reason"]');
+            if(oldInput) oldInput.remove();
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'reason';
+            hiddenInput.value = reason;
+            rejectForm.appendChild(hiddenInput);
+
+            rejectForm.submit();
+        }
+    }
+</script>
 @endsection
 
 @push('styles')

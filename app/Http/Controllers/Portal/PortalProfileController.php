@@ -7,90 +7,87 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Store;
 
 class PortalProfileController extends Controller
 {
-    public function show()
+    public function index()
     {
-        $store = Auth::guard('store')->user();
-        return view('portal.profile.show', compact('store'));
+        $store = Store::find(Auth::guard('store')->id());
+        return view('portal.profile.index', compact('store'));
     }
 
     public function edit()
     {
-        $store = Auth::guard('store')->user();
+        $store = Store::find(Auth::guard('store')->id());
         return view('portal.profile.edit', compact('store'));
     }
 
     public function update(Request $request)
     {
-        $store = Auth::guard('store')->user();
+        $store = Store::find(Auth::guard('store')->id());
 
-        $data = $request->validate([
-            'store_name'     => 'required|string|max:255',
-            'owner_name'     => 'required|string|max:255',
-            'contact_number' => 'required|string|max:50',
-            'email'          => 'required|email|max:255|unique:stores,email,' . $store->id,
-            'address'        => 'required|string|max:500',
-            'barangay'       => 'nullable|string|max:100',
-            'city'           => 'nullable|string|max:100',
-            'logo'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        $request->validate([
+            'store_name' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'contact_number' => 'required|string|max:20',
+            'address' => 'required|string',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
-        if ($request->hasFile('logo')) {
-            if ($store->logo && !str_starts_with($store->logo, 'http')) {
-                Storage::disk('public')->delete($store->logo);
+        $store->store_name = $request->store_name;
+        $store->owner_name = $request->owner_name;
+        $store->email = $request->email;
+        $store->contact_number = $request->contact_number;
+        $store->address = $request->address;
+        $store->barangay = $request->barangay;
+        $store->city = $request->city;
+
+        if ($request->hasFile('profile_image')) {
+            if ($store->profile_image && Storage::disk('public')->exists($store->profile_image)) {
+                Storage::disk('public')->delete($store->profile_image);
             }
-            $data['logo'] = $request->file('logo')->store('store-logos', 'public');
+            $path = $request->file('profile_image')->store('profiles', 'public');
+            $store->profile_image = $path;
         }
 
-        $store->update($data);
+        $store->save();
+        $store->refresh();
+        Auth::guard('store')->setUser($store);
 
-        return redirect()->route('portal.dashboard')
-            ->with('success', 'Profile updated successfully.');
+        return redirect()->route('portal.profile')->with('success', 'Profile updated successfully!');
     }
 
-    public function removeLogo(Request $request)
+    public function password()
     {
-        $store = Auth::guard('store')->user();
-
-        if ($store->logo && !str_starts_with($store->logo, 'http')) {
-            Storage::disk('public')->delete($store->logo);
-        }
-
-        $store->update(['logo' => null]);
-
-        return redirect()->route('portal.dashboard')
-            ->with('success', 'Logo removed.');
-    }
-
-    public function passwordForm()
-    {
-        $store = Auth::guard('store')->user();
+        $store = Store::find(Auth::guard('store')->id());
         return view('portal.profile.password', compact('store'));
     }
 
     public function updatePassword(Request $request)
     {
-        $store = Auth::guard('store')->user();
-
-        $data = $request->validate([
+        $request->validate([
             'current_password' => 'required',
-            'password'         => 'required|string|min:6|confirmed',
+            'password' => 'required|min:6|confirmed',
         ]);
 
-        // Check current password
-        if (!Hash::check($data['current_password'], $store->password)) {
-            return back()->withErrors([
-                'current_password' => 'The current password is incorrect.'
-            ]);
+        $store = \App\Models\Store::find(Auth::guard('store')->id());
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $store->password)) {
+            return back()->withErrors(['current_password' => 'Current password does not match.']);
         }
 
-        $store->update([
-            'password' => Hash::make($data['password']),
-        ]);
+        $store->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $store->save();
 
-        return redirect()->route('portal.dashboard')
-            ->with('success', 'Password changed successfully.');
+        // REDIRECT PABALIK SA PROFILE PAGE
+        return redirect()->route('portal.profile')->with('success', 'Password updated successfully!');
+    }
+
+    public function passwordForm()
+    {
+        $store = \App\Models\Store::find(Auth::guard('store')->id());
+        return view('portal.profile.password', compact('store'));
     }
 }

@@ -1,4 +1,4 @@
-﻿@extends('portal.layouts.app')
+@extends('portal.layouts.app')
 
 @section('title', 'Dashboard')
 
@@ -33,7 +33,7 @@
 
     <div class="dash-hero-avatar">
         @if($store->logo_url)
-            <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+            <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
         @else
             {{ $initials }}
         @endif
@@ -43,7 +43,8 @@
 {{-- ═══ BALANCE CARD ═══ --}}
 <div class="dash-balance">
     <div class="dash-balance-head">
-        <div class="dash-balance-label">
+        
+<div class="dash-balance-label">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             Outstanding Balance
         </div>
@@ -104,6 +105,164 @@
 </div>
 
 {{-- ═══ QUICK STATS ═══ --}}
+
+
+
+
+
+
+<script>
+    function markNotifAsRead(id, redirectUrl) {
+        // I-send ang AJAX request para markahan as read
+        fetch('/portal/notifications/' + id + '/read', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(() => {
+            // Kapag success, redirect sa payment details
+            window.location.href = redirectUrl;
+        }).catch(() => {
+            // Fallback: Redirect pa rin kahit mag-error ang AJAX
+            window.location.href = redirectUrl;
+        });
+    }
+</script>
+
+
+<script>
+    function markNotifAsRead(id, redirectUrl) {
+        fetch('/portal/notifications/' + id + '/read', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(() => {
+            window.location.href = redirectUrl;
+        }).catch(() => {
+            window.location.href = redirectUrl;
+        });
+    }
+</script>
+<!-- DASHBOARD NOTIFICATIONS -->
+@php
+    // Kukunin lang natin ang PINAKABAGO at UNREAD na payment alert
+    $latestAlert = isset($storeNotifications) ? $storeNotifications->filter(function($notif) {
+        $isPayment = str_contains($notif->title ?? '', 'Approved') || str_contains($notif->title ?? '', 'Rejected');
+        return $isPayment && is_null($notif->read_at);
+    })->first() : null;
+@endphp
+
+@if($latestAlert)
+@php
+    $isApprove = str_contains($latestAlert->title ?? '', 'Approved');
+    $link = $latestAlert->link ?? route('portal.payments.index');
+    
+    // Kunin ang reason mula sa message (e.g., "Your payment of ₱3.00 was rejected. Reason: scam")
+    $rejectReason = '';
+    if (!$isApprove && isset($latestAlert->message)) {
+        $parts = explode('Reason: ', $latestAlert->message);
+        $rejectReason = count($parts) > 1 ? trim($parts[1]) : trim($latestAlert->message);
+    }
+@endphp
+
+<style>
+    @keyframes slideInDown {
+        0% { opacity: 0; transform: translateY(-15px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseRedAlert {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+        50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+    @keyframes pulseGreenAlert {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
+        50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    }
+    
+    .premium-alert {
+        display: flex; align-items: flex-start; gap: 14px; padding: 16px;
+        border-radius: 12px; text-decoration: none; margin-bottom: 12px;
+        animation: slideInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        transition: transform 0.2s;
+    }
+    .premium-alert:active { transform: scale(0.98); }
+    
+    .premium-alert.rejected {
+        background: #FEF2F2;
+        border: 1.5px solid #FECACA;
+        border-left: 4px solid #EF4444;
+        animation: slideInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, pulseRedAlert 2s infinite 0.5s;
+    }
+    
+    .premium-alert.approved {
+        background: #F0FDF4;
+        border: 1.5px solid #BBF7D0;
+        border-left: 4px solid #10B981;
+        animation: slideInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, pulseGreenAlert 2s infinite 0.5s;
+    }
+</style>
+
+<div style="margin: 20px 0; padding: 0 4px;">
+    <a href="{{ $link }}" class="premium-alert {{ $isApprove ? 'approved' : 'rejected' }}" 
+       onclick="event.preventDefault(); markNotifAsRead({{ $latestAlert->id }}, '{{ $link }}');">
+        
+        <!-- Icon Container -->
+        <div style="flex-shrink: 0; margin-top: 2px;">
+            @if($isApprove)
+                <svg width="24" height="24" fill="none" stroke="#10B981" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            @else
+                <svg width="24" height="24" fill="none" stroke="#EF4444" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            @endif
+        </div>
+        
+        <!-- Content -->
+        <div style="flex: 1;">
+            <div style="font-size: 15px; font-weight: 800; color: {{ $isApprove ? '#065F46' : '#991B1B' }}; margin-bottom: 4px;">
+                {{ $isApprove ? 'Payment Approved' : 'Payment Rejected' }}
+            </div>
+            <div style="font-size: 13px; color: {{ $isApprove ? '#047857' : '#7F1D1D' }}; font-weight: 500; line-height: 1.4;">
+                @if($isApprove)
+                    Your payment has been verified. Tap to view details.
+                @else
+                    Your previous payment was rejected.<br>
+                    <span style="display:inline-block; margin-top:6px; padding: 6px 10px; background: #FEE2E2; border-radius: 6px; font-weight: 700; color: #991B1B;">
+                        Reason: {{ $rejectReason ?: 'No reason provided' }}
+                    </span>
+                @endif
+            </div>
+        </div>
+        
+        <!-- Arrow Icon -->
+        <div style="flex-shrink: 0; margin-left: auto; display: flex; align-items: center; color: {{ $isApprove ? '#10B981' : '#EF4444' }};">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+    </a>
+</div>
+
+<script>
+    function markNotifAsRead(id, redirectUrl) {
+        // Palitan ang button para maging "loading" habang nag-aantay
+        const alertEl = event.currentTarget;
+        alertEl.style.opacity = '0.5';
+
+        fetch('/portal/notifications/' + id + '/read', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(() => {
+            window.location.href = redirectUrl;
+        }).catch(() => {
+            window.location.href = redirectUrl;
+        });
+    }
+</script>
+@endif
+<!-- END DASHBOARD NOTIFICATIONS -->
 <div class="dash-section-label">
     <span>Overview</span>
 </div>

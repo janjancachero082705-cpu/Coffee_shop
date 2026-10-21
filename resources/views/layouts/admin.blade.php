@@ -941,7 +941,7 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
                     <div class="nav-label">Settings</div>
                     <a href="{{ route('admin.settings.gcash') }}" class="nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                        GCash Settings
+                        E-Wallet Settings
                     </a>
                 </div>
             </nav>
@@ -1128,8 +1128,8 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             var html = '';
             for (var i = 0; i < orders.length; i++) {
                 var o = orders[i];
-                var avatar = o.store_logo
-                    ? '<img src="' + o.store_logo + '" style="width:100%;height:100%;object-fit:cover;">'
+                var avatar = o.store_avatar
+                    ? '<img src="' + o.store_avatar + '" style="width:100%;height:100%;object-fit:cover;">'
                     : o.store_initials;
 
                 var label = '', amountHtml = '';
@@ -1261,5 +1261,67 @@ html[data-theme="blue"] body    { background-color: #eff6ff !important; }
             });
         })();
     </script>
+<!-- CUSTOM TOAST SYSTEM -->
+<style>
+    .toast-container { position: fixed; top: 24px; right: 24px; z-index: 999999; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+    .custom-toast { 
+        background: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981; 
+        border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); min-width: 300px; max-width: 400px;
+        pointer-events: auto; animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .custom-toast.error { border-left-color: #EF4444; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+    
+    .toast-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .custom-toast.success .toast-icon { background: rgba(16,185,129,0.15); color: #10B981; }
+    .custom-toast.error .toast-icon { background: rgba(239,68,68,0.15); color: #EF4444; }
+    .custom-toast.warning .toast-icon { background: rgba(245,158,11,0.15); color: #F59E0B; }
+    
+    .toast-content { flex: 1; }
+    .toast-title { font-size: 13px; font-weight: 800; color: #F8FAFC; margin-bottom: 2px; }
+    .toast-message { font-size: 12px; color: #94A3B8; line-height: 1.4; }
+    
+    .toast-close { background: none; border: none; color: #64748B; cursor: pointer; padding: 4px; transition: 0.2s; }
+    .toast-close:hover { color: #F8FAFC; }
+    
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideOutRight { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(50px); } }
+</style>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script>
+    window.showToast = function(title, message = '', type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast ' + type;
+        
+        let iconSvg = '';
+        if(type === 'success') iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+        else if(type === 'error') iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+        else iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+        
+        toast.innerHTML = `
+            <div class="toast-icon">${iconSvg}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                ${message ? `<div class="toast-message">${message}</div>` : ''}
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    };
+</script>
+<!-- END CUSTOM TOAST SYSTEM -->
 </body>
 </html>

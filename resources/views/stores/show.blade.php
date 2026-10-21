@@ -46,7 +46,7 @@
         <div class="sd-hero-left">
             <div class="sd-hero-avatar">
                 @if($store->logo_url)
-                    <img src="{{ $store->logo_url }}" alt="{{ $store->store_name }}">
+                    <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
                 @else
                     {{ strtoupper(substr($store->store_name, 0, 2)) }}
                 @endif

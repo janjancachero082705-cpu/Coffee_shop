@@ -166,16 +166,16 @@
 
                 <div class="pro-actions">
                     @if($payment->verification_status === 'pending')
-                        <form method="POST" action="{{ route('consignment.payments.approve', $payment->id) }}" style="flex: 1;">
+                        <form id="approve-form-{{ $payment->id }}" method="POST" action="{{ route('consignment.payments.approve', $payment->id) }}" style="flex: 1;">
                             @csrf
-                            <button type="submit" class="pro-btn pro-btn-approve">
+                            <button type="button" onclick="openDecisionModal('approve', {{ $payment->id }}, '{{ $payment->payment_number }}', '₱{{ number_format($payment->amount, 2) }}', '{{ $payment->store->store_name ?? '-' }}', '{{ strtoupper($payment->method) }}')" class="pro-btn pro-btn-approve">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
                                 Approve
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('consignment.payments.reject', $payment->id) }}" style="flex: 1;">
+                        <form id="reject-form-{{ $payment->id }}" method="POST" action="{{ route('consignment.payments.reject', $payment->id) }}" style="flex: 1;">
                             @csrf
-                            <button type="submit" class="pro-btn pro-btn-reject">
+                            <button type="button" onclick="openDecisionModal('reject', {{ $payment->id }}, '{{ $payment->payment_number }}', '₱{{ number_format($payment->amount, 2) }}', '{{ $payment->store->store_name ?? '-' }}', '{{ strtoupper($payment->method) }}')" class="pro-btn pro-btn-reject">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
                                 Reject
                             </button>
@@ -192,6 +192,156 @@
         </div>
     </div>
 </div>
+<!-- UNIVERSAL DECISION MODAL -->
+<div id="decisionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(12px); z-index:999999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#16161d; border:1px solid rgba(255,255,255,.08); border-radius:22px; width:100%; max-width:520px; box-shadow:0 40px 100px -30px rgba(0,0,0,.9); display:flex; flex-direction:column; overflow:hidden;">
+        
+        <!-- HEADER -->
+        <div style="position:relative; display:flex; align-items:center; gap:16px; padding:24px; border-bottom:1px solid rgba(255,255,255,.06);">
+            <div style="position:absolute; top:-80px; right:-80px; width:240px; height:240px; background:radial-gradient(circle,rgba(245,158,11,.22),transparent 65%); pointer-events:none;"></div>
+            <div id="decisionIcon" style="width:54px; height:54px; border-radius:15px; display:grid; place-items:center; flex-shrink:0; border:1px solid; position:relative; z-index:1;"></div>
+            <div style="flex:1; min-width:0; position:relative; z-index:1;">
+                <div id="decisionEyebrow" style="font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.15em; margin-bottom:5px;"></div>
+                <div id="decisionTitle" style="font-size:18px; font-weight:800; color:#f5f3f0; letter-spacing:-.02em; margin-bottom:4px;"></div>
+                <div id="decisionSub" style="font-size:11.5px; color:#7a7a85; font-family:ui-monospace,monospace;"></div>
+            </div>
+            <button type="button" onclick="closeDecisionModal()" style="width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:#a8a5a0; display:grid; place-items:center; cursor:pointer; transition:.15s; position:relative; z-index:1;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- BODY -->
+        <div style="padding:24px; overflow-y:auto;">
+            <div id="decisionAlert" style="display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:14px; margin-bottom:18px; border:1px solid;">
+                <div style="flex-shrink:0;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                </div>
+                <div id="decisionAlertText" style="flex:1; font-size:13px; line-height:1.5; padding-top:2px;"></div>
+            </div>
+
+            <!-- FACTS GRID -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
+                <div style="padding:12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.05); border-radius:12px;">
+                    <div style="font-size:9px; font-weight:800; color:#7a7a85; text-transform:uppercase; margin-bottom:4px;">Payment No.</div>
+                    <div id="decisionPayNo" style="font-size:13px; font-weight:800; color:#f5f3f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div>
+                </div>
+                <div style="padding:12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.05); border-radius:12px;">
+                    <div style="font-size:9px; font-weight:800; color:#7a7a85; text-transform:uppercase; margin-bottom:4px;">Amount</div>
+                    <div id="decisionAmount" style="font-size:13px; font-weight:800; color:#E8A33D;">-</div>
+                </div>
+                <div style="padding:12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.05); border-radius:12px;">
+                    <div style="font-size:9px; font-weight:800; color:#7a7a85; text-transform:uppercase; margin-bottom:4px;">Store</div>
+                    <div id="decisionStore" style="font-size:13px; font-weight:800; color:#f5f3f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div>
+                </div>
+                <div style="padding:12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.05); border-radius:12px;">
+                    <div style="font-size:9px; font-weight:800; color:#7a7a85; text-transform:uppercase; margin-bottom:4px;">Method</div>
+                    <div id="decisionMethod" style="font-size:13px; font-weight:800; color:#f5f3f0;">-</div>
+                </div>
+            </div>
+
+            <!-- REASON FIELD -->
+            <div id="decisionReasonContainer" style="display:none; margin-top:4px;">
+                <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:#d4d1cc; text-transform:uppercase; margin-bottom:8px;">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                    Rejection Reason <span style="color:#EF4444;">*</span>
+                </label>
+                <textarea id="decisionReason" class="dv-mo-textarea" placeholder="e.g., Invalid reference number, blurry receipt, etc..." oninput="this.style.borderColor='rgba(255,255,255,.08)'; document.getElementById('reasonError').style.display='none';"></textarea>
+                <div id="reasonError" style="display: none; color: #ef4444; font-size: 11.5px; font-weight: 600; margin-top: 6px;">
+                    Please provide a rejection reason.
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="display:flex; gap:10px; padding:20px 24px; border-top:1px solid rgba(255,255,255,.05); background:rgba(0,0,0,.12);">
+            <button type="button" onclick="closeDecisionModal()" style="flex:0 0 auto; padding:13px 20px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:#d4d1cc; border-radius:12px; font-weight:800; cursor:pointer;">Cancel</button>
+            <button type="button" id="decisionConfirmBtn" onclick="confirmDecision()" style="flex:1; padding:13px 18px; border:none; border-radius:12px; color:#fff; font-weight:800; cursor:pointer; transition:.18s;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAction = '';
+    let currentPaymentId = '';
+
+    function openDecisionModal(action, id, payNo, amount, store, method) {
+        currentAction = action;
+        currentPaymentId = id;
+        
+        const modal = document.getElementById('decisionModal');
+        const icon = document.getElementById('decisionIcon');
+        const eyebrow = document.getElementById('decisionEyebrow');
+        const title = document.getElementById('decisionTitle');
+        const sub = document.getElementById('decisionSub');
+        const alertBox = document.getElementById('decisionAlert');
+        const alertText = document.getElementById('decisionAlertText');
+        const reasonBox = document.getElementById('decisionReasonContainer');
+        const confirmBtn = document.getElementById('decisionConfirmBtn');
+        const reasonInput = document.getElementById('decisionReason');
+
+        // Populate Facts
+        document.getElementById('decisionPayNo').textContent = payNo;
+        document.getElementById('decisionAmount').textContent = amount;
+        document.getElementById('decisionStore').textContent = store;
+        document.getElementById('decisionMethod').textContent = method;
+        reasonInput.value = '';
+
+        if (action === 'approve') {
+            icon.style.cssText = 'background:rgba(34,197,94,.15); border-color:rgba(34,197,94,.4); color:#22c55e; box-shadow:0 8px 24px -8px rgba(34,197,94,.5);';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+            eyebrow.style.color = '#4ade80'; eyebrow.textContent = 'APPROVE ACTION';
+            title.textContent = 'Confirm Payment Approval';
+            sub.textContent = 'Payment will be marked as verified.';
+            alertBox.style.cssText = 'background:rgba(34,197,94,.08); border-color:rgba(34,197,94,.25); color:#bbf7d0;';
+            alertText.innerHTML = 'Are you sure you want to <strong>APPROVE</strong> this payment? This will update the store\'s balance immediately.';
+            reasonBox.style.display = 'none';
+            confirmBtn.style.cssText = 'flex:1; padding:13px 18px; background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border:none; border-radius:12px; color:#fff; font-weight:800; cursor:pointer; box-shadow:0 8px 24px -8px rgba(34,197,94,.7);';
+            confirmBtn.innerHTML = 'Yes, Approve';
+        } else {
+            icon.style.cssText = 'background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.4); color:#ef4444; box-shadow:0 8px 24px -8px rgba(239,68,68,.5);';
+            icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+            eyebrow.style.color = '#f87171'; eyebrow.textContent = 'REJECT ACTION';
+            title.textContent = 'Confirm Payment Rejection';
+            sub.textContent = 'Customer will be notified to re-submit.';
+            alertBox.style.cssText = 'background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.25); color:#fecaca;';
+            alertText.innerHTML = 'Are you sure you want to <strong>REJECT</strong> this payment? The customer will see the reason you provide below.';
+            reasonBox.style.display = 'block';
+            confirmBtn.style.cssText = 'flex:1; padding:13px 18px; background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border:none; border-radius:12px; color:#fff; font-weight:800; cursor:pointer; box-shadow:0 8px 24px -8px rgba(239,68,68,.7);';
+            confirmBtn.innerHTML = 'Yes, Reject';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeDecisionModal() {
+        document.getElementById('decisionModal').style.display = 'none';
+    }
+
+    function confirmDecision() {
+        if (currentAction === 'approve') {
+            document.getElementById('approve-form-' + currentPaymentId).submit();
+        } else {
+            const reason = document.getElementById('decisionReason').value.trim();
+            if (!reason) {
+            document.getElementById('decisionReason').style.borderColor = '#ef4444';
+            document.getElementById('reasonError').style.display = 'block';
+            return;
+        }
+            
+            const rejectForm = document.getElementById('reject-form-' + currentPaymentId);
+            const oldInput = rejectForm.querySelector('input[name="reason"]');
+            if(oldInput) oldInput.remove();
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'reason';
+            hiddenInput.value = reason;
+            rejectForm.appendChild(hiddenInput);
+
+            rejectForm.submit();
+        }
+    }
+</script>
 @endsection
 
 @push('styles')
