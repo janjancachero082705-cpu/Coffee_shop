@@ -92,6 +92,11 @@ class StoreController extends Controller
         ]);
 
         $data['credit_limit'] = $data['credit_limit'] ?? 0;
+        
+        // Auto-approve — admin manual input (bag-ong flow)
+        $data['registration_status'] = 'approved';
+        $data['is_read_by_admin'] = 1;
+        $data['status'] = $data['status'] ?? 'active';
 
         Store::create($data);
 

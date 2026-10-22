@@ -115,7 +115,11 @@ class DeliveryReceiptController extends Controller
                 'total_amount'  => $total,
                 'amount_paid'   => 0,
                 'balance'       => $total,
-                'status'        => 'pending',
+                'status'             => 'delivered',
+                  'customer_confirmed' => 1,
+                  'confirmed_at'       => now(),
+                  'confirmed_notes'    => 'Auto-confirmed (admin manual)',
+                  'delivered_at'       => now(),
                 'notes'         => $data['notes'] ?? null,
             ]);
 
