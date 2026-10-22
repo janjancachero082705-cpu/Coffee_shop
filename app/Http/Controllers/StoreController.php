@@ -86,7 +86,9 @@ class StoreController extends Controller
             'credit_limit'   => 'nullable|numeric|min:0',
             'payment_terms'  => 'required|in:weekly,semi_monthly,monthly,flexible',
             'status'         => 'required|in:active,inactive,suspended',
-            'notes'          => 'nullable|string',
+              'customer_type'  => 'nullable|in:regular,suki,friend',
+              'default_discount_percent' => 'nullable|numeric|min:0|max:100',
+              'notes'          => 'nullable|string',
         ]);
 
         $data['credit_limit'] = $data['credit_limit'] ?? 0;
@@ -120,7 +122,9 @@ class StoreController extends Controller
             'credit_limit'   => 'nullable|numeric|min:0',
             'payment_terms'  => 'required|in:weekly,semi_monthly,monthly,flexible',
             'status'         => 'required|in:active,inactive,suspended',
-            'notes'          => 'nullable|string',
+              'customer_type'  => 'nullable|in:regular,suki,friend',
+              'default_discount_percent' => 'nullable|numeric|min:0|max:100',
+              'notes'          => 'nullable|string',
         ]);
 
         $data['credit_limit'] = $data['credit_limit'] ?? 0;

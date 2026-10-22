@@ -120,6 +120,22 @@
                                 <option value="flexible" @selected(old('payment_terms', $store->payment_terms ?? '') === 'flexible')>Flexible</option>
                             </select>
                         </div>
+                        <div>
+                            <label class="label">Customer Type</label>
+                            <select name="customer_type" class="input">
+                                <option value="regular" @selected(old('customer_type', $store->customer_type ?? 'regular') === 'regular')>Regular</option>
+                                <option value="suki" @selected(old('customer_type', $store->customer_type ?? '') === 'suki')>Suki (Loyal Customer)</option>
+                                <option value="friend" @selected(old('customer_type', $store->customer_type ?? '') === 'friend')>Friend</option>
+                            </select>
+                            <small style="color:#888;font-size:12px;">Suki = automatic discount sa deliveries</small>
+                        </div>
+                        <div>
+                            <label class="label">Default Discount %</label>
+                            <input type="number" name="default_discount_percent" step="0.01" min="0" max="100" 
+                                   value="{{ old('default_discount_percent', $store->default_discount_percent ?? 0) }}" 
+                                   class="input" placeholder="0">
+                            <small style="color:#888;font-size:12px;">Auto-apply sa delivery form (e.g., 10 = 10%)</small>
+                        </div>
                     </div>
 
                     <div class="form-row">
