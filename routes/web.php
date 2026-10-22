@@ -1,211 +1,54 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\TransactionController;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
-use App\Http\Controllers\DeliveryReceiptController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SalesReportController;
-use App\Http\Controllers\ConsignmentPaymentController;
-use App\Http\Controllers\ReorderRequestController;
-use App\Http\Controllers\AdminNotificationController;
-use App\Http\Controllers\Portal\StoreAuthController;
-use App\Http\Controllers\Portal\StoreRegisterController;
-use App\Http\Controllers\Portal\PortalProfileController;
-use App\Http\Controllers\StoreRegistrationController;
-use App\Http\Controllers\Portal\PortalDashboardController;
-use App\Http\Controllers\Portal\PortalOrderController;
-use App\Http\Controllers\Portal\PortalDeliveryController;
-use App\Http\Controllers\Portal\PortalSalesReportController;
-use App\Http\Controllers\Portal\PortalPaymentController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StoreInventoryController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\ExpenseController;
 
+// Root Redirect
 Route::get('/', function () {
-    // Logged-in admin -> dashboard
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    // Logged-in store -> portal dashboard
-    if (auth('store')->check()) {
-        return redirect()->route('portal.dashboard');
-    }
-    // Guest -> welcome page (may hidden login form)
-    return view('welcome');
-})->name('welcome');
-
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    return redirect()->route('dashboard');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// Custom Login Routes (Manual)
+Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+
+// Protected Routes (Kailangan naka-login)
+Route::middleware(['auth'])->group(function () {
+    
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Finance Dashboard
-    Route::get('/finance', [\App\Http\Controllers\FinanceController::class, 'dashboard'])->name('finance.dashboard');
-
-        // Transactions (Activity Log)
-    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
-
-    // Products
-    Route::resource('products', ProductController::class);
-
-    // Stores
+    
+    // Operations
     Route::resource('stores', StoreController::class);
-
-    // Store Registrations
-    Route::get('store-registrations', [StoreRegistrationController::class, 'index'])->name('store-registrations.index');
-    Route::get('store-registrations/{store}', [StoreRegistrationController::class, 'show'])->name('store-registrations.show');
-    Route::post('store-registrations/{store}/approve', [StoreRegistrationController::class, 'approve'])->name('store-registrations.approve');
-    Route::post('store-registrations/{store}/reject', [StoreRegistrationController::class, 'reject'])->name('store-registrations.reject');
-
-    // Delivery Receipts
-    Route::resource('reorder-requests', \App\Http\Controllers\ReorderRequestController::class)->only(['index', 'show']);
-    Route::post('reorder-requests/{reorderRequest}/approve', [\App\Http\Controllers\ReorderRequestController::class, 'approve'])->name('reorder-requests.approve');
-    Route::post('reorder-requests/{reorderRequest}/reject', [\App\Http\Controllers\ReorderRequestController::class, 'reject'])->name('reorder-requests.reject');
-
-    Route::resource('deliveries', DeliveryReceiptController::class);
-    Route::post('deliveries/{id}/out-for-delivery', [\App\Http\Controllers\DeliveryReceiptController::class, 'markOutForDelivery'])->name('deliveries.out-for-delivery');
-// Consignment
-    Route::prefix('consignment')->name('consignment.')->group(function () {
-        Route::get('/reports', [SalesReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/create', [SalesReportController::class, 'create'])->name('reports.create');
-        Route::post('/reports', [SalesReportController::class, 'store'])->name('reports.store');
-        Route::get('/reports/{report}', [SalesReportController::class, 'show'])->name('reports.show');
-
-        Route::get('/payments', [ConsignmentPaymentController::class, 'index'])->name('payments.index');
-        Route::get('/payments/create', [ConsignmentPaymentController::class, 'create'])->name('payments.create');
-        Route::post('/payments', [ConsignmentPaymentController::class, 'store'])->name('payments.store');
-        Route::get('/payments/{payment}', [ConsignmentPaymentController::class, 'show'])->name('payments.show');
-    });
+    Route::resource('products', ProductController::class);
+    
+    // Deliveries
+    Route::resource('deliveries', DeliveryController::class);
+    Route::get('deliveries/store/{store}', [DeliveryController::class, 'showStore'])->name('deliveries.store-profile');
+    
+    // Inventory
+    Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    
+    // Consignment & Sales
+    Route::get('sales-reports', [SalesReportController::class, 'index'])->name('sales-reports.index');
+    Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('store-inventory', [StoreInventoryController::class, 'index'])->name('store-inventory.index');
+    
+    // Business Modules (Placeholders)
+    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+    Route::get('production', [ProductionController::class, 'index'])->name('production.index');
+    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
 });
-
-// ==================================================================
-// STORE PORTAL
-// ==================================================================
-
-Route::prefix('portal')->name('portal.')->group(function () {
-
-    // Portal Inventory â€” delivered products per store
-    Route::get('inventory', [\App\Http\Controllers\Portal\PortalInventoryController::class, 'index'])
-        ->name('inventory.index');
-
-    // Guest routes
-    Route::middleware('guest:store')->group(function () {
-        Route::get('/login', [StoreAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [StoreAuthController::class, 'login'])->name('login.store');
-        Route::get('/register', [StoreRegisterController::class, 'showForm'])->name('register');
-        Route::post('/register', [StoreRegisterController::class, 'register'])->name('register.store');
-        Route::get('/register/success', [StoreRegisterController::class, 'success'])->name('register.success');
-    });
-
-    // Authenticated store routes
-    Route::middleware('auth:store')->group(function () {
-        Route::post('/logout', [StoreAuthController::class, 'logout'])->name('logout');
-        Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
-
-        // Profile
-        Route::get('/profile', [PortalProfileController::class, 'show'])->name('profile');
-        Route::get('/profile/edit', [PortalProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/profile', [PortalProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/profile/logo', [PortalProfileController::class, 'removeLogo'])->name('profile.logo.remove');
-        Route::get('/profile/password', [PortalProfileController::class, 'passwordForm'])->name('profile.password');
-        Route::put('/profile/password', [PortalProfileController::class, 'updatePassword'])->name('profile.password.update');
-
-                // ═══ TRACKING MODULE (Separate) ═══
-        Route::get('/tracking', [\App\Http\Controllers\Portal\PortalTrackingController::class, 'index'])->name('tracking.index');
-        Route::get('/tracking/{id}', [\App\Http\Controllers\Portal\PortalTrackingController::class, 'show'])->name('tracking.show');
-
-        // Orders
-        Route::get('/orders', [PortalOrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/create', [PortalOrderController::class, 'create'])->name('orders.create');
-        Route::post('/orders', [PortalOrderController::class, 'store'])->name('orders.store');
-        Route::get('/orders/{id}', [PortalOrderController::class, 'show'])->name('orders.show');
-        Route::post('/orders/{id}/cancel', [PortalOrderController::class, 'cancel'])->name('orders.cancel');
-
-        // Deliveries
-        Route::get('/deliveries', [PortalDeliveryController::class, 'index'])->name('deliveries.index');
-        Route::get('/deliveries/{id}', [PortalDeliveryController::class, 'show'])->name('deliveries.show');
-        Route::post('/deliveries/{id}/confirm', [PortalDeliveryController::class, 'confirm'])->name('deliveries.confirm');
-
-        // Sales Reports
-        Route::get('/reports', [PortalSalesReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/{id}', [PortalSalesReportController::class, 'show'])->name('reports.show');
-
-        // Payments
-        Route::get('/payments', [PortalPaymentController::class, 'index'])->name('payments.index');
-        Route::get('/payments/create', [PortalPaymentController::class, 'create'])->name('payments.create');
-        Route::post('/payments', [PortalPaymentController::class, 'store'])->name('payments.store');
-        Route::get('/payments/{id}', [PortalPaymentController::class, 'show'])->name('payments.show');
-
-        // Notifications
-        Route::get('/notifications/unread', [\App\Http\Controllers\Portal\NotificationController::class, 'unread'])->name('notifications.unread');
-        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Portal\NotificationController::class, 'markRead'])->name('notifications.read');
-        Route::post('/notifications/read-all', [\App\Http\Controllers\Portal\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
-    });
-});
-
-// ============ ADMIN NOTIFICATIONS ============
-Route::middleware(['auth'])->group(function () {
-    Route::get('notifications', [\App\Http\Controllers\AdminNotificationController::class, 'index'])->name('notifications.index');
-    Route::post('notifications/read-all', [\App\Http\Controllers\AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
-    Route::post('notifications/{id}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markRead'])->name('notifications.read');
-});
-// Nav badge polling endpoint
-Route::middleware('auth')->get('/nav/pending-orders', function () {
-    return response()->json([
-        'pending'  => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['pending'])->count(),
-        'total'    => \App\Models\ReorderRequest::count(),
-        'approved' => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['approved'])->count(),
-        'rejected' => \App\Models\ReorderRequest::whereRaw('LOWER(status) = ?', ['rejected'])->count(),
-    ]);
-})->name('nav.pending-orders');
-
-// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â PAYMENT VERIFICATION Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-Route::middleware('auth')->prefix('consignment/payments')->name('consignment.payments.')->group(function () {
-    Route::post('{id}/verify', [\App\Http\Controllers\ConsignmentPaymentController::class, 'verify'])->name('verify');
-    Route::post('{id}/reject', [\App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('reject');
-});
-
-// ===== Sales Report Modal (AJAX partial) =====
-Route::middleware(['auth'])->get('sales-reports/{report}/modal', [SalesReportController::class, 'modal'])
-    ->name('sales-reports.modal');
-
-// ===== Store-level Sales Report Modal =====
-Route::middleware(['auth'])->get('sales-reports/store/{store}/modal', [SalesReportController::class, 'storeModal'])
-    ->name('sales-reports.store-modal');
-
-// ===== Store-specific Sales Reports page =====
-Route::middleware(['auth'])->get('reports/store/{store}', [SalesReportController::class, 'storeReports'])
-    ->name('reports.store-reports');
-
-// ===== Store-specific Transactions page =====
-Route::middleware(['auth'])->get('transactions/store/{store}', [\App\Http\Controllers\TransactionController::class, 'storeTransactions'])
-    ->name('transactions.store-transactions');
-// GCash Settings
-Route::get('/admin/settings/gcash', [App\Http\Controllers\AdminSettingController::class, 'index'])->name('admin.settings.gcash');
-Route::post('/admin/settings/gcash', [App\Http\Controllers\AdminSettingController::class, 'update'])->name('admin.settings.gcash.update');
-
-// Auto-added routes for Consignment Payment Approval
-Route::middleware(['auth'])->group(function () {
-    Route::post('/consignment/payments/{payment}/approve', [App\Http\Controllers\ConsignmentPaymentController::class, 'approve'])->name('consignment.payments.approve');
-    Route::post('/consignment/payments/{payment}/reject', [App\Http\Controllers\ConsignmentPaymentController::class, 'reject'])->name('consignment.payments.reject');
-});
-Route::middleware(['auth'])->group(function () {
-    Route::get('/consignment/payments/{payment}', [App\Http\Controllers\ConsignmentPaymentController::class, 'show'])->name('consignment.payments.show');
-});
-// Route for Portal Profile
-Route::middleware(['auth:store'])->group(function () {
-    Route::get('/portal/profile', function () {
-        return view('portal.profile.index'); 
-    })->name('portal.profile');
-});
-Route::middleware(['auth'])->group(function () {
-    Route::get('/admin/e-wallets', [App\Http\Controllers\AdminEWalletController::class, 'index'])->name('admin.e-wallets.index');
-    Route::post('/admin/e-wallets', [App\Http\Controllers\AdminEWalletController::class, 'store'])->name('admin.e-wallets.store');
-    Route::delete('/admin/e-wallets/{id}', [App\Http\Controllers\AdminEWalletController::class, 'destroy'])->name('admin.e-wallets.destroy');
-    Route::post('/admin/e-wallets/{id}/toggle', [App\Http\Controllers\AdminEWalletController::class, 'toggle'])->name('admin.e-wallets.toggle');
-});
-

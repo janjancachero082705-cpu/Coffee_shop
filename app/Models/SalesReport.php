@@ -1,116 +1,33 @@
 <?php
-
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesReport extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'report_number',
-        'delivery_receipt_id',
-        'store_id',
-        'user_id',
-        'period_from',
-        'period_to',
-        'total_sales',
-        'total_quantity',
-        'amount_due',
-        'amount_paid',
-        'balance',
-        'status',
-        'notes',
+        'report_number','store_id','period_from','period_to',
+        'total_sales','total_quantity','total_cost','gross_profit',
+        'amount_due','amount_paid','balance','status','notes','user_id'
     ];
-
     protected $casts = [
-        'period_from'  => 'date',
-        'period_to'    => 'date',
-        'total_sales'  => 'decimal:2',
-        'amount_due'   => 'decimal:2',
-        'amount_paid'  => 'decimal:2',
-        'balance'      => 'decimal:2',
+        'period_from'=>'date','period_to'=>'date',
+        'total_sales'=>'decimal:2','total_quantity'=>'decimal:2',
+        'total_cost'=>'decimal:2','gross_profit'=>'decimal:2',
+        'amount_due'=>'decimal:2','amount_paid'=>'decimal:2','balance'=>'decimal:2'
     ];
 
-    public function store()
-    {
-        return $this->belongsTo(Store::class);
-    }
+    public function store() { return $this->belongsTo(Store::class); }
+    public function user() { return $this->belongsTo(User::class); }
+    public function items() { return $this->hasMany(SalesReportItem::class); }
+    public function payments() { return $this->hasMany(ConsignmentPayment::class); }
 
-    public function deliveryReceipt()
-    {
-        return $this->belongsTo(DeliveryReceipt::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function items()
-    {
-        return $this->hasMany(SalesReportItem::class);
-    }
-
-    public function recalculate(): void
-    {
-        $due  = (float) $this->total_sales;
-        $paid = (float) $this->amount_paid;
-
-        $this->amount_due = $due;
-        $this->balance    = max(0, $due - $paid);
-
-        if ($this->balance <= 0.01 && $due > 0) {
-            $this->status = 'paid';
-            $this->balance = 0;
-        } elseif ($paid > 0) {
-            $this->status = 'partial';
-        } else {
-            $this->status = 'pending';
-        }
-
-        $this->save();
-    }
-
-    public function getPaidPercentAttribute(): float
-    {
-        if ($this->total_sales <= 0) return 0;
-        return min(100, round(($this->amount_paid / $this->total_sales) * 100, 1));
-    }
-
-    // Get all store payments (for display)
-    public function getStorePaymentsAttribute()
-    {
-        return ConsignmentPayment::where('store_id', $this->store_id)
-            ->orderBy('payment_date', 'desc')
-            ->get();
-    }
-
-    // ═══ GENERATE UNIQUE REPORT NUMBER (race-safe) ═══
-    public static function generateNumber(): string
-    {
-        $prefix = 'SR-' . now()->format('Ymd') . '-';
-
-        $last = static::where('report_number', 'like', $prefix . '%')
-            ->orderByDesc('report_number')
-            ->value('report_number');
-
-        $seq = 1;
-        if ($last && preg_match('/-(\d+)$/', $last, $m)) {
-            $seq = (int) $m[1] + 1;
-        }
-
-        // Retry hangtud wala'y existing (in case of race)
-        $attempts = 0;
-        do {
-            $number = $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
-            $exists = static::where('report_number', $number)->exists();
-            $seq++;
-            $attempts++;
-        } while ($exists && $attempts < 100);
-
-        return $number;
+    public function getStatusBadgeAttribute() {
+        return match($this->status) {
+            'paid','closed' => 'badge-success',
+            'partial' => 'badge-warning',
+            'submitted' => 'badge-friend',
+            'draft' => 'badge-regular',
+            default => 'badge-regular',
+        };
     }
 }

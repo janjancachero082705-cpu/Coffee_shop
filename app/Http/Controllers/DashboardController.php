@@ -1,62 +1,53 @@
 <?php
-
 namespace App\Http\Controllers;
-
+use App\Models\Delivery;
 use App\Models\Store;
 use App\Models\Product;
-use App\Models\DeliveryReceipt;
-use App\Models\SalesReport;
-use App\Models\ConsignmentPayment;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $stats = [
-            'stores_total'      => Store::count(),
-            'stores_active'     => Store::where('status', 'active')->count(),
-            'products_total'    => Product::count(),
-            'products_active'   => Product::where('is_active', true)->count(),
-            'low_stock'         => Product::where('is_active', true)
-                                          ->whereColumn('stock', '<=', 'reorder_level')
-                                          ->count(),
-            'deliveries_total'  => DeliveryReceipt::count(),
-            'deliveries_today'  => DeliveryReceipt::whereDate('delivery_date', today())->count(),
-            'receivables'       => (float) DeliveryReceipt::sum('balance'),
-            'overdue'           => (float) DeliveryReceipt::where('status', 'overdue')->sum('balance'),
-            'pending_reports'   => SalesReport::where('status', 'pending')->count(),
-            'month_sales'       => (float) SalesReport::where('created_at', '>=', now()->startOfMonth())->sum('total_sales'),
-            'month_payments'    => (float) ConsignmentPayment::verified()->where('payment_date', '>=', now()->startOfMonth())->sum('amount'),
+        // Calculate Start and End of Current Month
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
 
-            // NEW - DR-based totals
-            'total_delivered'   => (float) DeliveryReceipt::sum('total_amount'),
-            'total_paid'        => (float) ConsignmentPayment::verified()->sum('amount'),
-            'pending_payments'  => ConsignmentPayment::pending()->count(),
-            'rejected_payments' => ConsignmentPayment::rejected()->count(),
-            'total_outstanding' => (float) DeliveryReceipt::sum('balance'),
-        ];
+        // 1. Metrics (Base sa atong bag-ong tables)
+        $distributed = Delivery::whereBetween('delivery_date', [$startOfMonth, $endOfMonth])->sum('total_amount');
+        $distributedCount = Delivery::whereBetween('delivery_date', [$startOfMonth, $endOfMonth])->count();
+        
+        // Dummy data para sa mga module nga wala pa na-build
+        $sold = 0; 
+        $collected = 0;
+        $outstanding = 0;
 
-        $recentDeliveries = DeliveryReceipt::with('store')
-            ->latest()
-            ->take(5)
-            ->get();
+        $totalStores = Store::count();
+        $totalProducts = Product::count();
 
-        $recentPayments = ConsignmentPayment::with('store')
-            ->latest()
-            ->take(5)
-            ->get();
+        // 2. Recent Deliveries
+        $recentDeliveries = Delivery::with('store')->latest()->take(5)->get();
 
-        $topStores = Store::withSum('deliveryReceipts as total_delivered', 'total_amount')
-            ->orderByDesc('total_delivered')
-            ->take(5)
-            ->get();
+        // 3. Store Balances (Dummy data kay wala pa tay sales module)
+        $storeBalances = collect([]); 
 
-        return view('dashboard.index', compact(
-            'stats',
-            'recentDeliveries',
-            'recentPayments',
-            'topStores'
+        // 4. Trend Data (Sample data para sa Chart)
+        $trend = collect([
+            ['label' => 'Week 1', 'sold' => 5000],
+            ['label' => 'Week 2', 'sold' => 8000],
+            ['label' => 'Week 3', 'sold' => 12000],
+            ['label' => 'Week 4', 'sold' => 15000],
+        ]);
+
+        // 5. Low Stock Variants
+        $lowStockVariants = ProductVariant::with('product')->where('stock', '<=', 5)->take(5)->get();
+
+        return view('dashboard', compact(
+            'distributed', 'distributedCount', 'sold', 'collected', 'outstanding',
+            'totalStores', 'totalProducts', 'recentDeliveries', 'storeBalances', 
+            'trend', 'lowStockVariants'
         ));
     }
 }

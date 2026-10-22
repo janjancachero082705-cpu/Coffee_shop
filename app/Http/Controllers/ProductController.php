@@ -1,152 +1,142 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with('category', 'variants');
 
         if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('sku', 'like', "%{$s}%");
-            });
+            $search = $request->input('search');
+            $query->where(fn($q) => $q->where('name', 'like', "%$search%")->orWhere('sku', 'like', "%$search%"));
         }
 
         if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+            $query->where('category_id', $request->input('category'));
         }
 
-        if ($request->filled('stock')) {
-            if ($request->stock === 'low') {
-                $query->where('is_active', true)->whereColumn('stock', '<=', 'reorder_level')->where('stock', '>', 0);
-            } elseif ($request->stock === 'out') {
-                $query->where('stock', '<=', 0);
-            } elseif ($request->stock === 'in') {
-                $query->where('stock', '>', 0);
-            }
-        }
+        $products = $query->latest()->paginate(15)->withQueryString();
+        $categories = Category::all();
 
-        $sort = $request->get('sort', 'latest');
-        if ($sort === 'name') {
-            $query->orderBy('name');
-        } elseif ($sort === 'price_low') {
-            $query->orderBy('price');
-        } elseif ($sort === 'price_high') {
-            $query->orderByDesc('price');
-        } else {
-            $query->latest();
-        }
-
-        $products = $query->paginate(12)->withQueryString();
-
-        return view('products.index', compact('products'));
+        return view('products.index', compact('products', 'categories'));
     }
 
     public function create()
     {
-        $categories = Category::orderBy('name')->get();
-        return view('products.form', ['product' => new Product(), 'categories' => $categories]);
+        $categories = Category::all();
+        return view('products.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $validated = $request->validate([
+            'sku' => 'required|string|max:255|unique:products,sku',
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku',
             'category_id' => 'nullable|exists:categories,id',
+            'unit_type' => 'required|string',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'wholesale_price' => 'nullable|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'reorder_level' => 'nullable|integer|min:0',
-            'unit' => 'nullable|string|max:50',
-            'is_active' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'variants' => 'required|array|min:1',
+            'variants.*.weight' => 'required|string',
+            'variants.*.unit' => 'required|string',
+            'variants.*.price' => 'required|numeric|min:0',
+            'variants.*.stock' => 'required|integer|min:0',
         ]);
 
-        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
-        $data['reorder_level'] = $data['reorder_level'] ?? 10;
-        $data['category_id'] = $data['category_id'] ?? null;
-        $data['stock'] = $data['stock'] ?? 0;
+        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
+        $validated['is_featured'] = $request->has('is_featured') ? 1 : 0;
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
-        }
+        DB::transaction(function () use ($validated, $request) {
+            $product = Product::create([
+                'sku' => $validated['sku'],
+                'name' => $validated['name'],
+                'category_id' => $validated['category_id'],
+                'unit_type' => $validated['unit_type'],
+                'description' => $validated['description'],
+                'is_active' => $validated['is_active'],
+                'is_featured' => $validated['is_featured'],
+            ]);
 
-        Product::create($data);
+            foreach ($request->variants as $variant) {
+                $isNumeric = is_numeric($variant['weight']);
+                $product->variants()->create([
+                    'name' => $variant['weight'],
+                    'weight' => $isNumeric ? $variant['weight'] : 0,
+                    'unit' => $variant['unit'],
+                    'price' => $variant['price'],
+                    'cost_price' => $variant['cost_price'] ?? 0,
+                    'stock' => $variant['stock'],
+                ]);
+            }
+        });
 
-        return redirect()->route('products.index')->with('success', 'Product created successfully.');
-    }
-
-    public function show(Product $product)
-    {
-        return view('products.show', compact('product'));
+        return redirect()->route('products.index')->with('success', 'Product and Variants created successfully!');
     }
 
     public function edit(Product $product)
     {
-        $categories = Category::orderBy('name')->get();
-        return view('products.form', compact('product', 'categories'));
+        $product->load('variants');
+        $categories = Category::all();
+        return view('products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
     {
-        $data = $request->validate([
+        $validated = $request->validate([
+            'sku' => 'required|string|max:255|unique:products,sku,' . $product->id,
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'category_id' => 'nullable|exists:categories,id',
+            'unit_type' => 'required|string',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'wholesale_price' => 'nullable|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'reorder_level' => 'nullable|integer|min:0',
-            'unit' => 'nullable|string|max:50',
-            'is_active' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'variants' => 'required|array|min:1',
+            'variants.*.weight' => 'required|string',
+            'variants.*.unit' => 'required|string',
+            'variants.*.price' => 'required|numeric|min:0',
+            'variants.*.stock' => 'required|integer|min:0',
         ]);
 
-        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
-        $data['reorder_level'] = $data['reorder_level'] ?? 10;
-        $data['category_id'] = $data['category_id'] ?? null;
-        $data['stock'] = $data['stock'] ?? 0;
+        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
+        $validated['is_featured'] = $request->has('is_featured') ? 1 : 0;
 
+        DB::transaction(function () use ($validated, $request, $product) {
+            $product->update([
+                'sku' => $validated['sku'],
+                'name' => $validated['name'],
+                'category_id' => $validated['category_id'],
+                'unit_type' => $validated['unit_type'],
+                'description' => $validated['description'],
+                'is_active' => $validated['is_active'],
+                'is_featured' => $validated['is_featured'],
+            ]);
 
-        // ⚠️ Kung walay bag-o nga image, ayaw hilabti ang existing
-        if (!$request->hasFile('image')) {
-            unset($data['image']);
-        }
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($product->image && !str_starts_with($product->image, 'http')) {
-                Storage::disk('public')->delete($product->image);
+            // Safest way: Delete existing variants and recreate
+            $product->variants()->delete();
+
+            foreach ($request->variants as $variant) {
+                $isNumeric = is_numeric($variant['weight']);
+                $product->variants()->create([
+                    'name' => $variant['weight'],
+                    'weight' => $isNumeric ? $variant['weight'] : 0,
+                    'unit' => $variant['unit'],
+                    'price' => $variant['price'],
+                    'cost_price' => $variant['cost_price'] ?? 0,
+                    'stock' => $variant['stock'],
+                ]);
             }
-            $data['image'] = $request->file('image')->store('products', 'public');
-        }
+        });
 
-        $product->update($data);
-
-        return redirect()->route('products.show', $product)->with('success', 'Product updated successfully.');
+        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
     }
 
     public function destroy(Product $product)
     {
-        if ($product->image && !str_starts_with($product->image, 'http')) {
-            Storage::disk('public')->delete($product->image);
-        }
         $product->delete();
-
-        return redirect()->route('products.index')->with('success', 'Product deleted.');
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
     }
 }
