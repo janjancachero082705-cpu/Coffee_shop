@@ -2020,7 +2020,7 @@
     <div class="p-sidebar-foot">
         <div class="p-sidebar-user">
             <div class="p-sidebar-user-avatar">
-                @if(Auth::guard('store')->user() && Auth::guard('store')->user()->logo_url)
+                @if(Auth::guard('store')->user() && Auth::guard('store')->user()->avatar_url)
                     <img src="{{ Auth::guard('store')->user()->avatar_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
                 @else
                     {{ strtoupper(substr(Auth::guard('store')->user()->store_name ?? 'ST', 0, 2)) }}

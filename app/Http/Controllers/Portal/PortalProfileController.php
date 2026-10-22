@@ -25,36 +25,63 @@ class PortalProfileController extends Controller
 
     public function update(Request $request)
     {
-        $store = Store::find(Auth::guard('store')->id());
+        // Robust store lookup
+        $store = null;
+        if (auth('store')->check()) {
+            $store = auth('store')->user();
+        } elseif (auth()->check() && auth()->user()->store_id) {
+            $store = \App\Models\Store::find(auth()->user()->store_id);
+        }
 
+        if (!$store) {
+            return back()->withErrors(['error' => 'Store not found. Please login again.']);
+        }
+
+        // Validation — nullable fields (para mo-work sa bag-ong accounts)
         $request->validate([
-            'store_name' => 'required|string|max:255',
-            'owner_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'contact_number' => 'required|string|max:20',
-            'address' => 'required|string',
+            'store_name'    => 'nullable|string|max:255',
+            'owner_name'    => 'nullable|string|max:255',
+            'email'         => 'nullable|email|max:255',
+            'contact_number'=> 'nullable|string|max:20',
+            'phone'         => 'nullable|string|max:20',
+            'address'       => 'nullable|string|max:500',
+            'barangay'      => 'nullable|string|max:255',
+            'city'          => 'nullable|string|max:255',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
-        $store->store_name = $request->store_name;
-        $store->owner_name = $request->owner_name;
-        $store->email = $request->email;
-        $store->contact_number = $request->contact_number;
-        $store->address = $request->address;
-        $store->barangay = $request->barangay;
-        $store->city = $request->city;
+        // Update text fields — support both 'contact_number' and 'phone'
+        $store->store_name = $request->input('store_name', $store->store_name);
+        $store->owner_name = $request->input('owner_name', $store->owner_name);
+        $store->email = $request->input('email', $store->email);
+        
+        // Support both field names
+        if ($request->filled('contact_number')) {
+            $store->contact_number = $request->contact_number;
+        } elseif ($request->filled('phone')) {
+            $store->contact_number = $request->phone;
+        }
+        
+        $store->address = $request->input('address', $store->address);
+        $store->barangay = $request->input('barangay', $store->barangay);
+        $store->city = $request->input('city', $store->city);
 
+        // Handle profile picture upload
         if ($request->hasFile('profile_image')) {
-            if ($store->profile_image && Storage::disk('public')->exists($store->profile_image)) {
-                Storage::disk('public')->delete($store->profile_image);
+            // Delete old
+            if ($store->profile_image && \Storage::disk('public')->exists($store->profile_image)) {
+                \Storage::disk('public')->delete($store->profile_image);
             }
+
+            // Save new — with 'profiles/' prefix
             $path = $request->file('profile_image')->store('profiles', 'public');
             $store->profile_image = $path;
         }
 
+        // IMPORTANTE — explicit save + touch for cache-bust
         $store->save();
         $store->refresh();
-        Auth::guard('store')->setUser($store);
+        $store->touch();  // force updated_at change
 
         return redirect()->route('portal.profile')->with('success', 'Profile updated successfully!');
     }

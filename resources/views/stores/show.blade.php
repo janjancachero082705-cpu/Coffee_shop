@@ -45,10 +45,10 @@
     <div class="sd-hero-inner">
         <div class="sd-hero-left">
             <div class="sd-hero-avatar">
-                @if($store->logo_url)
+                @if($store->avatar_url)
                     <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
                 @else
-                    {{ strtoupper(substr($store->store_name, 0, 2)) }}
+                    {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
                 @endif
                 <span class="sd-hero-avatar-ring"></span>
             </div>

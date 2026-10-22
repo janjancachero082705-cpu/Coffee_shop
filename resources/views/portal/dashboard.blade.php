@@ -32,7 +32,7 @@
     </div>
 
     <div class="dash-hero-avatar">
-        @if($store->logo_url)
+        @if($store->avatar_url)
             <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}">
         @else
             {{ $initials }}

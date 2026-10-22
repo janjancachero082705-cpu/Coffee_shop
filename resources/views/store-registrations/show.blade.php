@@ -25,8 +25,12 @@
 {{-- ═══════ HERO ═══════ --}}
 <div class="sr-hero" style="--status-color: {{ $statusConfig['color'] }};">
     <div class="sr-hero-avatar">
+    @if($store->avatar_url)
+        <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}" style="width:100%;height:100%;object-fit:cover;">
+    @else
         {{ $initials }}
-    </div>
+    @endif
+</div>
 
     <div class="sr-hero-content">
         <div class="sr-hero-label">Store Registration</div>

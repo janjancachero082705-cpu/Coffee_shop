@@ -208,3 +208,4 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/e-wallets/{id}', [App\Http\Controllers\AdminEWalletController::class, 'destroy'])->name('admin.e-wallets.destroy');
     Route::post('/admin/e-wallets/{id}/toggle', [App\Http\Controllers\AdminEWalletController::class, 'toggle'])->name('admin.e-wallets.toggle');
 });
+

@@ -17,7 +17,13 @@
 </a>
 
 <div class="tx-hero">
-    <div class="tx-hero-avatar">{{ $initials }}</div>
+    <div class="tx-hero-avatar">
+    @if($store->avatar_url)
+        <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}" style="width:100%;height:100%;object-fit:cover;">
+    @else
+        {{ $initials }}
+    @endif
+</div>
     <div class="tx-hero-info">
         <div class="tx-hero-name">{{ $store->store_name }}</div>
         <div class="tx-hero-meta">

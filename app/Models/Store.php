@@ -93,7 +93,7 @@ class Store extends Authenticatable
     {
         if (!$this->logo) return null;
         if (str_starts_with($this->logo, "http")) return $this->logo;
-        return asset("storage/" . $this->logo);
+        return "/storage/" . $this->logo;
     }
 
     public function getInitialsAttribute(): string
@@ -151,7 +151,7 @@ class Store extends Authenticatable
         $path = $this->profile_image ?: $this->logo;
         if ($path && \Storage::disk('public')->exists($path)) {
             $time = $this->updated_at ? $this->updated_at->timestamp : time();
-            return asset('storage/' . $path) . '?v=' . $time;
+            return '/storage/' . $path . '?v=' . $time;
         }
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->store_name ?? 'ST') . '&background=E8A33D&color=fff';
     }

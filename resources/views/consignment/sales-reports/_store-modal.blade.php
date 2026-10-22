@@ -8,8 +8,12 @@
 {{-- ===== STORE HEADER ===== --}}
 <div class="sr-store-head">
     <div class="sr-store-avatar">
-        {{ strtoupper(substr($store->store_name, 0, 2)) }}
-    </div>
+    @if($store->avatar_url)
+        <img src="{{ $store->avatar_url }}" alt="{{ $store->store_name }}" style="width:100%;height:100%;object-fit:cover;">
+    @else
+        {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
+    @endif
+</div>
     <div class="sr-store-info">
         <div class="sr-store-name">{{ $store->store_name }}</div>
         <div class="sr-store-meta">

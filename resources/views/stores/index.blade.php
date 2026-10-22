@@ -152,7 +152,7 @@
                     <a href="{{ route('stores.show', $store) }}" class="st-card st-card-grid">
                         <div class="st-card-top">
                             <div class="st-card-logo {{ $isActive ? '' : 'st-card-logo-gray' }}">
-                                @if($store->logo_url)
+                                @if($store->avatar_url)
                                     <img src="{{ $store->avatar_url }}" alt="">
                                 @else
                                     {{ strtoupper(substr($store->store_name ?? 'ST', 0, 2)) }}
