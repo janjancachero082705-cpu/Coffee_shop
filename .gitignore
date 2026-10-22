@@ -97,3 +97,10 @@ tmp_*.php
 /*.txt
 !public/robots.txt
 
+
+# Local backups
+backup_*/
+
+# Diagnostic scripts
+check-*.php
+diag-*.php
