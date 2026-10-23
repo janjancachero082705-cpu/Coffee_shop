@@ -45,27 +45,27 @@
 {{-- MAIN CONTENT CARD --}}
 <div class="bg-white rounded-xl shadow-sm border border-espresso-200">
     
-    {{-- FILTER BAR --}}
+    {{-- FILTER BAR & STOCK IN BUTTON --}}
     <div class="p-5 border-b border-espresso-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-espresso-50/30">
         <form method="GET" action="{{ route('inventory.index') }}" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <div class="relative group w-full md:w-72">
+            <div class="relative group w-full md:w-64">
                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-espresso-400 text-sm group-focus-within:text-caramel-500 transition-colors"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search product or SKU..." class="w-full pl-9 pr-4 py-2 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-2 focus:ring-caramel-500/20 outline-none transition-all shadow-sm">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search product or SKU..." class="w-full pl-9 pr-4 py-2 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 outline-none shadow-sm transition-all">
             </div>
             
-            <select name="status" class="py-2 px-3 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-2 focus:ring-caramel-500/20 outline-none shadow-sm cursor-pointer font-medium text-espresso-700">
+            <select name="status" class="py-2 px-3 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 outline-none shadow-sm cursor-pointer font-medium text-espresso-700">
                 <option value="">All Status</option>
                 <option value="in_stock" {{ request('status') == 'in_stock' ? 'selected' : '' }}>In Stock</option>
                 <option value="low_stock" {{ request('status') == 'low_stock' ? 'selected' : '' }}>Low Stock</option>
                 <option value="out_of_stock" {{ request('status') == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
             </select>
 
-            <button type="submit" class="px-4 py-2 bg-espresso-900 hover:bg-espresso-800 text-white rounded-lg font-semibold text-sm shadow-sm transition-colors">Filter</button>
-            
-            @if(request()->has('search') || request()->has('status'))
-                <a href="{{ route('inventory.index') }}" class="px-4 py-2 bg-white border border-espresso-200 text-espresso-600 hover:bg-espresso-50 rounded-lg font-semibold text-sm transition-colors shadow-sm">Clear</a>
-            @endif
+            <button type="submit" class="px-4 py-2 bg-white border border-espresso-200 text-espresso-700 rounded-lg font-semibold text-sm hover:bg-espresso-50 transition-colors shadow-sm">Filter</button>
         </form>
+
+        <button onclick="openStockInModal()" class="px-5 py-2.5 bg-espresso-900 hover:bg-espresso-800 text-white rounded-lg font-semibold text-sm shadow-sm transition-all flex items-center gap-2 whitespace-nowrap">
+            <i class="fas fa-plus-circle"></i> Stock In
+        </button>
     </div>
 
     {{-- DATA TABLE --}}
@@ -83,8 +83,7 @@
                 </thead>
                 <tbody class="divide-y divide-espresso-100">
                     @foreach($variants as $variant)
-                        <tr class="hover:bg-espresso-50/50 transition-colors">
-                            {{-- Product --}}
+                        <tr class="hover:bg-espresso-50/50 transition-colors odd:bg-white even:bg-espresso-50/20">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-lg bg-espresso-100 text-espresso-700 flex items-center justify-center font-bold text-sm border border-espresso-200 shadow-sm">
@@ -96,15 +95,9 @@
                                     </div>
                                 </div>
                             </td>
-
-                            {{-- Variant Name --}}
                             <td class="px-6 py-4">
-                                <span class="inline-flex px-2.5 py-1 bg-white text-espresso-800 rounded-md text-xs font-bold border border-espresso-200 shadow-sm">
-                                    {{ $variant->name }} ({{ $variant->unit }})
-                                </span>
+                                <span class="inline-flex px-2.5 py-1 bg-white text-espresso-800 rounded-md text-xs font-bold border border-espresso-200 shadow-sm">{{ $variant->name }} ({{ $variant->unit }})</span>
                             </td>
-
-                            {{-- Stock Level Progress --}}
                             <td class="px-6 py-4">
                                 @if($variant->stock == 0)
                                     <div class="flex items-center gap-2">
@@ -130,36 +123,72 @@
                                     </div>
                                 @endif
                             </td>
-
-                            {{-- Unit Price --}}
-                            <td class="px-6 py-4 text-right font-medium text-espresso-700">
-                                &#8369;{{ number_format($variant->price, 2) }}
-                            </td>
-
-                            {{-- Total Value --}}
-                            <td class="px-6 py-4 text-right font-bold text-espresso-900">
-                                &#8369;{{ number_format($variant->stock * $variant->price, 2) }}
-                            </td>
+                            <td class="px-6 py-4 text-right font-medium text-espresso-700">&#8369;{{ number_format($variant->price, 2) }}</td>
+                            <td class="px-6 py-4 text-right font-bold text-espresso-900">&#8369;{{ number_format($variant->stock * $variant->price, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-        
-        {{-- PAGINATION --}}
-        <div class="px-6 py-4 border-t border-espresso-200 bg-espresso-50/30">
-            {{ $variants->withQueryString()->links() }}
-        </div>
+        <div class="px-6 py-4 border-t border-espresso-200 bg-espresso-50/30">{{ $variants->withQueryString()->links() }}</div>
     @else
-        {{-- EMPTY STATE --}}
         <div class="text-center py-24">
-            <div class="w-20 h-20 mx-auto bg-espresso-50 rounded-2xl flex items-center justify-center mb-4 border border-espresso-100">
-                <i class="fas fa-boxes text-3xl text-espresso-300"></i>
-            </div>
+            <div class="w-20 h-20 mx-auto bg-espresso-50 rounded-2xl flex items-center justify-center mb-4 border border-espresso-100"><i class="fas fa-boxes text-3xl text-espresso-300"></i></div>
             <h3 class="text-lg font-bold text-espresso-800 mb-1">No inventory found</h3>
             <p class="text-sm text-espresso-500 mb-6 max-w-sm mx-auto">Try adjusting your filters or add a new product to start tracking stock.</p>
-            <a href="{{ route('inventory.index') }}" class="text-sm font-semibold text-caramel-600 hover:text-caramel-700 hover:underline">Clear all filters</a>
         </div>
     @endif
 </div>
+
+{{-- MODAL FOR STOCK IN --}}
+<div id="stockInModal" class="fixed inset-0 z-50 hidden bg-espresso-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300 border border-espresso-200" id="modalContent">
+        <form action="{{ route('inventory.stock-in') }}" method="POST">
+            @csrf
+            <div class="px-6 py-5 border-b border-espresso-200 bg-espresso-50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-espresso-900">Add Stock</h3>
+                <button type="button" onclick="closeStockInModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-espresso-200 text-espresso-400 hover:text-red-500 shadow-sm"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-espresso-800 mb-1">Select Product Variant</label>
+                    <select name="variant_id" required class="w-full px-3 py-2 bg-espresso-50 border border-espresso-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none transition-all">
+                        <option value="">Choose variant...</option>
+                        @foreach($variants as $v)
+                            <option value="{{ $v->id }}">{{ $v->product->name ?? 'Product' }} - {{ $v->name }} (Current: {{ $v->stock }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-espresso-800 mb-1">Quantity to Add</label>
+                    <input type="number" name="quantity" min="1" required class="w-full px-3 py-2 bg-espresso-50 border border-espresso-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none transition-all" placeholder="e.g. 50">
+                </div>
+            </div>
+            
+            <div class="bg-espresso-50 px-6 py-4 border-t border-espresso-200 flex justify-end gap-3">
+                <button type="button" onclick="closeStockInModal()" class="px-4 py-2 bg-white border border-espresso-200 text-espresso-700 font-bold rounded-lg hover:bg-espresso-100 transition-colors text-sm">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-caramel-500 hover:bg-caramel-600 text-white font-bold rounded-lg shadow-md transition-all text-sm">Save Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    const modal = document.getElementById('stockInModal');
+    const content = document.getElementById('modalContent');
+
+    function openStockInModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+    }
+
+    function closeStockInModal() {
+        modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
+    modal.addEventListener('click', function(e) { if (e.target === this) closeStockInModal(); });
+</script>
+@endpush

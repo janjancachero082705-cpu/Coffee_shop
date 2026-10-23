@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->decimal('price', 12, 2)->default(0);
             $table->decimal('cost_price', 12, 2)->default(0);
             $table->integer('stock')->default(0);
+            $table->string('image')->nullable(); // MERGED MULA SA ADD_IMAGE
             $table->timestamps();
         });
     }

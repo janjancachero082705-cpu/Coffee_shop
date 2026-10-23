@@ -40,6 +40,8 @@ Route::middleware(['auth'])->group(function () {
     
     // Inventory
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+
+Route::post('inventory/stock-in', [App\Http\Controllers\InventoryController::class, 'stockIn'])->name('inventory.stock-in');
     
     // Consignment & Sales
     Route::get('sales-reports', [SalesReportController::class, 'index'])->name('sales-reports.index');

@@ -4,79 +4,198 @@
     $method = $isEdit ? 'PUT' : 'POST';
 @endphp
 
-<form method="POST" action="{{ $action }}" class="space-y-6">
+<form method="POST" action="{{ $action }}" class="space-y-6 max-w-5xl mx-auto" enctype="multipart/form-data">
     @csrf @method($method)
 
-    <div class="bg-white rounded-2xl shadow-card p-6 border border-espresso-100">
-        <div class="flex justify-between items-center mb-4 border-b border-espresso-100 pb-3">
-            <h3 class="text-sm font-bold text-espresso-500 uppercase tracking-widest"><i class="fas fa-box mr-2 text-caramel-500"></i> Product Info</h3>
-            <label class="flex items-center gap-2 text-sm text-espresso-700 font-bold bg-espresso-50 px-3 py-1.5 rounded-lg border border-espresso-100 cursor-pointer hover:bg-espresso-100 transition-colors">
-                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active ?? true) ? 'checked' : '' }} class="rounded text-caramel-500 focus:ring-caramel-400 w-4 h-4"> Active
+    {{-- CARD 1: PRODUCT INFORMATION --}}
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <i class="fas fa-box text-caramel-500"></i> Product Information
+            </h3>
+            <label class="flex items-center gap-2 text-xs text-slate-700 font-bold bg-white px-3 py-1.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active ?? true) ? 'checked' : '' }} class="rounded text-caramel-500 focus:ring-caramel-400 w-4 h-4"> 
+                Active Status
             </label>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <label class="block text-sm font-semibold text-espresso-800 mb-1">SKU <span class="text-red-500">*</span></label>
-                <input type="text" name="sku" required value="{{ old('sku', $product->sku ?? 'SKU-' . strtoupper(Str::random(5))) }}" class="w-full px-4 py-2 border border-espresso-200 rounded-lg focus:border-caramel-400 outline-none">
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">SKU <span class="text-red-500">*</span></label>
+                <input type="text" name="sku" required value="{{ old('sku', $product->sku ?? 'SKU-' . strtoupper(Str::random(5))) }}" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-espresso-800 mb-1">Name <span class="text-red-500">*</span></label>
-                <input type="text" name="name" required value="{{ old('name', $product->name ?? '') }}" class="w-full px-4 py-2 border border-espresso-200 rounded-lg focus:border-caramel-400 outline-none">
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Product Name <span class="text-red-500">*</span></label>
+                <input type="text" name="name" required value="{{ old('name', $product->name ?? '') }}" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-espresso-800 mb-1">Category</label>
-                <select name="category_id" class="w-full px-4 py-2 border border-espresso-200 rounded-lg focus:border-caramel-400 outline-none">
-                    <option value="">—</option>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Category</label>
+                <select name="category_id" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none transition-all cursor-pointer">
+                    <option value="">— Select Category —</option>
                     @foreach($categories as $c)<option value="{{ $c->id }}" {{ old('category_id', $product->category_id ?? '') == $c->id ? 'selected' : '' }}>{{ $c->emoji }} {{ $c->name }}</option>@endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-espresso-800 mb-1">Base Unit <span class="text-red-500">*</span></label>
-                <select name="unit_type" required class="w-full px-4 py-2 border border-espresso-200 rounded-lg focus:border-caramel-400 outline-none">
-                    @foreach(['grams', 'kg', 'pcs', 'pack', 'bundle', 'seedling'] as $u)<option value="{{ $u }}" {{ old('unit_type', $product->unit_type ?? 'grams') === $u ? 'selected' : '' }}>{{ $u }}</option>@endforeach
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Base Unit <span class="text-red-500">*</span></label>
+                <select name="unit_type" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none transition-all cursor-pointer">
+                    @foreach(['grams', 'kg', 'pcs', 'pack', 'bundle', 'seedling'] as $u)<option value="{{ $u }}" {{ old('unit_type', $product->unit_type ?? 'grams') === $u ? 'selected' : '' }}>{{ ucfirst($u) }}</option>@endforeach
                 </select>
             </div>
+            
+            {{-- Product Image --}}
             <div class="md:col-span-2">
-                <label class="block text-sm font-semibold text-espresso-800 mb-1">Description</label>
-                <textarea name="description" rows="2" class="w-full px-4 py-2 border border-espresso-200 rounded-lg focus:border-caramel-400 outline-none">{{ old('description', $product->description ?? '') }}</textarea>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Product Image (Optional)</label>
+                <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200 border-dashed">
+                    @if($isEdit && $product->image)
+                        <div class="w-14 h-14 rounded-md border border-slate-200 overflow-hidden flex-shrink-0 shadow-sm bg-white">
+                            <img src="{{ Storage::url($product->image) }}" class="w-full h-full object-cover">
+                        </div>
+                    @else
+                        <div class="w-14 h-14 rounded-md border border-slate-200 flex items-center justify-center flex-shrink-0 bg-white shadow-sm">
+                            <i class="fas fa-image text-slate-300 text-xl"></i>
+                        </div>
+                    @endif
+                    <div class="flex-1">
+                        <input type="file" name="image" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 file:shadow-sm hover:file:bg-slate-100 transition-all cursor-pointer">
+                        <p class="text-[10px] text-slate-400 mt-1">JPG, PNG, WEBP. Max 2MB.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Description (Optional)</label>
+                <textarea name="description" rows="2" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none transition-all" placeholder="Brief description about this product...">{{ old('description', $product->description ?? '') }}</textarea>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-card p-6 border-l-4 border-caramel-400">
-        <div class="flex items-center justify-between mb-4 border-b border-espresso-100 pb-3">
-            <div><h3 class="text-sm font-bold text-espresso-500 uppercase tracking-widest"><i class="fas fa-balance-scale mr-2 text-caramel-500"></i> Product Variants & Pricing</h3><p class="text-xs text-espresso-500 mt-1">Set the size, price, and stock for each variant.</p></div>
-            <button type="button" id="addVariantBtn" class="px-4 py-2 bg-caramel-100 text-caramel-700 font-bold rounded-lg hover:bg-caramel-200 text-sm transition-colors shadow-sm"><i class="fas fa-plus"></i> Add Variant</button>
+    {{-- CARD 2: VARIANTS --}}
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <i class="fas fa-layer-group text-caramel-500"></i> Product Variants
+                </h3>
+                <p class="text-xs text-slate-500 mt-1 font-medium">Set prices here. Stock will be added in the Inventory module.</p>
+            </div>
+            <button type="button" id="addVariantBtn" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 text-sm transition-colors shadow-sm flex items-center gap-2 self-start md:self-auto">
+                <i class="fas fa-plus"></i> Add Variant
+            </button>
         </div>
 
-        <div id="variantsContainer" class="space-y-3">
-            @if($isEdit && $product->variants->count() > 0)
-                @foreach($product->variants as $index => $variant)
-                    <div class="grid grid-cols-12 gap-2 items-end variant-row bg-espresso-50 p-3 rounded-xl border border-espresso-100">
-                        <div class="col-span-3"><label class="block text-xs font-bold text-espresso-600 mb-1">Name / Size</label><input type="text" name="variants[{{ $index }}][weight]" required value="{{ $variant->name ?? $variant->weight }}" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm" placeholder="e.g. 250g or Small"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Unit</label><select name="variants[{{ $index }}][unit]" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm"><option value="g" {{ $variant->unit == 'g' ? 'selected' : '' }}>g</option><option value="kg" {{ $variant->unit == 'kg' ? 'selected' : '' }}>kg</option><option value="pcs" {{ $variant->unit == 'pcs' ? 'selected' : '' }}>pcs</option></select></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Price (₱) <span class="text-red-500">*</span></label><input type="number" name="variants[{{ $index }}][price]" step="0.01" required value="{{ $variant->price }}" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Cost (₱)</label><input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" value="{{ $variant->cost_price }}" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm" placeholder="0.00"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Stock <span class="text-red-500">*</span></label><input type="number" name="variants[{{ $index }}][stock]" min="0" required value="{{ $variant->stock ?? 0 }}" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white"></div>
-                        <div class="col-span-1 flex justify-center pb-1"><button type="button" class="remove-variant w-8 h-8 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fas fa-trash text-xs"></i></button></div>
+        <div class="p-6 bg-slate-50/30">
+            <div id="variantsContainer" class="space-y-4">
+                
+                @if($isEdit && $product->variants->count() > 0)
+                    @foreach($product->variants as $index => $variant)
+                        {{-- INDIVIDUAL VARIANT CARD --}}
+                        <div class="variant-row bg-white border border-slate-200 rounded-xl shadow-sm relative group transition-all hover:border-slate-300">
+                            
+                            {{-- Card Header: Index & Remove --}}
+                            <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Variant #{{ $index + 1 }}</span>
+                                <button type="button" class="remove-variant text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><i class="fas fa-trash text-xs"></i></button>
+                            </div>
+
+                            <input type="hidden" name="variants[{{ $index }}][id]" value="{{ $variant->id }}">
+                            
+                            <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+                                {{-- Name & Unit --}}
+                                <div class="md:col-span-4">
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label>
+                                    <input type="text" name="variants[{{ $index }}][weight]" required value="{{ $variant->name ?? $variant->weight }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all" placeholder="e.g. 250g or Small">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Unit</label>
+                                    <select name="variants[{{ $index }}][unit]" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none cursor-pointer">
+                                        <option value="g" {{ $variant->unit == 'g' ? 'selected' : '' }}>g</option>
+                                        <option value="kg" {{ $variant->unit == 'kg' ? 'selected' : '' }}>kg</option>
+                                        <option value="pcs" {{ $variant->unit == 'pcs' ? 'selected' : '' }}>pcs</option>
+                                    </select>
+                                </div>
+                                
+                                {{-- Price & Cost --}}
+                                <div class="md:col-span-3">
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Selling Price (&#8369;) <span class="text-red-500">*</span></label>
+                                    <input type="number" name="variants[{{ $index }}][price]" step="0.01" required value="{{ $variant->price }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all font-bold text-slate-800">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Cost Price (&#8369;)</label>
+                                    <input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" value="{{ $variant->cost_price }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none transition-all text-slate-600" placeholder="0.00">
+                                </div>
+
+                                {{-- Image Upload --}}
+                                <div class="md:col-span-12 mt-2">
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
+                                    <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-200 border-dashed">
+                                        @if($variant->image)
+                                            <div class="w-10 h-10 rounded border border-slate-200 overflow-hidden flex-shrink-0 shadow-sm">
+                                                <img src="{{ Storage::url($variant->image) }}" class="w-full h-full object-cover">
+                                            </div>
+                                        @else
+                                            <div class="w-10 h-10 rounded border border-slate-200 flex items-center justify-center flex-shrink-0 bg-white">
+                                                <i class="fas fa-image text-slate-300"></i>
+                                            </div>
+                                        @endif
+                                        <input type="file" name="variants[{{ $index }}][image]" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-white file:text-slate-700 file:shadow-sm hover:file:bg-slate-100 cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    {{-- DEFAULT VARIANT CARD --}}
+                    <div class="variant-row bg-white border border-slate-200 rounded-xl shadow-sm relative group transition-all hover:border-slate-300">
+                        
+                        <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Variant #1</span>
+                            <button type="button" class="remove-variant text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors opacity-50 cursor-not-allowed"><i class="fas fa-trash text-xs"></i></button>
+                        </div>
+
+                        <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div class="md:col-span-4">
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label>
+                                <input type="text" name="variants[0][weight]" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all" placeholder="e.g. 250g or Small">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Unit</label>
+                                <select name="variants[0][unit]" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none cursor-pointer">
+                                    <option value="g">g</option>
+                                    <option value="kg">kg</option>
+                                    <option value="pcs">pcs</option>
+                                </select>
+                            </div>
+                            
+                            <div class="md:col-span-3">
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Selling Price (&#8369;) <span class="text-red-500">*</span></label>
+                                <input type="number" name="variants[0][price]" step="0.01" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all font-bold text-slate-800" placeholder="190">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Cost Price (&#8369;)</label>
+                                <input type="number" name="variants[0][cost_price]" step="0.01" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none transition-all text-slate-600" placeholder="0.00">
+                            </div>
+
+                            <div class="md:col-span-12 mt-2">
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
+                                <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-200 border-dashed">
+                                    <div class="w-10 h-10 rounded border border-slate-200 flex items-center justify-center flex-shrink-0 bg-white">
+                                        <i class="fas fa-image text-slate-300"></i>
+                                    </div>
+                                    <input type="file" name="variants[0][image]" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-white file:text-slate-700 file:shadow-sm hover:file:bg-slate-100 cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                @endforeach
-            @else
-                <div class="grid grid-cols-12 gap-2 items-end variant-row bg-espresso-50 p-3 rounded-xl border border-espresso-100">
-                    <div class="col-span-3"><label class="block text-xs font-bold text-espresso-600 mb-1">Name / Size</label><input type="text" name="variants[0][weight]" required class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm" placeholder="e.g. 250g or Small"></div>
-                    <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Unit</label><select name="variants[0][unit]" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option></select></div>
-                    <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Price (₱) <span class="text-red-500">*</span></label><input type="number" name="variants[0][price]" step="0.01" required class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white" placeholder="190"></div>
-                    <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Cost (₱)</label><input type="number" name="variants[0][cost_price]" step="0.01" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm" placeholder="0.00"></div>
-                    <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Stock <span class="text-red-500">*</span></label><input type="number" name="variants[0][stock]" min="0" required value="0" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white"></div>
-                    <div class="col-span-1 flex justify-center pb-1"><button type="button" class="remove-variant w-8 h-8 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 rounded-lg opacity-50 cursor-not-allowed"><i class="fas fa-trash text-xs"></i></button></div>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
     </div>
 
-    <div class="flex justify-end gap-3">
-        <a href="{{ route('products.index') }}" class="px-6 py-2.5 bg-espresso-100 text-espresso-700 rounded-lg font-semibold hover:bg-espresso-200">Cancel</a>
-        <button type="submit" class="px-6 py-2.5 bg-caramel-400 hover:bg-caramel-500 text-espresso-900 font-bold rounded-lg shadow-md transition-all"><i class="fas fa-save mr-1"></i> {{ $isEdit ? 'Update Product' : 'Save Product' }}</button>
+    {{-- SUBMIT BUTTONS --}}
+    <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+        <a href="{{ route('products.index') }}" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm">Cancel</a>
+        <button type="submit" class="px-6 py-2.5 bg-caramel-500 hover:bg-caramel-600 text-white font-bold rounded-lg shadow-md transition-all text-sm flex items-center gap-2">
+            <i class="fas fa-save"></i> {{ $isEdit ? 'Update Product' : 'Save Product' }}
+        </button>
     </div>
 </form>
 
@@ -89,14 +208,41 @@
 
         addBtn.addEventListener('click', function() {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-12 gap-2 items-end variant-row bg-espresso-50 p-3 rounded-xl border border-espresso-100';
+            // Ginamit ang parehong CSS classes para sa bagong card
+            row.className = 'variant-row bg-white border border-slate-200 rounded-xl shadow-sm relative group transition-all hover:border-slate-300';
             row.innerHTML = `
-                <div class="col-span-3"><label class="block text-xs font-bold text-espresso-600 mb-1">Name / Size</label><input type="text" name="variants[${variantIndex}][weight]" required placeholder="e.g. 500g or Large" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm"></div>
-                <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Unit</label><select name="variants[${variantIndex}][unit]" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option></select></div>
-                <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Price (₱) <span class="text-red-500">*</span></label><input type="number" name="variants[${variantIndex}][price]" step="0.01" required placeholder="190" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white"></div>
-                <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Cost (₱)</label><input type="number" name="variants[${variantIndex}][cost_price]" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm"></div>
-                <div class="col-span-2"><label class="block text-xs font-bold text-espresso-600 mb-1">Stock <span class="text-red-500">*</span></label><input type="number" name="variants[${variantIndex}][stock]" min="0" required value="0" class="w-full px-3 py-2 border border-espresso-200 rounded-lg text-sm bg-white"></div>
-                <div class="col-span-1 flex justify-center pb-1"><button type="button" class="remove-variant w-8 h-8 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fas fa-trash text-xs"></i></button></div>
+                <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Variant #${variantIndex + 1}</span>
+                    <button type="button" class="remove-variant text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><i class="fas fa-trash text-xs"></i></button>
+                </div>
+
+                <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-4">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label>
+                        <input type="text" name="variants[${variantIndex}][weight]" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all" placeholder="e.g. 500g or Large">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Unit</label>
+                        <select name="variants[${variantIndex}][unit]" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none cursor-pointer"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option></select>
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Selling Price (&#8369;) <span class="text-red-500">*</span></label>
+                        <input type="number" name="variants[${variantIndex}][price]" step="0.01" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-1 focus:ring-caramel-500 outline-none transition-all font-bold text-slate-800" placeholder="190">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Cost Price (&#8369;)</label>
+                        <input type="number" name="variants[${variantIndex}][cost_price]" step="0.01" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-caramel-500 outline-none transition-all text-slate-600" placeholder="0.00">
+                    </div>
+
+                    <div class="md:col-span-12 mt-2">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
+                        <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-200 border-dashed">
+                            <div class="w-10 h-10 rounded border border-slate-200 flex items-center justify-center flex-shrink-0 bg-white"><i class="fas fa-image text-slate-300"></i></div>
+                            <input type="file" name="variants[${variantIndex}][image]" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-white file:text-slate-700 file:shadow-sm hover:file:bg-slate-100 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
             `;
             container.appendChild(row);
             variantIndex++;
@@ -106,7 +252,7 @@
             if (e.target.closest('.remove-variant')) {
                 const row = e.target.closest('.variant-row');
                 if (document.querySelectorAll('.variant-row').length > 1) { row.remove(); } 
-                else { alert('Kinahanglan naay bisan isa ka variant ang produkto.'); }
+                else { alert('You need at least one variant.'); }
             }
         });
     });

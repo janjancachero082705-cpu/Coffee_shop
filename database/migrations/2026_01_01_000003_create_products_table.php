@@ -8,6 +8,7 @@ return new class extends Migration {
             $table->id();
             $table->string('sku')->unique();
             $table->string('name');
+            $table->string('image')->nullable(); // MERGED MULA SA ADD_IMAGE
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->string('unit_type')->default('grams');
             $table->text('description')->nullable();

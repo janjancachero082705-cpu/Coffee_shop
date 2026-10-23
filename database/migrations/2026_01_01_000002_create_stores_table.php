@@ -8,6 +8,7 @@ return new class extends Migration {
             $table->id();
             $table->string('store_name');
             $table->string('address')->nullable();
+            $table->string('customer_type')->default('regular'); // MERGED MULA SA ADD_CUSTOMER_TYPE
             $table->timestamps();
         });
     }
