@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Store Profile')
+@section('title', 'Customer Profile')
 @section('subtitle', $store->store_name)
 
 @section('content')

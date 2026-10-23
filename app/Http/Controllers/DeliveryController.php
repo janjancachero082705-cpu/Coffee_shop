@@ -15,24 +15,17 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::find($delivery_id);
         if (!$delivery) return;
-
         $totalPaid = Payment::where('delivery_id', $delivery_id)->sum('amount');
 
-        if ($totalPaid >= $delivery->total_amount) {
-            $delivery->update(['status' => 'completed']);
-        } elseif ($totalPaid > 0) {
-            $delivery->update(['status' => 'partial']);
-        } else {
-            $delivery->update(['status' => 'pending']);
-        }
+        if ($totalPaid >= $delivery->total_amount) { $delivery->update(['status' => 'completed']); } 
+        elseif ($totalPaid > 0) { $delivery->update(['status' => 'partial']); } 
+        else { $delivery->update(['status' => 'pending']); }
     }
 
     public function index(Request $request)
     {
-        $query = Store::with(['deliveries' => function($q) { $q->latest(); }]);
-        if ($request->filled('search')) {
-            $query->where('store_name', 'like', "%" . $request->input('search') . "%");
-        }
+        $query = Store::with(['deliveries' => fn($q) => $q->latest()]);
+        if ($request->filled('search')) { $query->where('store_name', 'like', "%" . $request->input('search') . "%"); }
         $stores = $query->withCount('deliveries')->withSum('deliveries', 'total_amount')->withSum('payments', 'amount')->latest()->paginate(9);
         $stats = [
             'total' => Delivery::count(),
@@ -45,27 +38,18 @@ class DeliveryController extends Controller
 
     public function showStore(Store $store)
     {
-        // Eager load items (with variant and product) and payments
-        $deliveries = $store->deliveries()
-            ->with(['items.variant.product', 'payments'])
-            ->withSum('payments', 'amount')
-            ->latest()
-            ->paginate(10);
-            
+        $deliveries = $store->deliveries()->with(['items.variant.product', 'payments'])->withSum('payments', 'amount')->latest()->paginate(10);
         $totalAmount = $store->deliveries()->sum('total_amount');
         $totalPaid = $store->payments()->sum('amount');
         $totalItems = $store->deliveries()->count();
-        
         return view('deliveries.store', compact('store', 'deliveries', 'totalAmount', 'totalPaid', 'totalItems'));
     }
 
     public function create()
     {
         $stores = Store::all();
-        $variants = ProductVariant::with('product')->whereHas('product', function($q) {
-            $q->where('is_active', 1);
-        })->get();
-        
+        // Kuhanin LAHAT ng variants para pwede ibenta kahit Cherries, Powder, o Beans
+        $variants = ProductVariant::with('product')->whereHas('product', fn($q) => $q->where('is_active', 1))->get();
         return view('deliveries.create', compact('stores', 'variants'));
     }
 

@@ -4,88 +4,80 @@
     $method = $isEdit ? 'PUT' : 'POST';
 @endphp
 
-<form method="POST" action="{{ $action }}" class="max-w-3xl mx-auto space-y-6">
+<form method="POST" action="{{ $action }}" class="max-w-2xl mx-auto space-y-6">
     @csrf @method($method)
     
-    <div class="bg-white rounded-3xl shadow-card p-8 border border-espresso-100 relative overflow-hidden">
-        <!-- Decorative Background -->
-        <div class="absolute -right-10 -top-10 text-espresso-50 opacity-50">
-            <i class="fas fa-store fa-10x"></i>
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div class="mb-6 border-b border-slate-200 pb-4">
+            <h3 class="text-lg font-bold text-slate-900">Customer Information</h3>
+            <p class="text-xs text-slate-500 mt-1">Enter the details and discount for this customer.</p>
         </div>
-
-        <div class="relative z-10">
-            <h3 class="text-2xl font-serif font-bold text-espresso-900 mb-6 flex items-center gap-3">
-                <i class="fas fa-store text-caramel-500"></i> Store Information
-            </h3>
-            
-            <div class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-bold text-espresso-800 mb-2">Store Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="store_name" required value="{{ old('store_name', $store->store_name ?? '') }}" 
-                               class="w-full px-4 py-3 bg-espresso-50/50 border border-espresso-200 rounded-xl focus:bg-white focus:border-caramel-400 focus:ring-4 focus:ring-caramel-400/10 outline-none transition-all placeholder-espresso-300" 
-                               placeholder="e.g. Juan's Sari-Sari Store">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-bold text-espresso-800 mb-2">Address (Optional)</label>
-                        <input type="text" name="address" value="{{ old('address', $store->address ?? '') }}" 
-                               class="w-full px-4 py-3 bg-espresso-50/50 border border-espresso-200 rounded-xl focus:bg-white focus:border-caramel-400 focus:ring-4 focus:ring-caramel-400/10 outline-none transition-all placeholder-espresso-300" 
-                               placeholder="e.g. Purok 1, Miarayon">
-                    </div>
-                </div>
-
-                {{-- CUSTOMER TYPE RADIO CARDS --}}
+        
+        <div class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label class="block text-sm font-bold text-espresso-800 mb-3">Customer Type <span class="text-red-500">*</span></label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        
-                        {{-- Regular --}}
-                        <div>
-                            <input type="radio" name="customer_type" id="type_regular" value="regular" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? 'regular') == 'regular' ? 'checked' : '' }}>
-                            <label for="type_regular" class="flex flex-col items-center justify-center p-4 bg-white border-2 border-espresso-100 rounded-2xl cursor-pointer hover:bg-espresso-50 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 transition-all">
-                                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 peer-checked:scale-110 transition-transform">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="font-bold text-espresso-900 text-sm">Regular</div>
-                                <div class="text-[10px] text-espresso-500 text-center mt-1">Standard pricing</div>
-                            </label>
-                        </div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Customer Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="store_name" required value="{{ old('store_name', $store->store_name ?? '') }}" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 outline-none transition-all" 
+                           placeholder="e.g. Juan Dela Cruz / Sari-Sari Store">
+                </div>
+                
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Address (Optional)</label>
+                    <input type="text" name="address" value="{{ old('address', $store->address ?? '') }}" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 outline-none transition-all" 
+                           placeholder="e.g. Purok 1, Miarayon">
+                </div>
+            </div>
 
-                        {{-- Suki --}}
-                        <div>
-                            <input type="radio" name="customer_type" id="type_suki" value="suki" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? '') == 'suki' ? 'checked' : '' }}>
-                            <label for="type_suki" class="flex flex-col items-center justify-center p-4 bg-white border-2 border-espresso-100 rounded-2xl cursor-pointer hover:bg-espresso-50 peer-checked:border-caramel-500 peer-checked:bg-caramel-50 transition-all">
-                                <div class="w-10 h-10 rounded-full bg-caramel-100 text-caramel-600 flex items-center justify-center mb-2 peer-checked:scale-110 transition-transform">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                                <div class="font-bold text-espresso-900 text-sm">Suki (VIP)</div>
-                                <div class="text-[10px] text-espresso-500 text-center mt-1">Best discounts applied</div>
-                            </label>
-                        </div>
-
-                        {{-- Friend --}}
-                        <div>
-                            <input type="radio" name="customer_type" id="type_friend" value="friend" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? '') == 'friend' ? 'checked' : '' }}>
-                            <label for="type_friend" class="flex flex-col items-center justify-center p-4 bg-white border-2 border-espresso-100 rounded-2xl cursor-pointer hover:bg-espresso-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all">
-                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 peer-checked:scale-110 transition-transform">
-                                    <i class="fas fa-handshake"></i>
-                                </div>
-                                <div class="font-bold text-espresso-900 text-sm">Friend</div>
-                                <div class="text-[10px] text-espresso-500 text-center mt-1">Special pricing</div>
-                            </label>
-                        </div>
-
+            {{-- CUSTOMER TYPE --}}
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-2 uppercase tracking-wider">Customer Type <span class="text-red-500">*</span></label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <input type="radio" name="customer_type" id="type_regular" value="regular" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? 'regular') == 'regular' ? 'checked' : '' }}>
+                        <label for="type_regular" class="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50 peer-checked:border-slate-500 peer-checked:bg-slate-50 transition-all text-center">
+                            <span class="font-semibold text-slate-900 text-sm">Regular</span>
+                            <span class="text-[10px] text-slate-500 mt-0.5">Standard price</span>
+                        </label>
+                    </div>
+                    <div>
+                        <input type="radio" name="customer_type" id="type_suki" value="suki" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? '') == 'suki' ? 'checked' : '' }}>
+                        <label for="type_suki" class="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50 peer-checked:border-caramel-500 peer-checked:bg-caramel-50 transition-all text-center">
+                            <span class="font-semibold text-slate-900 text-sm">Suki VIP</span>
+                            <span class="text-[10px] text-slate-500 mt-0.5">Discounted price</span>
+                        </label>
+                    </div>
+                    <div>
+                        <input type="radio" name="customer_type" id="type_friend" value="friend" class="peer sr-only" {{ old('customer_type', $store->customer_type ?? '') == 'friend' ? 'checked' : '' }}>
+                        <label for="type_friend" class="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all text-center">
+                            <span class="font-semibold text-slate-900 text-sm">Friend</span>
+                            <span class="text-[10px] text-slate-500 mt-0.5">Special price</span>
+                        </label>
                     </div>
                 </div>
+            </div>
+
+            {{-- DISCOUNT INPUT --}}
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Custom Discount (%)</label>
+                <div class="relative">
+                    <input type="number" name="discount" step="0.01" min="0" max="100" value="{{ old('discount', $store->discount ?? 0) }}" 
+                           class="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-md text-sm focus:border-slate-400 focus:ring-2 focus:ring-slate-200 outline-none transition-all font-bold text-slate-800" 
+                           placeholder="0.00">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span class="text-slate-500 sm:text-sm font-bold">%</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">I-set ang discount percentage para sa store na ito (e.g. 5 para sa 5%).</p>
             </div>
         </div>
     </div>
 
     <div class="flex justify-end gap-3">
-        <a href="{{ route('stores.index') }}" class="px-6 py-3 bg-white border border-espresso-200 text-espresso-700 rounded-xl font-bold hover:bg-espresso-50 transition-colors shadow-sm">Cancel</a>
-        <button type="submit" class="px-8 py-3 bg-caramel-400 hover:bg-caramel-500 text-espresso-900 font-bold rounded-xl shadow-md shadow-caramel-400/30 transition-all flex items-center gap-2">
-            <i class="fas fa-save"></i> {{ $isEdit ? 'Update Store' : 'Save Store' }}
+        <a href="{{ route('stores.index') }}" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md font-medium text-sm hover:bg-slate-50 transition-colors shadow-sm">Cancel</a>
+        <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-md shadow-sm transition-all">
+            {{ $isEdit ? 'Update Customer' : 'Save Customer' }}
         </button>
     </div>
 </form>

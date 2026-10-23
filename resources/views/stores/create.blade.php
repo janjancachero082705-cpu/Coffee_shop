@@ -1,6 +1,6 @@
 @extends('layouts.admin')
-@section('title', 'Add Store')
-@section('subtitle', 'Create a new store customer')
+@section('title', 'Add Customer')
+@section('subtitle', 'Create a new customer account')
 @section('content')
 @include('stores._form')
 @endsection

@@ -46,13 +46,13 @@
 {{-- HEADER & SEARCH --}}
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-        <h3 class="font-bold text-espresso-900 text-lg">Stores Directory</h3>
-        <p class="text-xs text-espresso-500">Select a store to manage its deliveries</p>
+        <h3 class="font-bold text-espresso-900 text-lg">Customers Directory</h3>
+        <p class="text-xs text-espresso-500">Select a customer to manage deliveries</p>
     </div>
     <div class="flex items-center gap-3">
         <form method="GET" action="{{ route('deliveries.index') }}" class="relative group">
             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-espresso-400 text-sm group-focus-within:text-caramel-500 transition-colors"></i>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search store..." class="pl-9 pr-4 py-2.5 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-2 focus:ring-caramel-500/20 outline-none w-64 shadow-sm transition-all">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search customer..." class="pl-9 pr-4 py-2.5 bg-white border border-espresso-200 rounded-lg text-sm focus:border-caramel-500 focus:ring-2 focus:ring-caramel-500/20 outline-none w-64 shadow-sm transition-all">
         </form>
         <a href="{{ route('deliveries.create') }}" class="px-5 py-2.5 bg-espresso-900 hover:bg-espresso-800 text-white rounded-lg font-semibold text-sm shadow-md shadow-espresso-900/20 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"><i class="fas fa-plus"></i> New Delivery</a>
     </div>
@@ -105,9 +105,9 @@
 @else
     <div class="bg-white rounded-xl border border-espresso-200 text-center py-24 text-espresso-500 shadow-sm">
         <div class="w-20 h-20 mx-auto bg-espresso-50 rounded-2xl flex items-center justify-center mb-5 border border-espresso-100"><i class="fas fa-store-slash text-3xl text-espresso-300"></i></div>
-        <h3 class="text-xl font-bold text-espresso-800 mb-2">No stores found</h3>
-        <p class="text-sm mb-6 max-w-md mx-auto">You need to add stores first before creating deliveries.</p>
-        <a href="{{ route('stores.create') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-espresso-900 text-white rounded-lg font-semibold hover:bg-espresso-800 transition-all text-sm shadow-md"><i class="fas fa-plus"></i> Add a Store</a>
+        <h3 class="text-xl font-bold text-espresso-800 mb-2">No customers found</h3>
+        <p class="text-sm mb-6 max-w-md mx-auto">You need to add customers first before creating deliveries.</p>
+        <a href="{{ route('stores.create') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-espresso-900 text-white rounded-lg font-semibold hover:bg-espresso-800 transition-all text-sm shadow-md"><i class="fas fa-plus"></i> Add a Customer</a>
     </div>
 @endif
 @endsection

@@ -9,48 +9,42 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\StoreInventoryController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ExpenseController;
 
 // Root Redirect
-Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+Route::get('/', function () { return redirect()->route('dashboard'); });
+Route::get('/admin', function () { return redirect()->route('dashboard'); });
 
-// Custom Login Routes (Manual)
+// Auth Routes (Custom Login)
 Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
-// Protected Routes (Kailangan naka-login)
+// Protected Routes
 Route::middleware(['auth'])->group(function () {
     
-    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Operations
+    // Management
     Route::resource('stores', StoreController::class);
     Route::resource('products', ProductController::class);
-    
-    // Deliveries
+    Route::post('products/stock-in', [ProductController::class, 'stockIn'])->name('products.stock-in');
+    Route::post('products/store-production', [ProductController::class, 'storeProduction'])->name('products.store-production');
     Route::resource('deliveries', DeliveryController::class);
     Route::get('deliveries/store/{store}', [DeliveryController::class, 'showStore'])->name('deliveries.store-profile');
-    
-    // Inventory
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('inventory/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
 
-Route::post('inventory/stock-in', [App\Http\Controllers\InventoryController::class, 'stockIn'])->name('inventory.stock-in');
-    
     // Consignment & Sales
     Route::get('sales-reports', [SalesReportController::class, 'index'])->name('sales-reports.index');
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
-    Route::get('store-inventory', [StoreInventoryController::class, 'index'])->name('store-inventory.index');
+
+    // Business Modules (Purchases, Production, Expenses)
+    Route::resource('purchases', PurchaseController::class);
     
-    // Business Modules (Placeholders)
-    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
-    Route::get('production', [ProductionController::class, 'index'])->name('production.index');
     Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
 });
