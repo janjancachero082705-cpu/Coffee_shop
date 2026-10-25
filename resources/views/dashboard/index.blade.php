@@ -15,7 +15,7 @@
         </div>
         <div>
             <div class="text-[11px] text-espresso-500 font-bold uppercase tracking-wider mb-1">Distributed</div>
-            <div class="text-2xl font-bold text-espresso-900">₱{{ number_format($distributed, 0) }}</div>
+            <div class="text-2xl font-bold text-espresso-900">&#8369;{{ number_format($distributed, 0) }}</div>
             <div class="text-[11px] text-espresso-400 mt-1 font-medium">{{ $distributedCount }} deliveries</div>
         </div>
     </div>
@@ -27,7 +27,7 @@
         </div>
         <div>
             <div class="text-[11px] text-espresso-500 font-bold uppercase tracking-wider mb-1">Sold (Reports)</div>
-            <div class="text-2xl font-bold text-espresso-900">₱{{ number_format($sold, 0) }}</div>
+            <div class="text-2xl font-bold text-espresso-900">&#8369;{{ number_format($sold, 0) }}</div>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
         </div>
         <div>
             <div class="text-[11px] text-espresso-500 font-bold uppercase tracking-wider mb-1">Collected</div>
-            <div class="text-2xl font-bold text-espresso-900">₱{{ number_format($collected, 0) }}</div>
+            <div class="text-2xl font-bold text-espresso-900">&#8369;{{ number_format($collected, 0) }}</div>
         </div>
     </div>
 
@@ -50,7 +50,7 @@
         </div>
         <div class="relative z-10">
             <div class="text-[11px] text-caramel-300 font-bold uppercase tracking-wider mb-1">Outstanding</div>
-            <div class="text-2xl font-bold">₱{{ number_format($outstanding, 0) }}</div>
+            <div class="text-2xl font-bold">&#8369;{{ number_format($outstanding, 0) }}</div>
         </div>
         <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-xl relative z-10 backdrop-blur-sm border border-white/20">
             <i class="fas fa-exclamation text-caramel-400"></i>
@@ -95,12 +95,12 @@
                         </div>
                         <div>
                             <div class="text-sm font-bold text-espresso-900">{{ $sb->store->store_name ?? 'Unknown' }}</div>
-                            <div class="text-[11px] text-espresso-400 font-medium">Sold: ₱{{ number_format($sb->total_sold, 0) }}</div>
+                            <div class="text-[11px] text-espresso-400 font-medium">Sold: &#8369;{{ number_format($sb->total_sold, 0) }}</div>
                         </div>
                     </div>
                     <div class="text-right">
                         <div class="text-sm font-bold {{ $sb->total_balance > 0 ? 'text-red-500' : 'text-emerald-500' }}">
-                            ₱{{ number_format($sb->total_balance, 0) }}
+                            &#8369;{{ number_format($sb->total_balance, 0) }}
                         </div>
                         <div class="text-[10px] text-espresso-400 font-semibold uppercase tracking-wider">Balance</div>
                     </div>
@@ -144,7 +144,7 @@
                                 <td class="py-3.5 font-bold text-xs text-caramel-600">{{ $r->report_number }}</td>
                                 <td class="py-3.5 font-medium">{{ $r->store->store_name ?? '—' }}</td>
                                 <td class="py-3.5 text-xs text-espresso-500">{{ $r->period_from->format('M d') }} - {{ $r->period_to->format('M d, Y') }}</td>
-                                <td class="py-3.5 text-right font-bold text-espresso-900">₱{{ number_format($r->total_sales, 0) }}</td>
+                                <td class="py-3.5 text-right font-bold text-espresso-900">&#8369;{{ number_format($r->total_sales, 0) }}</td>
                                 <td class="py-3.5 text-center">
                                     <span class="badge badge-{{ $r->status === 'paid' || $r->status === 'closed' ? 'success' : ($r->status === 'partial' ? 'warning' : 'danger') }}">
                                         {{ ucfirst($r->status) }}
@@ -181,7 +181,7 @@
                         <div class="text-[11px] text-espresso-400 font-medium">{{ $d->dr_number }} • {{ $d->delivery_date->format('M d') }}</div>
                     </div>
                     <div class="text-xs font-bold text-espresso-800 bg-espresso-100 px-2 py-1 rounded-md">
-                        ₱{{ number_format($d->total_amount, 0) }}
+                        &#8369;{{ number_format($d->total_amount, 0) }}
                     </div>
                 </div>
             @empty
@@ -218,7 +218,7 @@
             datasets: [
                 {
                     type: 'bar',
-                    label: 'Sales (₱)',
+                    label: 'Sales (&#8369;)',
                     data: @json(collect($trend)->pluck('sold')),
                     backgroundColor: barGradient,
                     borderRadius: 6, // Rounded bars
@@ -258,7 +258,7 @@
                     displayColors: true,
                     callbacks: {
                         label: function(context) {
-                            return ' ₱' + context.parsed.y.toLocaleString();
+                            return ' &#8369;' + context.parsed.y.toLocaleString();
                         }
                     }
                 }
@@ -272,7 +272,7 @@
                         color: '#8B6F4E', // Espresso 500
                         font: { family: 'Inter', size: 11, weight: '600' }, 
                         padding: 10,
-                        callback: v => '₱' + (v >= 1000 ? (v/1000)+'k' : v) 
+                        callback: v => '&#8369;' + (v >= 1000 ? (v/1000)+'k' : v) 
                     }
                 },
                 x: {

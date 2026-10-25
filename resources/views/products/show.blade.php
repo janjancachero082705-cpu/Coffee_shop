@@ -67,25 +67,22 @@
                                     @endif
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-slate-900 text-lg">{{ $variant->name }}</h4>
-                                    <div class="text-xs text-slate-500 font-medium">Unit: {{ strtoupper($variant->unit) }}</div>
+                                    <h4 class="font-bold text-slate-900 text-lg">{{ $variant->name }} {{ $variant->unit }}</h4>
+                                    <div class="text-xs text-slate-500 font-medium">Price: &#8369;{{ number_format($variant->price, 2) }}</div>
                                 </div>
                             </div>
 
                             {{-- Variant Data --}}
                             <div class="flex items-center gap-8 w-full md:w-auto mt-4 md:mt-0">
                                 <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Price</div>
-                                    <div class="font-black text-slate-900 text-xl">&#8369;{{ number_format($variant->price, 2) }}</div>
-                                </div>
-                                <div class="text-right">
                                     <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Stock</div>
                                     @if($variant->stock <= 0)
                                         <div class="px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded border border-red-200">OUT OF STOCK</div>
                                     @elseif($variant->stock <= 5)
-                                        <div class="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded border border-amber-200">{{ $variant->stock }} left</div>
+                                        {{-- GIKAN SA "units" GI-USAB NATO SA TINUOD NGA UNIT SA PRODUCT --}}
+                                        <div class="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded border border-amber-200">{{ number_format($variant->stock, 0) }} units left</div>
                                     @else
-                                        <div class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded border border-emerald-200">{{ number_format($variant->stock) }} units</div>
+                                        <div class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded border border-emerald-200">{{ number_format($variant->stock, 0) }} units</div>
                                     @endif
                                 </div>
                             </div>
@@ -115,13 +112,14 @@
                     <select name="variant_id" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-emerald-500 outline-none transition-all">
                         <option value="">Choose variant...</option>
                         @foreach($product->variants as $v)
-                            <option value="{{ $v->id }}">{{ $v->name }} (Current Stock: {{ $v->stock }} {{ $v->unit }})</option>
+                            {{-- GIKAN SA "Current Stock: X g" GI-USAB NATO PARA MAS KLARO NGA STOCK COUNT NI SA PRODUCT UNIT --}}
+                            <option value="{{ $v->id }}">{{ $v->name }} {{ $v->unit }} (Stock: {{ number_format($v->stock, 0) }} units)</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-800 mb-1">Quantity to Add</label>
-                    <input type="number" name="quantity" min="1" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-emerald-500 outline-none transition-all" placeholder="e.g. 50">
+                    <label class="block text-sm font-bold text-slate-800 mb-1">Quantity to Add (units)</label>
+                    <input type="number" name="quantity" step="1" min="1" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-emerald-500 outline-none transition-all" placeholder="e.g. 50">
                 </div>
             </div>
             

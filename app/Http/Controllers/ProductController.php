@@ -101,7 +101,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'variant_id' => 'required|exists:product_variants,id',
-            'quantity' => 'required|numeric|min:0.01'
+            'quantity' => 'required|integer|min:1'
         ]);
 
         DB::transaction(function () use ($request) {
@@ -234,7 +234,7 @@ class ProductController extends Controller
 
             $cherryVariant->decrement('stock', $request->raw_qty_used);
 
-            $category = Category::firstOrCreate(['name' => 'Finished Goods'], ['emoji' => '☕']);
+            $category = Category::firstOrCreate(['name' => 'Finished Goods'], ['emoji' => 'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â¢']);
 
             foreach ($request->products as $index => $prod) {
                 $finishedProduct = Product::firstOrCreate(

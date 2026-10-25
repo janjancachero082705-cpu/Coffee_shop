@@ -18,11 +18,11 @@
     </div>
     <div class="bg-white rounded-2xl shadow-card p-5">
         <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Unit Cost</div>
-        <div class="text-2xl font-black text-coffee-900">₱{{ number_format($product->cost_price, 2) }}</div>
+        <div class="text-2xl font-black text-coffee-900">&#8369;{{ number_format($product->cost_price, 2) }}</div>
     </div>
     <div class="bg-white rounded-2xl shadow-card p-5">
         <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Total Value</div>
-        <div class="text-2xl font-black text-gold-600">₱{{ number_format($product->stock * $product->cost_price, 2) }}</div>
+        <div class="text-2xl font-black text-gold-600">&#8369;{{ number_format($product->stock * $product->cost_price, 2) }}</div>
     </div>
     <div class="bg-white rounded-2xl shadow-card p-5">
         <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Reorder Level</div>

@@ -151,7 +151,7 @@
         function calculateTotal() {
             const qty = parseFloat(qtyInput.value) || 0;
             const cost = parseFloat(costInput.value) || 0;
-            totalDisplay.innerText = 'â‚±' + (qty * cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            totalDisplay.innerText = '\u20B1' + (qty * cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
         qtyInput.addEventListener('input', calculateTotal);

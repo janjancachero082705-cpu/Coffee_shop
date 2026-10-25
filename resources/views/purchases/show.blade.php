@@ -9,14 +9,14 @@
             <div><div class="text-xs text-coffee-500 uppercase font-bold">Supplier</div><div class="font-semibold">{{ $purchase->supplier_name }}</div></div>
             <div><div class="text-xs text-coffee-500 uppercase font-bold">Date</div><div class="font-semibold">{{ $purchase->purchase_date->format('M d, Y') }}</div></div>
             <div><div class="text-xs text-coffee-500 uppercase font-bold">Quantity</div><div class="font-semibold">{{ $purchase->quantity }} {{ $purchase->unit }}</div></div>
-            <div><div class="text-xs text-coffee-500 uppercase font-bold">Unit Price</div><div class="font-semibold">₱{{ number_format($purchase->unit_price,2) }}</div></div>
-            <div><div class="text-xs text-coffee-500 uppercase font-bold">Total</div><div class="text-xl font-black text-gold-600">₱{{ number_format($purchase->total_amount,2) }}</div></div>
-            <div><div class="text-xs text-coffee-500 uppercase font-bold">Paid</div><div class="font-semibold text-emerald-600">₱{{ number_format($purchase->amount_paid,2) }}</div></div>
+            <div><div class="text-xs text-coffee-500 uppercase font-bold">Unit Price</div><div class="font-semibold">&#8369;{{ number_format($purchase->unit_price,2) }}</div></div>
+            <div><div class="text-xs text-coffee-500 uppercase font-bold">Total</div><div class="text-xl font-black text-gold-600">&#8369;{{ number_format($purchase->total_amount,2) }}</div></div>
+            <div><div class="text-xs text-coffee-500 uppercase font-bold">Paid</div><div class="font-semibold text-emerald-600">&#8369;{{ number_format($purchase->amount_paid,2) }}</div></div>
         </div>
     </div>
     <div class="bg-white rounded-2xl shadow-card p-5" style="border-left:4px solid #ef4444">
         <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Balance</div>
-        <div class="text-2xl font-black text-red-600">₱{{ number_format($purchase->total_amount - $purchase->amount_paid, 2) }}</div>
+        <div class="text-2xl font-black text-red-600">&#8369;{{ number_format($purchase->total_amount - $purchase->amount_paid, 2) }}</div>
     </div>
 </div>
 @endsection

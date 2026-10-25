@@ -54,7 +54,7 @@
             </div>
             <div>
                 <div class="text-xs text-gray-500 uppercase font-bold mb-1">Credit Limit</div>
-                <div class="text-xl font-black">₱{{ number_format($store->credit_limit, 2) }}</div>
+                <div class="text-xl font-black">&#8369;{{ number_format($store->credit_limit, 2) }}</div>
             </div>
         </div>
 
@@ -74,15 +74,15 @@
         </div>
         <div class="card p-5">
             <div class="text-xs font-bold text-gray-500 uppercase mb-1">Total Sales</div>
-            <div class="text-2xl font-black text-gray-800">₱{{ number_format($stats['total_sales'], 2) }}</div>
+            <div class="text-2xl font-black text-gray-800">&#8369;{{ number_format($stats['total_sales'], 2) }}</div>
         </div>
         <div class="card p-5">
             <div class="text-xs font-bold text-gray-500 uppercase mb-1">Total Paid</div>
-            <div class="text-2xl font-black text-green-600">₱{{ number_format($stats['total_paid'], 2) }}</div>
+            <div class="text-2xl font-black text-green-600">&#8369;{{ number_format($stats['total_paid'], 2) }}</div>
         </div>
         <div class="card p-5" style="border-left: 4px solid #ef4444;">
             <div class="text-xs font-bold text-gray-500 uppercase mb-1">Outstanding</div>
-            <div class="text-2xl font-black text-red-600">₱{{ number_format($stats['outstanding'], 2) }}</div>
+            <div class="text-2xl font-black text-red-600">&#8369;{{ number_format($stats['outstanding'], 2) }}</div>
         </div>
     </div>
 </div>
@@ -112,9 +112,9 @@
                     <tr class="border-b border-gray-50 hover:bg-gray-50">
                         <td class="px-6 py-3 font-mono font-semibold">{{ $dr->dr_number }}</td>
                         <td class="px-6 py-3 text-gray-500">{{ $dr->delivery_date->format('M d, Y') }}</td>
-                        <td class="px-6 py-3 text-right font-bold">₱{{ number_format($dr->total_amount, 2) }}</td>
+                        <td class="px-6 py-3 text-right font-bold">&#8369;{{ number_format($dr->total_amount, 2) }}</td>
                         <td class="px-6 py-3 text-right {{ $dr->balance > 0 ? 'text-red-600 font-bold' : 'text-gray-400' }}">
-                            ₱{{ number_format($dr->balance, 2) }}
+                            &#8369;{{ number_format($dr->balance, 2) }}
                         </td>
                         <td class="px-6 py-3 text-center">
                             <span class="badge {{ $dr->status === 'delivered' ? 'badge-success' : 'badge-warning' }}">

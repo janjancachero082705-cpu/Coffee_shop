@@ -14,7 +14,7 @@
                 </select>
             </div>
             <div class="md:col-span-2"><label class="block text-sm font-semibold text-coffee-800 mb-1">Description *</label><input type="text" name="description" required class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>
-            <div><label class="block text-sm font-semibold text-coffee-800 mb-1">Amount (₱) *</label><input type="number" name="amount" step="0.01" min="0" required class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>
+            <div><label class="block text-sm font-semibold text-coffee-800 mb-1">Amount (&#8369;) *</label><input type="number" name="amount" step="0.01" min="0" required class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>
             <div><label class="block text-sm font-semibold text-coffee-800 mb-1">Supplier</label><input type="text" name="supplier_name" class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>
             <div><label class="block text-sm font-semibold text-coffee-800 mb-1">Quantity</label><input type="number" name="quantity" step="0.01" min="0" class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>
             <div><label class="block text-sm font-semibold text-coffee-800 mb-1">Unit</label><input type="text" name="unit" placeholder="kg, pcs, etc." class="w-full px-4 py-2 border border-coffee-200 rounded-lg"></div>

@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('sales-reports', [SalesReportController::class, 'index'])->name('sales-reports.index');
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('payments/live-data', [PaymentController::class, 'liveData'])->name('payments.live-data');
 
     // Business Modules (Purchases, Production, Expenses)
     Route::resource('purchases', PurchaseController::class);

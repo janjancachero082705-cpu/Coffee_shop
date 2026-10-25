@@ -20,32 +20,32 @@
                     <tr class="border-b border-coffee-50">
                         <td class="py-2 font-semibold">{{ $item->product->name ?? '—' }}</td>
                         <td class="py-2 text-center">{{ $item->quantity_delivered }} {{ $item->unit }}</td>
-                        <td class="py-2 text-right">₱{{ number_format($item->unit_price,2) }}</td>
-                        <td class="py-2 text-right font-bold">₱{{ number_format($item->subtotal,2) }}</td>
+                        <td class="py-2 text-right">&#8369;{{ number_format($item->unit_price,2) }}</td>
+                        <td class="py-2 text-right font-bold">&#8369;{{ number_format($item->subtotal,2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
         <div class="mt-4 space-y-1 text-sm">
-            <div class="flex justify-between"><span>Subtotal</span><span class="font-bold">₱{{ number_format($delivery->subtotal,2) }}</span></div>
-            <div class="flex justify-between text-red-600"><span>Discount ({{ number_format($delivery->discount_percent,2) }}%)</span><span class="font-bold">-₱{{ number_format($delivery->discount_amount,2) }}</span></div>
-            <div class="flex justify-between text-lg pt-2 border-t border-coffee-100"><span class="font-bold">TOTAL</span><span class="font-black text-gold-600">₱{{ number_format($delivery->total_amount,2) }}</span></div>
+            <div class="flex justify-between"><span>Subtotal</span><span class="font-bold">&#8369;{{ number_format($delivery->subtotal,2) }}</span></div>
+            <div class="flex justify-between text-red-600"><span>Discount ({{ number_format($delivery->discount_percent,2) }}%)</span><span class="font-bold">-&#8369;{{ number_format($delivery->discount_amount,2) }}</span></div>
+            <div class="flex justify-between text-lg pt-2 border-t border-coffee-100"><span class="font-bold">TOTAL</span><span class="font-black text-gold-600">&#8369;{{ number_format($delivery->total_amount,2) }}</span></div>
         </div>
     </div>
 
     <div class="space-y-4">
         <div class="bg-white rounded-2xl shadow-card p-5">
             <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Total Amount</div>
-            <div class="text-3xl font-black text-coffee-900">₱{{ number_format($delivery->total_amount,2) }}</div>
+            <div class="text-3xl font-black text-coffee-900">&#8369;{{ number_format($delivery->total_amount,2) }}</div>
         </div>
         <div class="bg-white rounded-2xl shadow-card p-5">
             <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Paid</div>
-            <div class="text-xl font-black text-emerald-600">₱{{ number_format($delivery->amount_paid,2) }}</div>
+            <div class="text-xl font-black text-emerald-600">&#8369;{{ number_format($delivery->amount_paid,2) }}</div>
         </div>
         <div class="bg-white rounded-2xl shadow-card p-5" style="border-left:4px solid #ef4444">
             <div class="text-xs font-bold text-coffee-500 uppercase mb-1">Balance</div>
-            <div class="text-xl font-black text-red-600">₱{{ number_format($delivery->balance,2) }}</div>
+            <div class="text-xl font-black text-red-600">&#8369;{{ number_format($delivery->balance,2) }}</div>
         </div>
     </div>
 </div>
