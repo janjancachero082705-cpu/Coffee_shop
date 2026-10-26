@@ -1,210 +1,225 @@
 @extends('layouts.admin')
-@section('title', 'Dashboard')
-@section('subtitle', 'Business intelligence and financial overview')
+
+@section('title', 'Good morning, ' . (Auth::user()->name ?? 'Admin'))
+@section('subtitle', 'From truck to cash: where your coffee money is right now.')
 
 @section('content')
 
-{{-- ══════ TOP STATS CARDS (Modern Gradient Style) ══════ --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    
-    {{-- 1. TOTAL SALES --}}
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-        <div class="absolute -right-6 -top-6 w-32 h-32 bg-emerald-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-        <div class="relative z-10 flex justify-between items-start">
+@php
+    $distributed      = $distributed ?? 0;
+    $sold             = $sold ?? 0;
+    $collected        = $collected ?? 0;
+    $outstanding      = $outstanding ?? 0;
+    $distributedCount = $distributedCount ?? 0;
+    $storeBalances    = collect($storeBalances ?? []);
+    $recentReports    = collect($recentReports ?? []);
+    $recentDeliveries = collect($recentDeliveries ?? []);
+    $trend            = collect($trend ?? []);
+
+    $paidRate = $sold > 0 ? min(100, round($collected / $sold * 100)) : 0;
+    $unpaid   = max(0, $sold - $collected);
+    $unsold   = max(0, $distributed - $sold);
+    $maxBal   = max(1, $storeBalances->max('total_balance'));
+@endphp
+
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    .ds { --ink:#17211D; --muted:#6B7770; --line:#E6EAE7; --soft:#F5F7F6; --brand:#1D5F4C; --amber:#E39B2B; --bad:#C2412D; --warn:#B7791F;
+          font-family:'Manrope',system-ui,sans-serif; color:var(--ink); }
+    .ds *, .ds *::before, .ds *::after { box-sizing:border-box; }
+    .ds .num { font-variant-numeric:tabular-nums; letter-spacing:-.03em; }
+    .ds .card { background:#fff; border:1px solid var(--line); border-radius:20px; }
+    .ds .pad { padding:24px; }
+    .ds h3 { margin:0; font-size:16px; font-weight:800; }
+    .ds .sub { margin:2px 0 0; font-size:13px; color:var(--muted); }
+    .ds .more { font-size:13px; font-weight:700; color:var(--brand); text-decoration:none; white-space:nowrap; }
+    .ds .more:hover { text-decoration:underline; }
+    .ds .head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:18px; }
+    .ds .cols { display:grid; gap:20px; margin-top:20px; grid-template-columns:1fr; }
+    @media (min-width:1024px) { .ds .c-a { grid-template-columns:2fr 1fr; } .ds .c-b { grid-template-columns:3fr 2fr; } .ds .c-c { grid-template-columns:3fr 2fr; } }
+
+    /* KPI cards */
+    .ds .kpis { display:grid; gap:16px; grid-template-columns:1fr; }
+    @media (min-width:640px) { .ds .kpis { grid-template-columns:repeat(2,1fr); } }
+    @media (min-width:1100px) { .ds .kpis { grid-template-columns:repeat(4,1fr); } }
+    .ds .kpi { padding:22px; display:flex; justify-content:space-between; gap:12px; }
+    .ds .kpi .k { font-size:14px; color:var(--muted); font-weight:600; }
+    .ds .kpi .v { font-size:clamp(24px,2.4vw,31px); font-weight:800; margin-top:8px; line-height:1.1; }
+    .ds .kpi .s { font-size:13px; color:var(--muted); margin-top:6px; }
+    .ds .ico { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:18px; flex:none; }
+    .ds .kpi.owe { background:linear-gradient(160deg,#FFF8E6,#FDEFC9); border-color:#F1D693; }
+    .ds .kpi.owe .v { color:#7A4E07; }
+
+    /* Doughnut */
+    .ds .donut-wrap { position:relative; height:200px; }
+    .ds .donut-mid { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+    .ds .donut-mid b { font-size:30px; font-weight:800; letter-spacing:-.03em; }
+    .ds .donut-mid small { font-size:12px; color:var(--muted); font-weight:600; }
+    .ds .legend { margin-top:18px; display:grid; gap:10px; }
+    .ds .lg { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; }
+    .ds .lg span:first-child { display:flex; align-items:center; gap:10px; font-weight:600; color:#343E3A; }
+    .ds .lg i { width:10px; height:10px; border-radius:3px; flex:none; }
+    .ds .lg b { font-weight:800; }
+
+    /* Stores */
+    .ds .store { display:flex; align-items:center; gap:12px; padding:11px 0; }
+    .ds .store + .store { border-top:1px solid var(--line); }
+    .ds .rank { width:30px; height:30px; border-radius:10px; background:var(--soft); font-size:13px; font-weight:800; display:grid; place-items:center; flex:none; }
+    .ds .store-main { flex:1; min-width:0; }
+    .ds .store-top { display:flex; justify-content:space-between; gap:10px; font-size:14px; font-weight:700; }
+    .ds .store-top span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ds .mini { height:5px; background:var(--soft); border-radius:5px; margin-top:7px; overflow:hidden; }
+    .ds .mini i { display:block; height:100%; background:var(--bad); border-radius:5px; }
+    .ds .bad { color:var(--bad); } .ds .ok { color:var(--brand); } .ds .warn { color:var(--warn); }
+
+    /* Table + list */
+    .ds .tbl-wrap { overflow-x:auto; }
+    .ds table { width:100%; border-collapse:collapse; font-size:14px; }
+    .ds th { text-align:left; font-size:13px; color:var(--muted); font-weight:600; padding:0 10px 10px 0; border-bottom:1px solid var(--line); white-space:nowrap; }
+    .ds td { padding:13px 10px 13px 0; border-bottom:1px solid var(--line); white-space:nowrap; }
+    .ds tbody tr:last-child td { border-bottom:0; }
+    .ds .r { text-align:right; padding-right:0; }
+    .ds .chip { display:inline-block; font-size:12px; font-weight:700; padding:3px 11px; border-radius:999px; }
+    .ds .chip.ok { background:#D6EAE2; color:#184D3E; } .ds .chip.warn { background:#FDECC8; color:#8A5A0B; } .ds .chip.bad { background:#FBDDD7; color:#98291A; }
+    .ds .del { display:flex; justify-content:space-between; gap:12px; padding:13px 0; }
+    .ds .del + .del { border-top:1px solid var(--line); }
+    .ds .del-name { font-size:14px; font-weight:700; }
+    .ds .del-meta { font-size:12.5px; color:var(--muted); margin-top:2px; }
+    .ds .empty { padding:28px 8px; text-align:center; color:var(--muted); font-size:14px; }
+    .ds .empty b { display:block; color:var(--ink); margin-bottom:2px; }
+</style>
+
+<div class="ds">
+
+    {{-- ══ KPI CARDS ══ --}}
+    <section class="kpis" aria-label="Money summary">
+        <div class="card kpi">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Sales</p>
-                <h3 class="text-3xl font-black text-slate-900 tracking-tight">&#8369;{{ number_format($totalSales, 0) }}</h3>
-                <p class="text-[11px] font-medium text-emerald-600 mt-2 bg-emerald-50 inline-block px-2 py-1 rounded-md"><i class="fas fa-arrow-trend-up mr-1"></i> Revenue</p>
+                <div class="k">Distributed</div>
+                <div class="v num">&#8369;{{ number_format($distributed, 0) }}</div>
+                <div class="s">{{ $distributedCount }} {{ \Illuminate\Support\Str::plural('delivery', $distributedCount) }}</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30">
-                <i class="fas fa-wallet"></i>
-            </div>
+            <div class="ico" style="background:#E8EEFB; color:#3558B8"><i class="fas fa-truck"></i></div>
         </div>
-    </div>
-    
-    {{-- 2. TOTAL PURCHASES --}}
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-        <div class="absolute -right-6 -top-6 w-32 h-32 bg-amber-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-        <div class="relative z-10 flex justify-between items-start">
+        <div class="card kpi">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Purchases</p>
-                <h3 class="text-3xl font-black text-slate-900 tracking-tight">&#8369;{{ number_format($totalPurchases, 0) }}</h3>
-                <p class="text-[11px] font-medium text-amber-600 mt-2 bg-amber-50 inline-block px-2 py-1 rounded-md"><i class="fas fa-cart-shopping mr-1"></i> Raw Materials</p>
+                <div class="k">Sold</div>
+                <div class="v num">&#8369;{{ number_format($sold, 0) }}</div>
+                <div class="s">From reports</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center text-xl shadow-lg shadow-amber-500/30">
-                <i class="fas fa-boxes-stacked"></i>
-            </div>
+            <div class="ico" style="background:#EEF6F3; color:#2A7B63"><i class="fas fa-store"></i></div>
         </div>
+        <div class="card kpi">
+            <div>
+                <div class="k">Collected</div>
+                <div class="v num" style="color:var(--brand)">&#8369;{{ number_format($collected, 0) }}</div>
+                <div class="s">Payments in</div>
+            </div>
+            <div class="ico" style="background:#D6EAE2; color:#1D5F4C"><i class="fas fa-peso-sign"></i></div>
+        </div>
+        <div class="card kpi owe">
+            <div>
+                <div class="k" style="color:#8A5A0B">Still to collect</div>
+                <div class="v num">&#8369;{{ number_format($outstanding, 0) }}</div>
+                <div class="s" style="color:#8A5A0B">@if($sold > 0) {{ $paidRate }}% of sales is paid @else No sales reported yet @endif</div>
+            </div>
+            <div class="ico" style="background:#fff; color:#B7791F"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+    </section>
+
+    {{-- ══ LINE + PIE ══ --}}
+    <div class="cols c-a">
+        <section class="card pad">
+            <div class="head"><div><h3>Sales trend</h3><p class="sub">Reported sales per period.</p></div></div>
+            <div style="position:relative; height:300px;"><canvas id="salesChart" role="img" aria-label="Sales trend line chart"></canvas></div>
+        </section>
+
+        <section class="card pad">
+            <div class="head"><div><h3>Where the money is</h3><p class="sub">Share of everything distributed.</p></div></div>
+            <div class="donut-wrap">
+                <canvas id="shareChart" role="img" aria-label="Pie chart of collected, sold but unpaid, and not yet sold"></canvas>
+                <div class="donut-mid"><b class="num">{{ $paidRate }}%</b><small>of sales paid</small></div>
+            </div>
+            <div class="legend">
+                <div class="lg"><span><i style="background:#1D5F4C"></i>Collected</span><b class="num">&#8369;{{ number_format($collected, 0) }}</b></div>
+                <div class="lg"><span><i style="background:#E39B2B"></i>Sold, not paid</span><b class="num">&#8369;{{ number_format($unpaid, 0) }}</b></div>
+                <div class="lg"><span><i style="background:#C9D1CD"></i>Not yet sold</span><b class="num">&#8369;{{ number_format($unsold, 0) }}</b></div>
+            </div>
+        </section>
     </div>
 
-    {{-- 3. TOTAL EXPENSES --}}
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-        <div class="absolute -right-6 -top-6 w-32 h-32 bg-rose-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-        <div class="relative z-10 flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Expenses</p>
-                <h3 class="text-3xl font-black text-slate-900 tracking-tight">&#8369;{{ number_format($totalExpenses, 0) }}</h3>
-                <p class="text-[11px] font-medium text-rose-600 mt-2 bg-rose-50 inline-block px-2 py-1 rounded-md"><i class="fas fa-receipt mr-1"></i> Operations</p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-rose-600 text-white flex items-center justify-center text-xl shadow-lg shadow-rose-500/30">
-                <i class="fas fa-file-invoice-dollar"></i>
-            </div>
-        </div>
-    </div>
+    {{-- ══ BAR + STORES ══ --}}
+    <div class="cols c-b">
+        <section class="card pad">
+            <div class="head"><div><h3>Truck to cash</h3><p class="sub">The amount at each step, side by side.</p></div></div>
+            <div style="position:relative; height:290px;"><canvas id="stepsChart" role="img" aria-label="Bar graph of distributed, sold, collected and still to collect"></canvas></div>
+        </section>
 
-    {{-- 4. NET PROFIT --}}
-    <div class="rounded-2xl p-6 border relative overflow-hidden group hover:shadow-xl transition-all duration-300 {{ $netProfit >= 0 ? 'bg-gradient-to-br from-slate-800 to-slate-950 border-slate-700 shadow-slate-900/30' : 'bg-gradient-to-br from-red-900 to-red-950 border-red-800 shadow-red-900/30' }}">
-        <div class="absolute -right-8 -bottom-8 text-white/5 transform rotate-12 group-hover:scale-110 transition-transform"><i class="fas fa-chart-pie fa-8x"></i></div>
-        <div class="relative z-10 flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold {{ $netProfit >= 0 ? 'text-slate-400' : 'text-red-300' }} uppercase tracking-wider mb-1">Net Profit</p>
-                <h3 class="text-3xl font-black tracking-tight {{ $netProfit >= 0 ? 'text-caramel-400' : 'text-red-400' }}">
-                    {{ $netProfit >= 0 ? '' : '-' }}&#8369;{{ number_format(abs($netProfit), 0) }}
-                </h3>
-                <p class="text-[11px] font-medium {{ $netProfit >= 0 ? 'text-slate-400' : 'text-red-300' }} mt-2 bg-white/10 inline-block px-2 py-1 rounded-md backdrop-blur-sm"><i class="fas fa-scale-balanced mr-1"></i> Sales - (Purchases + Expenses)</p>
+        <section class="card pad">
+            <div class="head">
+                <div><h3>Who owes the most</h3><p class="sub">Top 5 store balances.</p></div>
+                <a class="more" href="{{ route('stores.index') }}">All stores</a>
             </div>
-            <div class="w-12 h-12 rounded-xl {{ $netProfit >= 0 ? 'bg-white/10 text-caramel-400 border border-white/10' : 'bg-red-500/20 text-red-300 border border-red-500/30' }} flex items-center justify-center text-xl backdrop-blur-md">
-                <i class="fas fa-chart-line"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ══════ SECONDARY STATS (Glassmorphism Row) ══════ --}}
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-slate-600 flex items-center justify-center"><i class="fas fa-truck-fast"></i></div>
-        <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deliveries</div><div class="text-xl font-black text-slate-800">{{ $totalDeliveries }}</div></div>
-    </div>
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-indigo-500 flex items-center justify-center"><i class="fas fa-store"></i></div>
-        <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stores</div><div class="text-xl font-black text-slate-800">{{ $totalStores }}</div></div>
-    </div>
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-caramel-500 flex items-center justify-center"><i class="fas fa-box"></i></div>
-        <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Products</div><div class="text-xl font-black text-slate-800">{{ $totalProducts }}</div></div>
-    </div>
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-rose-500 flex items-center justify-center"><i class="fas fa-money-bill-transfer"></i></div>
-        <div><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Outflow</div><div class="text-xl font-black text-slate-800">&#8369;{{ number_format($totalOutflow, 0) }}</div></div>
-    </div>
-</div>
-
-{{-- ══════ MAIN GRID (Chart + Low Stock) ══════ --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    
-    {{-- SALES CHART (Mixed Chart) --}}
-    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900 font-serif">Revenue Overview</h3>
-                <p class="text-xs text-slate-500">Monthly performance trend</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-caramel-400"></span> <span class="text-xs font-bold text-slate-500">Sales</span>
-            </div>
-        </div>
-        <div class="relative h-[320px] w-full">
-            <canvas id="salesChart"></canvas>
-        </div>
-    </div>
-
-    {{-- LOW STOCK ALERTS --}}
-    <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-slate-900 font-serif">Critical Stocks</h3>
-            <a href="{{ route('inventory.index') }}" class="text-xs font-bold text-caramel-500 hover:text-caramel-600 bg-caramel-50 px-2 py-1 rounded-md">Inventory</a>
-        </div>
-        
-        <div class="space-y-3 flex-1 overflow-y-auto pr-1">
-            @forelse($lowStockVariants as $variant)
-                <div class="flex items-center justify-between p-3 rounded-xl bg-rose-50/50 border border-rose-100 hover:bg-rose-50 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-white border border-rose-200 flex items-center justify-center text-rose-500 shadow-sm">
-                            <i class="fas fa-triangle-exclamation text-xs"></i>
+            @forelse($storeBalances->take(5) as $sb)
+                @php $owes = $sb->total_balance > 0; @endphp
+                <div class="store">
+                    <div class="rank">{{ $loop->iteration }}</div>
+                    <div class="store-main">
+                        <div class="store-top">
+                            <span>{{ $sb->store->store_name ?? 'Unknown' }}</span>
+                            <span class="num {{ $owes ? 'bad' : 'ok' }}">&#8369;{{ number_format($sb->total_balance, 0) }}</span>
                         </div>
-                        <div>
-                            <div class="text-sm font-bold text-slate-900 line-clamp-1">{{ $variant->product->name ?? 'Unknown' }}</div>
-                            <div class="text-[10px] text-rose-600 font-bold mt-0.5">{{ $variant->name }}</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-black text-rose-600">{{ $variant->stock }}</div>
-                        <div class="text-[9px] text-rose-400 font-bold uppercase tracking-wider">Left</div>
+                        <div class="mini"><i style="width:{{ $owes ? max(4, round($sb->total_balance / $maxBal * 100)) : 0 }}%"></i></div>
                     </div>
                 </div>
             @empty
-                <div class="text-center py-10 text-slate-400 text-sm flex flex-col items-center justify-center h-full">
-                    <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-3"><i class="fas fa-check-double text-2xl text-emerald-500"></i></div>
-                    <p class="font-bold text-slate-700">Stocks are healthy!</p>
-                    <p class="text-xs mt-1">No items need restocking.</p>
-                </div>
+                <div class="empty"><b>No balances yet</b>Balances appear after your first delivery.</div>
             @endforelse
-        </div>
-    </div>
-</div>
-
-{{-- ══════ BOTTOM ROW (Recent Deliveries & Expenses) ══════ --}}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    
-    {{-- RECENT DELIVERIES --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-            <h3 class="font-bold text-slate-900 font-serif flex items-center gap-2"><i class="fas fa-truck text-caramel-500"></i> Recent Deliveries</h3>
-            <a href="{{ route('deliveries.index') }}" class="text-xs font-bold text-caramel-500 hover:text-caramel-600">View All</a>
-        </div>
-        <div class="overflow-x-auto flex-1">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-white border-b border-slate-100 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
-                    <tr>
-                        <th class="px-6 py-4">DR Number</th>
-                        <th class="px-6 py-4">Customer</th>
-                        <th class="px-6 py-4 text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    @forelse($recentDeliveries as $d)
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-6 py-4 font-bold text-slate-900 font-mono text-xs">{{ $d->dr_number }}</td>
-                            <td class="px-6 py-4 font-medium text-slate-700">{{ $d->store->store_name ?? 'Unknown' }}</td>
-                            <td class="px-6 py-4 text-right font-black text-slate-900">&#8369;{{ number_format($d->total_amount, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" class="text-center py-10 text-slate-400 text-sm">No deliveries yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+        </section>
     </div>
 
-    {{-- RECENT EXPENSES --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-            <h3 class="font-bold text-slate-900 font-serif flex items-center gap-2"><i class="fas fa-receipt text-rose-500"></i> Recent Expenses</h3>
-            <a href="{{ route('expenses.index') }}" class="text-xs font-bold text-caramel-500 hover:text-caramel-600">View All</a>
-        </div>
-        <div class="overflow-x-auto flex-1">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-white border-b border-slate-100 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
-                    <tr>
-                        <th class="px-6 py-4">Date</th>
-                        <th class="px-6 py-4">Category</th>
-                        <th class="px-6 py-4 text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    @forelse($recentExpenses as $e)
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-6 py-4 text-slate-600 text-xs font-medium">{{ \Carbon\Carbon::parse($e->expense_date)->format('M d, Y') }}</td>
-                            <td class="px-6 py-4 font-medium text-slate-700">{{ $e->category }}</td>
-                            <td class="px-6 py-4 text-right font-black text-rose-600">- &#8369;{{ number_format($e->amount, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" class="text-center py-10 text-slate-400 text-sm">No expenses yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    {{-- ══ REPORTS + DELIVERIES ══ --}}
+    <div class="cols c-c">
+        <section class="card pad">
+            <div class="head"><h3>Latest sales reports</h3><a class="more" href="{{ route('sales-reports.index') }}">All reports</a></div>
+            @if($recentReports->count() > 0)
+                <div class="tbl-wrap">
+                    <table>
+                        <thead><tr><th>Report</th><th>Store</th><th>Period</th><th class="r">Total</th><th class="r">Status</th></tr></thead>
+                        <tbody>
+                            @foreach($recentReports as $r)
+                                @php $tone = in_array($r->status, ['paid','closed']) ? 'ok' : ($r->status === 'partial' ? 'warn' : 'bad'); @endphp
+                                <tr>
+                                    <td style="font-weight:700">{{ $r->report_number }}</td>
+                                    <td>{{ $r->store->store_name ?? '—' }}</td>
+                                    <td style="color:var(--muted)">{{ optional($r->period_from)->format('M d') }} – {{ optional($r->period_to)->format('M d, Y') }}</td>
+                                    <td class="r num" style="font-weight:700">&#8369;{{ number_format($r->total_sales, 0) }}</td>
+                                    <td class="r"><span class="chip {{ $tone }}">{{ ucfirst($r->status) }}</span></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty"><b>No sales reports yet</b>Reports show here once a store submits one.</div>
+            @endif
+        </section>
+
+        <section class="card pad">
+            <div class="head"><h3>Latest deliveries</h3><a class="more" href="{{ route('deliveries.index') }}">All deliveries</a></div>
+            @forelse($recentDeliveries as $d)
+                <div class="del">
+                    <div>
+                        <div class="del-name">{{ $d->store->store_name ?? 'Unknown' }}</div>
+                        <div class="del-meta">{{ $d->dr_number }} &middot; {{ optional($d->delivery_date)->format('M d') }}</div>
+                    </div>
+                    <div class="num" style="font-weight:800; font-size:14px">&#8369;{{ number_format($d->total_amount, 0) }}</div>
+                </div>
+            @empty
+                <div class="empty"><b>No deliveries yet</b>New delivery receipts appear here.</div>
+            @endforelse
+        </section>
     </div>
 </div>
 
@@ -212,94 +227,72 @@
 
 @push('scripts')
 <script>
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    
-    // Gradient for Bar Chart
-    const barGradient = ctx.createLinearGradient(0, 0, 0, 300);
-    barGradient.addColorStop(0, '#F59E0B'); // Caramel
-    barGradient.addColorStop(1, '#D97706');
+(function () {
+    if (typeof Chart === 'undefined') return;
+    const peso = '\u20B1';
+    const font = { family: 'Manrope', size: 11 };
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const anim = calm ? false : { duration: 500 };
+    const money = v => peso + (v >= 1000 ? (v / 1000) + 'k' : v);
+    const tip = {
+        backgroundColor: '#17211D', padding: 10, cornerRadius: 8, displayColors: false,
+        bodyFont: { family: 'Manrope', size: 14, weight: '700' }
+    };
+    const axes = {
+        y: { beginAtZero: true, border: { display: false }, grid: { color: '#E6EAE7' }, ticks: { color: '#6B7770', font, padding: 8, callback: money } },
+        x: { border: { display: false }, grid: { display: false }, ticks: { color: '#6B7770', font } }
+    };
 
-    // Gradient for Line Chart
-    const lineGradient = ctx.createLinearGradient(0, 0, 0, 300);
-    lineGradient.addColorStop(0, 'rgba(15, 23, 42, 0.2)'); // Slate
-    lineGradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
-
-    // Combined Chart: Bar + Line
+    // 1. Sales trend (line)
+    const trendEl = document.getElementById('salesChart');
+    const ctx = trendEl.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 300);
+    grad.addColorStop(0, 'rgba(29,95,76,.16)');
+    grad.addColorStop(1, 'rgba(29,95,76,0)');
     new Chart(ctx, {
-        type: 'bar', // Main type is Bar
-        data: {
-            labels: @json(collect($trend)->pluck('label')),
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'Sales (₱)',
-                    data: @json(collect($trend)->pluck('sold')),
-                    backgroundColor: barGradient,
-                    borderRadius: 6, // Rounded bars
-                    borderSkipped: false,
-                    barPercentage: 0.6,
-                    order: 2 // Draw behind the line
-                },
-                {
-                    type: 'line', // Overlay line chart
-                    label: 'Trend',
-                    data: @json(collect($trend)->pluck('sold')),
-                    borderColor: '#0F172A', // Slate 900
-                    backgroundColor: lineGradient,
-                    borderWidth: 3,
-                    tension: 0.4, // Smooth curve
-                    fill: true,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0F172A',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    order: 1 // Draw on top
-                }
-            ]
-        },
+        type: 'line',
+        data: { labels: @json($trend->pluck('label')), datasets: [{
+            data: @json($trend->pluck('sold')), borderColor: '#1D5F4C', backgroundColor: grad, fill: true,
+            borderWidth: 2.5, tension: .35, pointRadius: 0, pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#1D5F4C', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+        }]},
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1E293B',
-                    titleFont: { family: 'Inter', size: 13 },
-                    bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            return '₱' + context.parsed.y.toLocaleString();
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    border: { display: false },
-                    grid: { color: '#F1F5F9', drawTicks: false },
-                    ticks: { 
-                        color: '#64748B', 
-                        font: { family: 'Inter', size: 11, weight: '600' }, 
-                        padding: 10,
-                        callback: v => '₱' + (v >= 1000 ? (v/1000)+'k' : v) 
-                    }
-                },
-                x: {
-                    border: { display: false },
-                    grid: { display: false },
-                    ticks: { 
-                        color: '#64748B', 
-                        font: { family: 'Inter', size: 11, weight: '500' }, 
-                        padding: 10 
-                    }
-                }
-            }
+            responsive: true, maintainAspectRatio: false, animation: anim, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: c => peso + c.parsed.y.toLocaleString() } } },
+            scales: axes
         }
     });
+
+    // 2. Where the money is (doughnut)
+    const share = [{{ (float) $collected }}, {{ (float) $unpaid }}, {{ (float) $unsold }}];
+    const empty = share.every(v => v <= 0);
+    new Chart(document.getElementById('shareChart'), {
+        type: 'doughnut',
+        data: { labels: ['Collected', 'Sold, not paid', 'Not yet sold'], datasets: [{
+            data: empty ? [1] : share,
+            backgroundColor: empty ? ['#E6EAE7'] : ['#1D5F4C', '#E39B2B', '#C9D1CD'],
+            borderWidth: 0, spacing: empty ? 0 : 3, borderRadius: empty ? 0 : 6, hoverOffset: 4
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '74%', animation: anim,
+            plugins: { legend: { display: false }, tooltip: { ...tip, enabled: !empty, callbacks: { label: c => ' ' + c.label + ': ' + peso + c.parsed.toLocaleString() } } }
+        }
+    });
+
+    // 3. Truck to cash (bar graph)
+    new Chart(document.getElementById('stepsChart'), {
+        type: 'bar',
+        data: { labels: ['Distributed', 'Sold', 'Collected', 'Still to collect'], datasets: [{
+            data: [{{ (float) $distributed }}, {{ (float) $sold }}, {{ (float) $collected }}, {{ (float) $outstanding }}],
+            backgroundColor: ['#94B8AC', '#4A9980', '#1D5F4C', '#E39B2B'],
+            borderRadius: 10, borderSkipped: false, maxBarThickness: 64
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: anim,
+            plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: c => peso + c.parsed.y.toLocaleString() } } },
+            scales: axes
+        }
+    });
+})();
 </script>
 @endpush

@@ -1,300 +1,266 @@
 @extends('layouts.admin')
 @section('title', 'Inventory')
-@section('subtitle', 'Real-time stock levels and inventory valuation')
+@section('subtitle', 'Stock levels and inventory value')
 
 @section('content')
 
-{{-- STATS CARDS --}}
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 relative overflow-hidden group">
-        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-        <div class="relative z-10">
-            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total SKUs</div>
-            <div class="text-3xl font-black text-slate-900">{{ number_format($stats['total_items']) }}</div>
+@php
+    $lowAt    = 5;    // at or below = low stock
+    $capacity = 100;  // stock that fills the meter
+
+    $tones = [
+        'out' => ['label' => 'Out of stock', 'color' => '#DC2626', 'text' => 'text-red-700'],
+        'low' => ['label' => 'Running low',  'color' => '#E39B2B', 'text' => 'text-amber-700'],
+        'ok'  => ['label' => 'In stock',     'color' => '#2A7B63', 'text' => 'text-brand-700'],
+    ];
+    $levelOf = fn($s) => $s <= 0 ? 'out' : ($s <= $lowAt ? 'low' : 'ok');
+    $pctOf   = fn($s) => $s <= 0 ? 0 : min(100, max(6, round($s / $capacity * 100)));
+
+    $tabs = [
+        'main'     => ['label' => 'Raw materials & supplies', 'icon' => 'fa-boxes-stacked', 'rows' => $mainInventory,
+                       'empty' => 'No items found', 'hint' => 'Add a product to start tracking stock.'],
+        'finished' => ['label' => 'Finished goods', 'icon' => 'fa-mug-hot', 'rows' => $finishedGoods,
+                       'empty' => 'No finished goods yet', 'hint' => 'Process a production batch to add finished goods.'],
+    ];
+    $activeTab = array_key_exists(request('tab'), $tabs) ? request('tab') : 'main';
+    $status    = request('status');
+    $filtered  = request()->filled('search') || request()->filled('status');
+
+    $total   = max(0, (int) $stats['total_items']);
+    $low     = (int) $stats['low_stock'];
+    $out     = (int) $stats['out_of_stock'];
+    $inStock = max(0, $total - $low - $out);
+    $pct     = fn($n) => $total > 0 ? round($n / $total * 100, 1) : 0;
+
+    $link = fn($s = null) => route('inventory.index', array_filter(['tab' => $activeTab, 'search' => request('search'), 'status' => $s]));
+    $chips = ['' => 'All', 'in_stock' => 'In stock', 'low_stock' => 'Low', 'out_of_stock' => 'Out'];
+@endphp
+
+<style>
+    .inv-hero { background:#0F2C25; color:#fff; border-radius:20px; padding:28px 32px; display:grid; gap:28px; grid-template-columns:1fr; }
+    @media (min-width:900px) { .inv-hero { grid-template-columns:auto 1fr; gap:64px; align-items:center; } }
+    .inv-hero .k { font-size:14px; font-weight:600; color:#9FC4B7; }
+    .inv-hero .v { font-size:clamp(40px,6vw,64px); font-weight:800; line-height:1.05; letter-spacing:-.03em; margin-top:8px; font-variant-numeric:tabular-nums; }
+    .health { display:flex; height:14px; gap:3px; border-radius:8px; overflow:hidden; background:rgba(255,255,255,.08); }
+    .health i { display:block; height:100%; }
+    .legend { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+    .legend a { display:block; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); transition:background .15s; }
+    .legend a:hover { background:rgba(255,255,255,.07); }
+    .legend .n { font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .legend .l { display:flex; align-items:center; gap:7px; font-size:13px; color:#B7D3C9; font-weight:600; }
+    .legend .l i { width:9px; height:9px; border-radius:3px; }
+
+    .seg { display:inline-flex; background:#EDF0EE; padding:4px; border-radius:12px; gap:2px; }
+    .seg button { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:9px; font-size:14px; font-weight:600; color:#66736D; background:transparent; cursor:pointer; }
+    .seg button[aria-selected="true"] { background:#fff; color:#151B19; box-shadow:0 1px 3px rgba(21,27,25,.12); }
+    .seg .count { font-size:12px; font-weight:700; color:#8E9B95; }
+    .chip { padding:6px 14px; border-radius:999px; font-size:13px; font-weight:600; color:#4B5752; border:1px solid #DEE3E0; background:#fff; transition:all .15s; }
+    .chip:hover { border-color:#8E9B95; }
+    .chip.on { background:#151B19; border-color:#151B19; color:#fff; }
+
+    .inv-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+    .inv-card { background:#fff; border:1px solid #E4E8E6; border-radius:18px; padding:20px; display:grid; grid-template-columns:1fr 18px; gap:16px; transition:border-color .15s, box-shadow .15s; }
+    .inv-card:hover { border-color:#AED5C6; box-shadow:0 8px 24px -12px rgba(15,44,37,.25); }
+    .tile { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; font-weight:800; font-size:15px; background:#EEF6F3; color:#1D5F4C; }
+    .qty { font-size:34px; font-weight:800; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; }
+    .meter { position:relative; width:18px; height:100%; min-height:132px; background:#EDF0EE; border-radius:9px; overflow:hidden; }
+    .meter .fill { position:absolute; left:0; right:0; bottom:0; border-radius:9px; transition:height .4s ease; }
+    .meter .tick { position:absolute; left:0; right:0; height:0; border-top:2px dashed rgba(21,27,25,.35); }
+    .card-act { display:flex; gap:8px; margin-top:16px; }
+    .icon-btn { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid #DEE3E0; color:#66736D; background:#fff; transition:all .15s; }
+    .icon-btn:hover { color:#151B19; border-color:#8E9B95; }
+    .add-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:8px; height:36px; border-radius:10px; font-size:14px; font-weight:700; background:#EEF6F3; color:#184D3E; cursor:pointer; transition:background .15s; }
+    .add-btn:hover { background:#D6EAE2; }
+    #stockInDialog { padding:0; border:0; border-radius:20px; width:100%; max-width:440px; box-shadow:0 24px 48px -12px rgba(21,27,25,.4); }
+    #stockInDialog::backdrop { background:rgba(15,44,37,.55); backdrop-filter:blur(3px); }
+    @media (prefers-reduced-motion: reduce) { .meter .fill { transition:none; } }
+</style>
+
+{{-- ══ HERO ══ --}}
+<section class="inv-hero mb-6" aria-label="Inventory summary">
+    <div>
+        <div class="k">Inventory value</div>
+        <div class="v"><span style="color:#7DB9A5; font-weight:600">&#8369;</span>{{ number_format($stats['total_value'], 0) }}</div>
+        <div class="mt-3 text-sm" style="color:#9FC4B7">across {{ number_format($total) }} {{ \Illuminate\Support\Str::plural('SKU', $total) }}</div>
+    </div>
+    <div>
+        <div class="health" role="img" aria-label="{{ $inStock }} in stock, {{ $low }} low, {{ $out }} out of stock">
+            <i style="width:{{ $pct($inStock) }}%; background:#4A9980"></i>
+            <i style="width:{{ $pct($low) }}%; background:#E39B2B"></i>
+            <i style="width:{{ $pct($out) }}%; background:#EF5B4B"></i>
+        </div>
+        <div class="legend">
+            <a href="{{ $link('in_stock') }}"><div class="l"><i style="background:#4A9980"></i>In stock</div><div class="n">{{ number_format($inStock) }}</div></a>
+            <a href="{{ $link('low_stock') }}"><div class="l"><i style="background:#E39B2B"></i>Running low</div><div class="n">{{ number_format($low) }}</div></a>
+            <a href="{{ $link('out_of_stock') }}"><div class="l"><i style="background:#EF5B4B"></i>Out of stock</div><div class="n">{{ number_format($out) }}</div></a>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 relative overflow-hidden group">
-        <div class="absolute right-0 top-0 w-24 h-24 bg-amber-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-        <div class="relative z-10">
-            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Low Stock</div>
-            <div class="text-3xl font-black text-amber-600">{{ number_format($stats['low_stock']) }}</div>
-        </div>
+</section>
+
+{{-- ══ TOOLBAR ══ --}}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="seg" role="tablist" aria-label="Inventory type">
+        @foreach($tabs as $key => $tab)
+            <button type="button" role="tab" id="tabBtn-{{ $key }}" data-tab="{{ $key }}" aria-controls="tab-{{ $key }}" aria-selected="{{ $key === $activeTab ? 'true' : 'false' }}">
+                <i class="fas {{ $tab['icon'] }} text-[13px]"></i>{{ $tab['label'] }}<span class="count">{{ number_format($tab['rows']->total()) }}</span>
+            </button>
+        @endforeach
     </div>
-    <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 relative overflow-hidden group">
-        <div class="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-        <div class="relative z-10">
-            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Out of Stock</div>
-            <div class="text-3xl font-black text-red-600">{{ number_format($stats['out_of_stock']) }}</div>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200 relative overflow-hidden group">
-        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-        <div class="relative z-10">
-            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Value</div>
-            <div class="text-3xl font-black text-emerald-600">&#8369;{{ number_format($stats['total_value'], 0) }}</div>
-        </div>
+    <button type="button" data-stock-in class="btn btn-primary"><i class="fas fa-plus text-xs"></i>Add stock</button>
+</div>
+
+<div class="flex flex-wrap items-center gap-3 mb-6">
+    <form method="GET" action="{{ route('inventory.index') }}" class="relative w-full sm:w-80">
+        <input type="hidden" name="tab" id="currentTabInput" value="{{ $activeTab }}">
+        @if($status)<input type="hidden" name="status" value="{{ $status }}">@endif
+        <i class="fas fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400 text-sm pointer-events-none"></i>
+        <input type="search" name="search" value="{{ request('search') }}" placeholder="Search product or SKU" aria-label="Search product or SKU" class="input pl-10 !rounded-xl !py-2.5">
+    </form>
+    <div class="flex flex-wrap gap-2" aria-label="Filter by status">
+        @foreach($chips as $val => $text)
+            <a href="{{ $link($val ?: null) }}" class="chip {{ (string) $status === (string) $val ? 'on' : '' }}">{{ $text }}</a>
+        @endforeach
     </div>
 </div>
 
-{{-- TABS & FILTERS --}}
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-    
-    {{-- Header Tabs --}}
-    <div class="px-6 pt-4 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex gap-2">
-            <button onclick="switchInvTab('main')" id="tabBtn-main" class="px-5 py-3 text-sm font-bold border-b-2 border-slate-900 text-slate-900 transition-colors flex items-center gap-2">
-                <i class="fas fa-boxes"></i> Raw Materials & Supplies
-            </button>
-            <button onclick="switchInvTab('finished')" id="tabBtn-finished" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2">
-                <i class="fas fa-coffee"></i> Finished Goods
-            </button>
-        </div>
-        <button onclick="openStockInModal()" class="mb-3 md:mb-0 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-sm shadow-sm transition-all flex items-center gap-2 self-start md:self-auto">
-            <i class="fas fa-plus-circle"></i> Global Stock In
-        </button>
-    </div>
+{{-- ══ PANELS ══ --}}
+@foreach($tabs as $key => $tab)
+    <div id="tab-{{ $key }}" role="tabpanel" aria-labelledby="tabBtn-{{ $key }}" @if($key !== $activeTab) hidden @endif>
+        @if($tab['rows']->count() > 0)
+            <div class="inv-grid">
+                @foreach($tab['rows'] as $variant)
+                    @php $lv = $levelOf($variant->stock); $t = $tones[$lv]; @endphp
+                    <article class="inv-card">
+                        <div class="min-w-0 flex flex-col">
+                            <div class="flex items-center gap-3">
+                                <div class="tile">@if($key === 'finished')<i class="fas fa-mug-hot text-sm"></i>@else{{ strtoupper(substr($variant->product->name ?? 'P', 0, 1)) }}@endif</div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-ink-900 truncate">{{ $variant->product->name ?? 'Unknown' }}</div>
+                                    <div class="text-xs text-ink-500 font-mono truncate">{{ $variant->product->sku ?? 'No SKU' }}</div>
+                                </div>
+                            </div>
 
-    {{-- Filter Bar --}}
-    <div class="p-4 border-b border-slate-200 bg-white">
-        <form method="GET" action="{{ route('inventory.index') }}" class="flex flex-wrap items-center gap-3 w-full">
-            <input type="hidden" name="tab" id="currentTabInput" value="{{ request('tab', 'main') }}">
-            <div class="relative group w-full md:w-64">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-caramel-500 transition-colors"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search product or SKU..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none shadow-sm transition-all">
+                            <div class="mt-5 text-sm text-ink-600">{{ $variant->name }}</div>
+                            <div class="mt-1 flex items-baseline gap-1.5">
+                                <span class="qty text-ink-900">{{ number_format($variant->stock) }}</span>
+                                <span class="text-sm font-semibold text-ink-500">{{ $variant->unit }}</span>
+                            </div>
+                            <div class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold {{ $t['text'] }}">
+                                <span class="w-2 h-2 rounded-full" style="background:{{ $t['color'] }}"></span>{{ $t['label'] }}
+                            </div>
+
+                            <div class="card-act mt-auto pt-4">
+                                <button type="button" data-stock-in="{{ $variant->id }}" class="add-btn" aria-label="Add stock to {{ $variant->product->name ?? 'product' }}, {{ $variant->name }}"><i class="fas fa-plus text-xs"></i>Add stock</button>
+                                <a href="{{ route('products.edit', $variant->product_id) }}" class="icon-btn" title="Edit product" aria-label="Edit {{ $variant->product->name ?? 'product' }}"><i class="fas fa-pen text-xs"></i></a>
+                            </div>
+                        </div>
+
+                        <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $capacity }}" aria-valuenow="{{ min($capacity, $variant->stock) }}" aria-label="Stock level" title="Low-stock line at {{ $lowAt }}">
+                            <div class="fill" style="height:{{ $pctOf($variant->stock) }}%; background:{{ $t['color'] }}"></div>
+                            <div class="tick" style="bottom:{{ $lowAt / $capacity * 100 }}%"></div>
+                        </div>
+                    </article>
+                @endforeach
             </div>
-            <select name="status" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-caramel-500 outline-none shadow-sm cursor-pointer font-medium text-slate-700">
-                <option value="">All Status</option>
-                <option value="in_stock" {{ request('status') == 'in_stock' ? 'selected' : '' }}>In Stock</option>
-                <option value="low_stock" {{ request('status') == 'low_stock' ? 'selected' : '' }}>Low Stock</option>
-                <option value="out_of_stock" {{ request('status') == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
-            </select>
-            <button type="submit" class="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-colors shadow-sm">Filter</button>
-            
-            @if(request()->has('search') || request()->has('status'))
-                <a href="{{ route('inventory.index') }}" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-semibold text-sm hover:bg-red-100 transition-colors shadow-sm">Clear</a>
+            @if($tab['rows']->hasPages())
+                <div class="mt-6">{{ $tab['rows']->appends(array_merge(request()->except('page'), ['tab' => $key]))->links() }}</div>
             @endif
-        </form>
-    </div>
-
-    {{-- ══════ TAB 1: RAW MATERIALS & SUPPLIES ══════ --}}
-    <div id="tab-main" class="overflow-x-auto">
-        @if($mainInventory->count() > 0)
-            <table class="w-full text-sm text-left">
-                <thead class="bg-white border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                    <tr>
-                        <th class="px-6 py-4">Product</th>
-                        <th class="px-6 py-4">Variant</th>
-                        <th class="px-6 py-4 w-64">Stock Level</th>
-                        <th class="px-6 py-4 text-right">Current Stock</th>
-                        <th class="px-6 py-4 text-center w-28">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach($mainInventory as $variant)
-                        <tr class="hover:bg-slate-50 transition-colors group">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm border border-slate-200 shadow-sm">
-                                        {{ strtoupper(substr($variant->product->name ?? 'P', 0, 1)) }}
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-slate-900">{{ $variant->product->name ?? 'Unknown' }}</div>
-                                        <div class="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">{{ $variant->product->sku ?? 'N/A' }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex px-2.5 py-1 bg-white text-slate-800 rounded-md text-xs font-bold border border-slate-200 shadow-sm">{{ $variant->name }} ({{ $variant->unit }})</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($variant->stock == 0)
-                                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-xs font-bold text-red-600">Out of Stock</span></div>
-                                    <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1.5"></div>
-                                @elseif($variant->stock <= 5)
-                                    <div class="flex justify-between text-[11px] font-bold text-amber-600 mb-1"><span>Low Stock</span><span>{{ $variant->stock }} {{ $variant->unit }} left</span></div>
-                                    <div class="w-full bg-amber-100 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width: {{ ($variant->stock / 10) * 100 }}%"></div></div>
-                                @else
-                                    <div class="flex justify-between text-[11px] font-bold text-emerald-600 mb-1"><span>In Stock</span><span>{{ number_format($variant->stock) }} {{ $variant->unit }}</span></div>
-                                    <div class="w-full bg-emerald-100 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ min(100, ($variant->stock / 100) * 100) }}%"></div></div>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="text-xl font-black text-slate-900">{{ number_format($variant->stock) }}</span>
-                                <span class="text-xs font-bold text-slate-500 ml-1">{{ $variant->unit }}</span>
-                            </td>
-                            {{-- NEW ACTION COLUMN --}}
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button type="button" onclick="openStockInModal({{ $variant->id }})" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-700 transition-colors shadow-sm" title="Stock In">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <a href="{{ route('products.edit', $variant->product_id) }}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 transition-colors shadow-sm" title="Edit Product">
-                                        <i class="fas fa-pen text-xs"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/30">{{ $mainInventory->appends(['tab' => 'main'])->links() }}</div>
         @else
-            <div class="text-center py-20">
-                <div class="w-20 h-20 mx-auto bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100"><i class="fas fa-boxes text-3xl text-slate-300"></i></div>
-                <h3 class="text-lg font-bold text-slate-800 mb-1">No items found</h3>
+            <div class="card text-center py-16 px-4">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl mb-4"><i class="fas {{ $tab['icon'] }}"></i></div>
+                <h3 class="font-bold text-ink-900">{{ $tab['empty'] }}</h3>
+                <p class="text-sm text-ink-500 mt-1">{{ $filtered ? 'Nothing matches your filters.' : $tab['hint'] }}</p>
+                @if($filtered)<a href="{{ route('inventory.index', ['tab' => $key]) }}" class="btn btn-secondary mt-4">Clear filters</a>@endif
             </div>
         @endif
     </div>
+@endforeach
 
-    {{-- ══════ TAB 2: FINISHED GOODS ══════ --}}
-    <div id="tab-finished" class="hidden overflow-x-auto">
-        @if($finishedGoods->count() > 0)
-            <table class="w-full text-sm text-left">
-                <thead class="bg-white border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                    <tr>
-                        <th class="px-6 py-4">Product</th>
-                        <th class="px-6 py-4">Variant</th>
-                        <th class="px-6 py-4 w-64">Stock Level</th>
-                        <th class="px-6 py-4 text-right">Current Stock</th>
-                        <th class="px-6 py-4 text-center w-28">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach($finishedGoods as $variant)
-                        <tr class="hover:bg-slate-50 transition-colors group">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-caramel-50 text-caramel-700 flex items-center justify-center font-bold text-sm border border-caramel-200 shadow-sm">
-                                        <i class="fas fa-coffee"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-slate-900">{{ $variant->product->name ?? 'Unknown' }}</div>
-                                        <div class="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">{{ $variant->product->sku ?? 'N/A' }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex px-2.5 py-1 bg-white text-slate-800 rounded-md text-xs font-bold border border-slate-200 shadow-sm">{{ $variant->name }} ({{ $variant->unit }})</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($variant->stock == 0)
-                                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-xs font-bold text-red-600">Out of Stock</span></div>
-                                    <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1.5"></div>
-                                @elseif($variant->stock <= 5)
-                                    <div class="flex justify-between text-[11px] font-bold text-amber-600 mb-1"><span>Low Stock</span><span>{{ $variant->stock }} {{ $variant->unit }} left</span></div>
-                                    <div class="w-full bg-amber-100 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width: {{ ($variant->stock / 10) * 100 }}%"></div></div>
-                                @else
-                                    <div class="flex justify-between text-[11px] font-bold text-emerald-600 mb-1"><span>In Stock</span><span>{{ number_format($variant->stock) }} {{ $variant->unit }}</span></div>
-                                    <div class="w-full bg-emerald-100 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ min(100, ($variant->stock / 100) * 100) }}%"></div></div>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="text-xl font-black text-slate-900">{{ number_format($variant->stock) }}</span>
-                                <span class="text-xs font-bold text-slate-500 ml-1">{{ $variant->unit }}</span>
-                            </td>
-                            {{-- NEW ACTION COLUMN --}}
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button type="button" onclick="openStockInModal({{ $variant->id }})" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-700 transition-colors shadow-sm" title="Stock In">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <a href="{{ route('products.edit', $variant->product_id) }}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 transition-colors shadow-sm" title="Edit Product">
-                                        <i class="fas fa-pen text-xs"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
+{{-- ══ ADD STOCK DIALOG ══ --}}
+<dialog id="stockInDialog" aria-labelledby="stockInTitle">
+    <form action="{{ route('inventory.stock-in') }}" method="POST">
+        @csrf
+        <div class="px-6 pt-6 pb-2 flex items-start justify-between gap-4">
+            <div>
+                <h3 id="stockInTitle" class="text-lg font-bold text-ink-900">Add stock</h3>
+                <p class="text-sm text-ink-500 mt-0.5">Increase the on-hand quantity of a variant.</p>
+            </div>
+            <button type="button" data-close class="icon-btn !border-0 -mr-2 -mt-1" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+            <div>
+                <label for="stockInVariantSelect" class="block text-sm font-semibold text-ink-800 mb-1.5">Product variant</label>
+                <select name="variant_id" id="stockInVariantSelect" required class="input">
+                    <option value="">Choose a variant</option>
+                    @foreach($allVariantsList as $v)
+                        <option value="{{ $v->id }}" data-stock="{{ $v->stock }}" data-unit="{{ $v->unit }}">{{ $v->product->name ?? 'Product' }} · {{ $v->name }}</option>
                     @endforeach
-                </tbody>
-            </table>
-            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/30">{{ $finishedGoods->appends(['tab' => 'finished'])->links() }}</div>
-        @else
-            <div class="text-center py-20">
-                <div class="w-20 h-20 mx-auto bg-caramel-50 rounded-2xl flex items-center justify-center mb-4 border border-caramel-100"><i class="fas fa-coffee text-3xl text-caramel-300"></i></div>
-                <h3 class="text-lg font-bold text-slate-800 mb-1">No finished goods found</h3>
-                <p class="text-sm text-slate-500">Process a production batch to add finished goods.</p>
+                </select>
             </div>
-        @endif
-    </div>
-</div>
-
-{{-- MODAL FOR STOCK IN --}}
-<div id="stockInModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300 border border-slate-200" id="modalContent">
-        <form action="{{ route('inventory.stock-in') }}" method="POST">
-            @csrf
-            <div class="px-6 py-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-slate-900">Add Stock</h3>
-                <button type="button" onclick="closeStockInModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-500 shadow-sm"><i class="fas fa-times"></i></button>
+            <div>
+                <label for="stockInQty" class="block text-sm font-semibold text-ink-800 mb-1.5">Quantity to add</label>
+                <input type="number" name="quantity" id="stockInQty" step="0.01" min="0.01" required class="input" placeholder="e.g. 50" inputmode="decimal">
+                <p id="stockInPreview" class="text-sm text-ink-500 mt-2 min-h-[20px]" aria-live="polite"></p>
             </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-800 mb-1">Select Product Variant</label>
-                    <select name="variant_id" id="stockInVariantSelect" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-400 outline-none transition-all">
-                        <option value="">Choose variant...</option>
-                        @foreach($allVariantsList as $v)
-                            <option value="{{ $v->id }}">{{ $v->product->name ?? 'Product' }} - {{ $v->name }} (Current: {{ $v->stock }} {{ $v->unit }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-800 mb-1">Quantity to Add</label>
-                    <input type="number" name="quantity" step="0.01" min="0.01" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-400 outline-none transition-all" placeholder="e.g. 50">
-                </div>
-            </div>
-            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-                <button type="button" onclick="closeStockInModal()" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 transition-colors text-sm">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg shadow-md transition-all text-sm">Save Stock</button>
-            </div>
-        </form>
-    </div>
-</div>
+        </div>
+        <div class="px-6 py-4 bg-ink-50 border-t border-ink-100 flex justify-end gap-3">
+            <button type="button" data-close class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save stock</button>
+        </div>
+    </form>
+</dialog>
 @endsection
 
 @push('scripts')
 <script>
-    // ── TAB SWITCHING LOGIC ──
-    function switchInvTab(tabName) {
-        document.getElementById('tab-main').classList.add('hidden');
-        document.getElementById('tab-finished').classList.add('hidden');
-        
-        document.getElementById('tabBtn-main').className = "px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2";
-        document.getElementById('tabBtn-finished').className = "px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2";
+(function () {
+    // Tabs: keep ?tab= in the URL and the search form
+    const tabs = document.querySelectorAll('.seg [data-tab]');
+    const tabInput = document.getElementById('currentTabInput');
+    tabs.forEach(btn => btn.addEventListener('click', () => {
+        tabs.forEach(b => {
+            const on = b === btn;
+            b.setAttribute('aria-selected', on);
+            document.getElementById('tab-' + b.dataset.tab).hidden = !on;
+        });
+        tabInput.value = btn.dataset.tab;
+        const url = new URL(location.href);
+        url.searchParams.set('tab', btn.dataset.tab);
+        url.searchParams.delete('page');
+        history.replaceState(null, '', url);
+    }));
 
-        document.getElementById('tab-' + tabName).classList.remove('hidden');
-        document.getElementById('tabBtn-' + tabName).className = "px-5 py-3 text-sm font-bold border-b-2 border-slate-900 text-slate-900 transition-colors flex items-center gap-2";
-        
-        document.getElementById('currentTabInput').value = tabName;
+    // Add stock dialog
+    const dlg = document.getElementById('stockInDialog');
+    const select = document.getElementById('stockInVariantSelect');
+    const qty = document.getElementById('stockInQty');
+    const preview = document.getElementById('stockInPreview');
+
+    function updatePreview() {
+        const opt = select.selectedOptions[0];
+        if (!opt || !opt.value) { preview.textContent = ''; return; }
+        const cur = parseFloat(opt.dataset.stock) || 0;
+        const add = parseFloat(qty.value) || 0;
+        const unit = opt.dataset.unit || '';
+        preview.textContent = add > 0
+            ? `Now ${cur} ${unit}. After this: ${Number((cur + add).toFixed(2))} ${unit}.`
+            : `Currently ${cur} ${unit} on hand.`;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab') || 'main';
-        switchInvTab(tab);
-    });
-
-    // ── STOCK IN MODAL (With Row Pre-selection) ──
-    const modal = document.getElementById('stockInModal');
-    const content = document.getElementById('modalContent');
-    const variantSelect = document.getElementById('stockInVariantSelect');
-
-    function openStockInModal(variantId = null) {
-        modal.classList.remove('hidden');
-        
-        // Kung galing sa row button, i-select agad ang variant
-        if (variantId) {
-            variantSelect.value = variantId;
-        } else {
-            variantSelect.value = "";
+    document.addEventListener('click', e => {
+        const opener = e.target.closest('[data-stock-in]');
+        if (opener) {
+            select.value = opener.dataset.stockIn || '';
+            qty.value = '';
+            updatePreview();
+            dlg.showModal();
+            (select.value ? qty : select).focus();
+            return;
         }
-
-        setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-    }
-
-    function closeStockInModal() {
-        modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-        setTimeout(() => { modal.classList.add('hidden'); }, 300);
-    }
-    modal.addEventListener('click', function(e) { if (e.target === this) closeStockInModal(); });
+        if (e.target.closest('[data-close]') || e.target === dlg) dlg.close();
+    });
+    select.addEventListener('change', updatePreview);
+    qty.addEventListener('input', updatePreview);
+})();
 </script>
 @endpush
