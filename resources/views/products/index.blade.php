@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Inventory & Products')
+@section('title', 'Products')
 @section('subtitle', 'Manage catalog, stocks, and production')
 
 @section('content')
@@ -15,7 +15,7 @@
 </div>
 
 {{-- ══════ TAB 1: CATALOG ══════ --}}
-<div id="tab-catalog" class="hidden space-y-6">
+<div id="tab-catalog" class="space-y-6">
     
     {{-- STATS CARDS --}}
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -173,7 +173,7 @@
 </div>
 
 {{-- ══════ TAB 2: PRODUCTION ══════ --}}
-<div id="tab-production" class="space-y-6">
+<div id="tab-production" class="hidden space-y-6">
     
     {{-- PRODUCTION FORM --}}
     <div class="card overflow-hidden max-w-4xl mx-auto">
@@ -334,7 +334,8 @@
     // Auto-open tab base sa URL
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tab') === 'catalog') { switchTab('catalog'); } else { switchTab('production'); }
+        const tab = urlParams.get('tab') || 'catalog'; // Default to catalog
+        switchTab(tab);
 
         // ── GRID/LIST TOGGLE ──
         const gridView = document.getElementById('productGridView');

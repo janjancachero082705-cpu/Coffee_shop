@@ -113,6 +113,7 @@ class PaymentController extends Controller
                 'amount' => $totalPayment,
                 'payment_date' => $request->payment_date,
             ]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
 
             foreach ($itemsToSave as $item) {
                 PaymentItem::create([
@@ -120,6 +121,7 @@ class PaymentController extends Controller
                     'delivery_item_id' => $item['delivery_item_id'],
                     'amount_paid' => $item['amount_paid'],
                 ]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
             }
 
             DeliveryController::syncDeliveryStatus($delivery->id);

@@ -56,6 +56,7 @@
                             <th>Category</th>
                             <th>Description</th>
                             <th class="text-right">Amount</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -65,9 +66,24 @@
                                 <td class="font-bold text-ink-900">{{ $e->category }}</td>
                                 <td class="text-ink-600">{{ $e->description ?? '—' }}</td>
                                 <td class="text-right font-bold text-red-600">- &#8369;{{ number_format($e->amount, 2) }}</td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {{-- EDIT BUTTON --}}
+                                        <a href="{{ route('expenses.edit', $e) }}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-brand-600 bg-brand-50 hover:bg-brand-100 transition-colors shadow-sm" title="Edit">
+                                            <i class="fas fa-pen text-xs"></i>
+                                        </a>
+                                        {{-- DELETE BUTTON --}}
+                                        <form action="{{ route('expenses.destroy', $e) }}" method="POST" onsubmit="return confirm('Delete this expense?');" class="inline">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors shadow-sm" title="Delete">
+                                                <i class="fas fa-trash text-xs"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="text-center py-8 text-ink-400">No expenses recorded yet.</td></tr>
+                            <tr><td colspan="5" class="text-center py-8 text-ink-400">No expenses recorded yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

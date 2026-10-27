@@ -116,9 +116,13 @@ class PurchaseController extends Controller
                 'cost_per_unit' => $validated['cost_per_unit'],
                 'total_cost' => $total,
             ]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
 
             $variant->increment('stock', $quantity);
+        \Illuminate\Support\Facades\Cache::forget('low_stock_alerts');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
             $variant->update(['cost_price' => $validated['cost_per_unit']]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         });
 
         return redirect()->route('purchases.index')->with('success', 'Purchase logged! Stock updated.');
@@ -127,6 +131,7 @@ class PurchaseController extends Controller
     public function destroy(Purchase $purchase)
     {
         $purchase->delete();
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         return redirect()->route('purchases.index')->with('success', 'Purchase log deleted.');
     }
 }

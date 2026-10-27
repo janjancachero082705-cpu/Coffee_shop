@@ -67,7 +67,7 @@ class DeliveryReceiptController extends Controller
             $dp = $data['discount_percent'] ?? 0;
             $da = $subtotal * ($dp / 100);
             $total = $subtotal - $da;
-            $drNum = 'DR-' . now()->format('Ymd') . '-' . str_pad(DeliveryReceipt::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+            $drNum = 'DR-' . now()->format('Ymd') . '-' . now()->format('His') . rand(10, 99);
 
             $dr = DeliveryReceipt::create([
                 'dr_number'=>$drNum,'store_id'=>$data['store_id'],

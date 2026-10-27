@@ -140,12 +140,13 @@
         ]],
     ];
 
-    // LOW STOCK NOTIFICATION LOGIC
+    // LOW STOCK NOTIFICATION LOGIC (REAL-TIME)
     $lowStockCount = 0;
     $lowStockItems = collect();
     if (class_exists('App\Models\ProductVariant') && \Illuminate\Support\Facades\Schema::hasTable('product_variants')) {
-        $lowStockItems = \App\Models\ProductVariant::with('product')->where('stock', '<=', 5)->take(5)->get();
-        $lowStockCount = \App\Models\ProductVariant::where('stock', '<=', 5)->count();
+        // Gidugangan og whereNull('deleted_at') para siguradong active lang ang i-check
+        $lowStockItems = \App\Models\ProductVariant::with('product')->whereNull('deleted_at')->where('stock', '<=', 5)->take(5)->get();
+        $lowStockCount = \App\Models\ProductVariant::whereNull('deleted_at')->where('stock', '<=', 5)->count();
     }
 @endphp
 

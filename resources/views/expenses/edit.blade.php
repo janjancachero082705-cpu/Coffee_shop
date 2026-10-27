@@ -12,27 +12,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Date <span class="text-red-500">*</span></label>
-                <input type="date" name="expense_date" value="{{ $expense->expense_date->format('Y-m-d') }}" required class="input">
+                {{-- GI-FIX: Gigamit ang Carbon::parse() para mo-work bisan string pa ang value --}}
+                <input type="date" name="expense_date" value="{{ \Carbon\Carbon::parse($expense->expense_date)->format('Y-m-d') }}" required class="input">
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Category <span class="text-red-500">*</span></label>
                 <select name="category" required class="input cursor-pointer">
-                    @foreach(['cherry_purchase','labor','processing','packaging','utilities','transportation','harvesting','other'] as $c)
-                        <option value="{{ $c }}" {{ $expense->category === $c ? 'selected':'' }}>{{ ucfirst(str_replace('_',' ',$c)) }}</option>
+                    @foreach(['Gas/Fuel', 'Transport', 'Labor', 'Utilities', 'Supplies', 'Other', 'Production Cost', 'cherry_purchase', 'processing', 'packaging', 'transportation', 'harvesting', 'other'] as $c)
+                        <option value="{{ $c }}" {{ $expense->category === $c ? 'selected':'' }}>{{ ucfirst(str_replace('_', ' ', $c)) }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="md:col-span-2">
-                <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Description <span class="text-red-500">*</span></label>
-                <input type="text" name="description" value="{{ $expense->description }}" required class="input">
+                <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Description</label>
+                <input type="text" name="description" value="{{ $expense->description }}" class="input">
             </div>
-            <div>
+            <div class="md:col-span-2">
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Amount (&#8369;) <span class="text-red-500">*</span></label>
-                <input type="number" name="amount" step="0.01" min="0" value="{{ $expense->amount }}" required class="input font-bold">
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Supplier</label>
-                <input type="text" name="supplier_name" value="{{ $expense->supplier_name }}" class="input">
+                <input type="number" name="amount" step="0.01" min="0.01" value="{{ $expense->amount }}" required class="input font-bold">
             </div>
         </div>
     </div>

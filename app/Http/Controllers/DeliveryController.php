@@ -20,10 +20,13 @@ class DeliveryController extends Controller
 
         if ($totalPaid >= $delivery->total_amount) {
             $delivery->update(['status' => 'completed']);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         } elseif ($totalPaid > 0) {
             $delivery->update(['status' => 'partial']);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         } else {
             $delivery->update(['status' => 'pending']);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         }
     }
 
@@ -93,7 +96,7 @@ class DeliveryController extends Controller
         try {
             DB::beginTransaction();
 
-            $drNumber = 'DR-' . Carbon::now()->format('Ymd') . '-' . str_pad(Delivery::whereDate('created_at', Carbon::today())->count() + 1, 3, '0', STR_PAD_LEFT);
+            $drNumber = 'DR-' . Carbon::now()->format('Ymd') . '-' . Carbon::now()->format('His') . rand(10, 99);
             $totalAmount = 0;
 
             $delivery = Delivery::create([
@@ -103,6 +106,7 @@ class DeliveryController extends Controller
                 'total_amount' => 0,
                 'status' => 'pending'
             ]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
 
             foreach ($request->products as $item) {
                 $variant = ProductVariant::lockForUpdate()->findOrFail($item['variant_id']);
@@ -124,11 +128,15 @@ class DeliveryController extends Controller
                     'unit_price' => $item['price'],
                     'subtotal' => $subtotal,
                 ]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
 
                 $variant->decrement('stock', $item['quantity']);
+        \Illuminate\Support\Facades\Cache::forget('low_stock_alerts');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
             }
 
             $delivery->update(['total_amount' => $totalAmount]);
+        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
             DB::commit();
 
             return redirect()->route('deliveries.store-profile', $request->store_id)->with('success', 'Delivery created successfully!');

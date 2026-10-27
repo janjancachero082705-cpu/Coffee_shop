@@ -46,6 +46,5 @@ Route::middleware(['auth'])->group(function () {
     // Business Modules (Purchases, Production, Expenses)
     Route::resource('purchases', PurchaseController::class);
     
-    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
-    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
 });
