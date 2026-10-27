@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Delivery;
 use App\Models\Store;
+use App\Models\Purchase;
+use App\Models\Expense;
+use App\Models\Payment;
+use App\Models\SalesReport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -12,64 +16,55 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. DISTRIBUTED (Total Deliveries)
+        // 1. DISTRIBUTED & SOLD
         $distributed = Delivery::sum('total_amount') ?? 0;
         $distributedCount = Delivery::count();
-
-        // 2. SOLD (Sales Reports)
+        
         $sold = 0;
-        $recentReports = collect();
         if (class_exists('App\Models\SalesReport') && Schema::hasTable('sales_reports')) {
-            $sold = \App\Models\SalesReport::sum('total_sales') ?? 0;
-            $recentReports = \App\Models\SalesReport::with('store')->latest()->take(5)->get();
+            $sold = SalesReport::sum('total_sales') ?? 0;
         } else {
-            $sold = $distributed; // Fallback
+            $sold = $distributed;
         }
 
-        // 3. COLLECTED (Payments)
-        $collected = 0;
-        if (class_exists('App\Models\Payment') && Schema::hasTable('payments')) {
-            $collected = \App\Models\Payment::sum('amount') ?? 0;
-        }
-
-        // 4. OUTSTANDING
+        // 2. COLLECTED (Kwarta nga nakuha)
+        $collected = Payment::sum('amount') ?? 0;
+        
+        // 3. OUTSTANDING (Utang)
         $outstanding = max(0, $sold - $collected);
 
-        // 5. STORE BALANCES (Top 5) - FIXED SQL ERROR
-        $storeBalances = Store::withSum('deliveries', 'total_amount')
-            ->orderByDesc('deliveries_sum_total_amount')
-            ->take(5)
-            ->get()
-            ->map(function($store) {
-                $obj = new \stdClass();
-                $obj->store = $store;
-                $obj->total_balance = $store->deliveries_sum_total_amount ?? 0;
-                return $obj;
-            })
-            ->filter(fn($sb) => $sb->total_balance > 0) // Filter > 0 sa memorya
-            ->values(); // Reset keys
+        // 4. EXPENSES
+        $totalExpenses = Expense::sum('amount') ?? 0;
 
-        // 6. RECENT DELIVERIES
+        // 5. PURCHASES (Auto-detect column: total_cost, total_amount, etc.)
+        $purchaseColumn = 'total_cost';
+        if (!Schema::hasColumn('purchases', 'total_cost')) {
+            if (Schema::hasColumn('purchases', 'total_amount')) $purchaseColumn = 'total_amount';
+            elseif (Schema::hasColumn('purchases', 'amount')) $purchaseColumn = 'amount';
+            elseif (Schema::hasColumn('purchases', 'total')) $purchaseColumn = 'total';
+            else $purchaseColumn = 'id'; 
+        }
+        $totalPurchases = Purchase::sum($purchaseColumn) ?? 0;
+
+        // 6. NET PROFIT (Base sa kwarta nga nakuha: Collected - Expenses - Purchases)
+        $netProfit = $collected - $totalExpenses - $totalPurchases;
+
+        // 7. RECENT ACTIVITIES
         $recentDeliveries = Delivery::with('store')->latest()->take(5)->get();
+        $recentExpenses = Expense::latest()->take(5)->get();
 
-        // 7. TREND (Last 6 Months)
+        // 8. TREND (Last 6 Months)
         $trend = collect();
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $monthSold = 0;
-            
-            if (class_exists('App\Models\SalesReport') && Schema::hasTable('sales_reports')) {
-                $monthSold = \App\Models\SalesReport::whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_sales') ?? 0;
-            } else {
-                $monthSold = Delivery::whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_amount') ?? 0;
-            }
-            
+            $monthSold = Delivery::whereYear('created_at', $month->year)->whereMonth('created_at', $month->month)->sum('total_amount') ?? 0;
             $trend->push(['label' => $month->format('M'), 'sold' => $monthSold]);
         }
 
         return view('dashboard.index', compact(
             'distributed', 'distributedCount', 'sold', 'collected', 'outstanding',
-            'storeBalances', 'recentReports', 'recentDeliveries', 'trend'
+            'totalExpenses', 'totalPurchases', 'netProfit',
+            'recentDeliveries', 'recentExpenses', 'trend'
         ));
     }
 }

@@ -137,4 +137,9 @@ class DeliveryController extends Controller
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
+    public function show(\App\Models\Delivery $delivery)
+    {
+        $delivery->load(['store', 'items.variant.product', 'payments']);
+        return view('deliveries.show', compact('delivery'));
+    }
 }

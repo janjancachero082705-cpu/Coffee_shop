@@ -1,136 +1,217 @@
 @extends('layouts.admin')
-@section('title', $store->store_name)
-@section('subtitle', $store->code)
-
-@section('header-actions')
-<a href="{{ route('stores.edit', $store) }}" class="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700">
-    <i class="fas fa-edit mr-1"></i> Edit
-</a>
-@endsection
+@section('title', 'Customer Profile')
+@section('subtitle', $store->store_name)
 
 @section('content')
+<div class="max-w-5xl mx-auto space-y-6">
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    {{-- 1. HERO PROFILE CARD --}}
+    <div class="card p-0 overflow-hidden relative">
+        <div class="h-24 bg-gradient-to-r from-brand-500 to-brand-400 w-full"></div>
+        
+        <div class="px-8 pb-8 relative">
+            <div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-10">
+                
+                {{-- Avatar & Info --}}
+                <div class="flex flex-col md:flex-row items-start md:items-end gap-5">
+                    <div class="w-24 h-24 rounded-2xl bg-white p-1 shadow-md shrink-0">
+                        <div class="w-full h-full rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-black text-4xl border border-brand-100">
+                            {{ strtoupper(substr($store->store_name, 0, 1)) }}
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <div class="flex items-center gap-3 mb-1">
+                            <h2 class="text-3xl font-black text-ink-900 leading-none">{{ $store->store_name }}</h2>
+                            @if($store->customer_type === 'suki')
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200 uppercase tracking-wider">⭐ Suki VIP</span>
+                            @elseif($store->customer_type === 'friend')
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wider">👥 Friend</span>
+                            @else
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-ink-100 text-ink-600 border border-ink-200 uppercase tracking-wider">Regular</span>
+                            @endif
+                        </div>
+                        <div class="text-sm text-ink-500 font-medium flex items-center gap-2">
+                            <span><i class="fas fa-map-marker-alt text-ink-400"></i> {{ $store->address ?? 'No address' }}</span>
+                            <span class="text-ink-300">|</span>
+                            <span><i class="fas fa-phone text-ink-400"></i> {{ $store->contact_number ?? 'No contact' }}</span>
+                        </div>
+                    </div>
+                </div>
 
-    {{-- STORE INFO --}}
-    <div class="lg:col-span-2 card p-6">
-        <div class="flex items-start justify-between mb-4">
-            <div>
-                <h2 class="text-2xl font-black text-gray-800">{{ $store->store_name }}</h2>
-                <p class="text-sm text-gray-500">{{ $store->owner_name }}</p>
-            </div>
-            <div class="flex gap-2">
-                @if($store->customer_type === 'suki')
-                    <span class="badge badge-suki">⭐ Suki</span>
-                @elseif($store->customer_type === 'friend')
-                    <span class="badge badge-friend">👥 Friend</span>
-                @else
-                    <span class="badge badge-regular">Regular</span>
-                @endif
-                <span class="badge badge-{{ $store->status === 'active' ? 'success' : 'danger' }}">{{ ucfirst($store->status) }}</span>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 text-sm border-t border-gray-100 pt-4">
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Contact</div>
-                <div class="font-semibold">{{ $store->contact_number }}</div>
-            </div>
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Email</div>
-                <div class="font-semibold">{{ $store->email ?? '—' }}</div>
-            </div>
-            <div class="col-span-2">
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Address</div>
-                <div class="font-semibold">
-                    {{ $store->address }}
-                    @if($store->barangay), {{ $store->barangay }}@endif
-                    @if($store->city), {{ $store->city }}@endif
+                {{-- Action Button --}}
+                <div class="shrink-0 w-full md:w-auto">
+                    <a href="{{ route('deliveries.create') }}?store_id={{ $store->id }}" class="btn btn-primary w-full md:w-auto shadow-md">
+                        <i class="fas fa-plus-circle"></i> Create Delivery
+                    </a>
                 </div>
             </div>
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Discount</div>
-                <div class="text-xl font-black text-amber-600">{{ number_format($store->default_discount_percent, 2) }}%</div>
-            </div>
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Credit Limit</div>
-                <div class="text-xl font-black">&#8369;{{ number_format($store->credit_limit, 2) }}</div>
-            </div>
         </div>
-
-        @if($store->notes)
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <div class="text-xs text-gray-500 uppercase font-bold mb-1">Notes</div>
-                <p class="text-sm text-gray-700">{{ $store->notes }}</p>
-            </div>
-        @endif
     </div>
 
-    {{-- STATS --}}
-    <div class="space-y-4">
-        <div class="card p-5">
-            <div class="text-xs font-bold text-gray-500 uppercase mb-1">Total Deliveries</div>
-            <div class="text-3xl font-black text-blue-600">{{ $stats['total_deliveries'] }}</div>
+    {{-- 2. FINANCIAL SUMMARY (KPI CARDS) --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {{-- Total Billed --}}
+        <div class="card p-5 flex items-center justify-between border-l-4 border-l-ink-400">
+            <div>
+                <div class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Total Billed</div>
+                <div class="text-2xl font-black text-ink-900">₱{{ number_format($stats['total_sales'] ?? 0, 2) }}</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center text-ink-500">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
         </div>
-        <div class="card p-5">
-            <div class="text-xs font-bold text-gray-500 uppercase mb-1">Total Sales</div>
-            <div class="text-2xl font-black text-gray-800">&#8369;{{ number_format($stats['total_sales'], 2) }}</div>
+
+        {{-- Total Paid --}}
+        <div class="card p-5 flex items-center justify-between border-l-4 border-l-emerald-500">
+            <div>
+                <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Total Paid</div>
+                <div class="text-2xl font-black text-emerald-700">₱{{ number_format($stats['total_paid'] ?? 0, 2) }}</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-check-circle"></i>
+            </div>
         </div>
-        <div class="card p-5">
-            <div class="text-xs font-bold text-gray-500 uppercase mb-1">Total Paid</div>
-            <div class="text-2xl font-black text-green-600">&#8369;{{ number_format($stats['total_paid'], 2) }}</div>
+
+        {{-- Outstanding Balance --}}
+        <div class="card p-5 flex items-center justify-between border-l-4 border-l-red-500">
+            <div>
+                <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Balance Due</div>
+                <div class="text-2xl font-black text-red-600">₱{{ number_format($stats['outstanding'] ?? 0, 2) }}</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
         </div>
-        <div class="card p-5" style="border-left: 4px solid #ef4444;">
-            <div class="text-xs font-bold text-gray-500 uppercase mb-1">Outstanding</div>
-            <div class="text-2xl font-black text-red-600">&#8369;{{ number_format($stats['outstanding'], 2) }}</div>
+    </div>
+
+    {{-- 3. ORDER HISTORY ACCORDION --}}
+    <div>
+        <div class="flex items-center justify-between mb-4 mt-8">
+            <div>
+                <h3 class="text-lg font-bold text-ink-900">Order History</h3>
+                <p class="text-xs text-ink-500">Click an order to expand and view items.</p>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            @forelse($store->deliveryReceipts as $dr)
+                {{-- Accordion Item --}}
+                <div class="card overflow-hidden transition-all duration-200 hover:border-brand-300">
+                    
+                    {{-- Clickable Header --}}
+                    <button type="button" class="w-full px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 focus:outline-none" onclick="toggleAccordion('dr-{{ $dr->id }}')">
+                        
+                        {{-- Left: ID & Date & Status --}}
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 border border-brand-100 shadow-sm">
+                                <i class="fas fa-shopping-bag text-lg"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-ink-900 text-lg">{{ $dr->dr_number }}</span>
+                                    @if($dr->status === 'delivered' || $dr->status === 'completed')
+                                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 uppercase tracking-wider">Paid</span>
+                                    @elseif($dr->status === 'partial')
+                                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wider">Partial</span>
+                                    @else
+                                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wider">Unpaid</span>
+                                    @endif
+                                </div>
+                                <div class="text-xs text-ink-500 font-medium mt-1 flex items-center gap-1.5">
+                                    <i class="far fa-calendar-alt"></i> {{ \Carbon\Carbon::parse($dr->delivery_date)->format('F d, Y') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Right: Amounts & Toggle Icon --}}
+                        <div class="flex items-center gap-8">
+                            <div class="text-left sm:text-right">
+                                <div class="text-[10px] font-bold text-ink-400 uppercase tracking-widest mb-0.5">Total Amount</div>
+                                <div class="text-base font-bold text-ink-900">₱{{ number_format($dr->total_amount, 2) }}</div>
+                            </div>
+                            <div class="text-left sm:text-right">
+                                <div class="text-[10px] font-bold text-ink-400 uppercase tracking-widest mb-0.5">Balance</div>
+                                <div class="text-base font-black {{ ($dr->balance ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600' }}">₱{{ number_format($dr->balance ?? 0, 2) }}</div>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-400 hover:bg-brand-50 hover:text-brand-600 transition-colors shrink-0">
+                                <i class="fas fa-chevron-down text-sm transition-transform duration-300 transform" id="icon-dr-{{ $dr->id }}"></i>
+                            </div>
+                        </div>
+                    </button>
+
+                    {{-- Expandable Content --}}
+                    <div id="dr-{{ $dr->id }}" class="hidden border-t border-ink-200 bg-ink-50/50">
+                        <div class="p-6">
+                            <h4 class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <i class="fas fa-box-open text-brand-500"></i> Items Included
+                            </h4>
+                            <div class="bg-white rounded-xl border border-ink-200 overflow-hidden shadow-sm">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-ink-50 border-b border-ink-200">
+                                        <tr>
+                                            <th class="text-left px-4 py-3 text-[10px] font-bold text-ink-500 uppercase tracking-widest">Product</th>
+                                            <th class="text-center px-4 py-3 text-[10px] font-bold text-ink-500 uppercase tracking-widest">Qty</th>
+                                            <th class="text-right px-4 py-3 text-[10px] font-bold text-ink-500 uppercase tracking-widest">Price</th>
+                                            <th class="text-right px-4 py-3 text-[10px] font-bold text-ink-500 uppercase tracking-widest">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-ink-100">
+                                        @foreach($dr->items as $item)
+                                            <tr class="hover:bg-ink-50 transition-colors">
+                                                <td class="px-4 py-3">
+                                                    <div class="font-bold text-ink-800">{{ $item->variant->product->name ?? 'Unknown' }}</div>
+                                                    <div class="text-[10px] text-ink-500 font-medium">{{ $item->variant->name ?? '' }}</div>
+                                                </td>
+                                                <td class="px-4 py-3 text-center font-bold text-ink-700 bg-ink-50 rounded">{{ number_format($item->quantity, 2) }}</td>
+                                                <td class="px-4 py-3 text-right text-ink-600">₱{{ number_format($item->price, 2) }}</td>
+                                                <td class="px-4 py-3 text-right font-bold text-ink-900">₱{{ number_format($item->subtotal, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                {{-- Empty State --}}
+                <div class="card p-16 text-center border-dashed border-2 border-ink-200 bg-ink-50/50">
+                    <div class="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-ink-100">
+                        <i class="fas fa-box-open text-3xl text-ink-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-ink-900">Wala pay Orders</h3>
+                    <p class="text-sm text-ink-500 mt-2 mb-6">Wala pay mga deliveries nga na-record para niining customer.</p>
+                    <a href="{{ route('deliveries.create') }}?store_id={{ $store->id }}" class="btn btn-secondary mx-auto">
+                        <i class="fas fa-plus"></i> Create First Delivery
+                    </a>
+                </div>
+            @endforelse
         </div>
     </div>
 </div>
-
-{{-- RECENT DELIVERIES --}}
-<div class="card overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="font-bold text-gray-700">Recent Deliveries</h3>
-        <a href="{{ route('deliveries.create') }}?store_id={{ $store->id }}" class="text-sm text-amber-600 font-semibold">
-            + New Delivery
-        </a>
-    </div>
-
-    @if($store->deliveryReceipts->count() > 0)
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-100">
-                    <th class="text-left px-6 py-3">DR #</th>
-                    <th class="text-left px-6 py-3">Date</th>
-                    <th class="text-right px-6 py-3">Total</th>
-                    <th class="text-right px-6 py-3">Balance</th>
-                    <th class="text-center px-6 py-3">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($store->deliveryReceipts as $dr)
-                    <tr class="border-b border-gray-50 hover:bg-gray-50">
-                        <td class="px-6 py-3 font-mono font-semibold">{{ $dr->dr_number }}</td>
-                        <td class="px-6 py-3 text-gray-500">{{ $dr->delivery_date->format('M d, Y') }}</td>
-                        <td class="px-6 py-3 text-right font-bold">&#8369;{{ number_format($dr->total_amount, 2) }}</td>
-                        <td class="px-6 py-3 text-right {{ $dr->balance > 0 ? 'text-red-600 font-bold' : 'text-gray-400' }}">
-                            &#8369;{{ number_format($dr->balance, 2) }}
-                        </td>
-                        <td class="px-6 py-3 text-center">
-                            <span class="badge {{ $dr->status === 'delivered' ? 'badge-success' : 'badge-warning' }}">
-                                {{ $dr->status }}
-                            </span>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @else
-        <div class="text-center py-12 text-gray-400">
-            <i class="fas fa-truck text-4xl mb-2 block"></i>
-            <p class="text-sm">Wala pay deliveries para sa store nga ni</p>
-        </div>
-    @endif
-</div>
-
 @endsection
+
+@push('scripts')
+<script>
+    function toggleAccordion(id) {
+        const content = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        
+        if (content.classList.contains('hidden')) {
+            // Close all others first
+            document.querySelectorAll('[id^="dr-"]').forEach(el => {
+                if(el.id !== id && !el.classList.contains('hidden')) {
+                    el.classList.add('hidden');
+                    document.getElementById('icon-' + el.id).classList.remove('rotate-180');
+                }
+            });
+            
+            content.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+</script>
+@endpush
