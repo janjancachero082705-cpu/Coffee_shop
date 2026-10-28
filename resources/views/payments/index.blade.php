@@ -4,57 +4,58 @@
 
 @section('content')
 
-<div class="w-full max-w-screen-2xl mx-auto space-y-6">
+<div class="w-full max-w-screen-2xl mx-auto space-y-4 md:space-y-6">
 
     {{-- KPI CARDS --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card p-5 border-l-4 border-l-emerald-500 flex items-center justify-between">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div class="card p-4 md:p-5 border-l-4 border-l-emerald-500 flex items-center justify-between">
             <div>
                 <div class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Total Collected</div>
-                <div class="text-2xl font-black text-emerald-600">&#8369;{{ number_format($totalCollected, 0) }}</div>
+                <div class="text-xl md:text-2xl font-black text-emerald-600">₱{{ number_format($totalCollected, 0) }}</div>
             </div>
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg border border-emerald-100">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm md:text-lg border border-emerald-100 shrink-0">
                 <i class="fas fa-hand-holding-usd"></i>
             </div>
         </div>
 
-        <div class="card p-5 border-l-4 border-l-red-500 flex items-center justify-between">
+        <div class="card p-4 md:p-5 border-l-4 border-l-red-500 flex items-center justify-between">
             <div>
                 <div class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Outstanding</div>
-                <div class="text-2xl font-black text-red-600">&#8369;{{ number_format($totalOutstanding, 0) }}</div>
+                <div class="text-xl md:text-2xl font-black text-red-600">₱{{ number_format($totalOutstanding, 0) }}</div>
             </div>
-            <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-lg border border-red-100">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center text-sm md:text-lg border border-red-100 shrink-0">
                 <i class="fas fa-exclamation-circle"></i>
             </div>
         </div>
 
-        <div class="card p-5 border-l-4 border-l-brand-500 flex items-center justify-between">
+        <div class="card p-4 md:p-5 border-l-4 border-l-brand-500 flex items-center justify-between">
             <div>
                 <div class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Transactions</div>
-                <div class="text-2xl font-black text-ink-900">{{ $payments->total() }}</div>
+                <div class="text-xl md:text-2xl font-black text-ink-900">{{ $payments->total() }}</div>
             </div>
-            <div class="w-10 h-10 rounded-xl bg-ink-50 text-ink-600 flex items-center justify-center text-lg border border-ink-200">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-ink-50 text-ink-600 flex items-center justify-center text-sm md:text-lg border border-ink-200 shrink-0">
                 <i class="fas fa-receipt"></i>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    {{-- MAIN CONTENT --}}
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
         
         {{-- FORM SECTION --}}
         <div class="xl:col-span-5">
-            <div class="card p-6 sticky top-24">
-                <h3 class="font-bold text-ink-900 mb-4 border-b border-ink-200 pb-3 flex items-center gap-2">
+            <div class="card p-4 md:p-6 xl:sticky xl:top-24">
+                <h3 class="font-bold text-ink-900 mb-3 md:mb-4 border-b border-ink-200 pb-3 flex items-center gap-2 text-sm md:text-base">
                     <i class="fas fa-money-bill-wave text-brand-500"></i> Record Payment
                 </h3>
                 
-                <form action="{{ route('payments.store') }}" method="POST" class="space-y-4" id="paymentForm">
+                <form action="{{ route('payments.store') }}" method="POST" class="space-y-3 md:space-y-4" id="paymentForm">
                     @csrf
                     
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Filter by Store</label>
-                            <select name="store_id" id="storeFilter" required class="input">
+                            <select name="store_id" id="storeFilter" required class="input !py-2 !text-xs md:!text-sm">
                                 <option value="">Store...</option>
                                 @foreach($stores as $store)
                                     <option value="{{ $store->id }}" {{ $selectedStoreId == $store->id ? 'selected' : '' }}>{{ $store->store_name }}</option>
@@ -63,13 +64,13 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Payment Date</label>
-                            <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required class="input">
+                            <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required class="input !py-2 !text-xs md:!text-sm">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Select Order (DR Number)</label>
-                        <select name="delivery_id" id="deliverySelect" required class="input" {{ $unpaidDeliveries->isEmpty() ? 'disabled' : '' }}>
+                        <select name="delivery_id" id="deliverySelect" required class="input !py-2 !text-xs md:!text-sm" {{ $unpaidDeliveries->isEmpty() ? 'disabled' : '' }}>
                             <option value="">Select order...</option>
                             @foreach($unpaidDeliveries as $d)
                                 <option value="{{ $d->id }}" {{ $selectedDeliveryId == $d->id ? 'selected' : '' }}>
@@ -84,13 +85,13 @@
                         <div class="bg-ink-50 px-3 py-2 border-b border-ink-200">
                             <h4 class="text-[10px] font-bold text-ink-600 uppercase tracking-widest">Items to Pay</h4>
                         </div>
-                        <div class="overflow-x-auto max-h-64 overflow-y-auto">
-                            <table class="w-full text-xs text-left table-fixed">
-                                <thead class="bg-white border-b border-ink-200 text-ink-500 font-bold">
+                        <div class="overflow-x-auto max-h-64 overflow-y-auto w-full" style="-webkit-overflow-scrolling: touch;">
+                            <table class="w-full text-xs text-left table-fixed min-w-[300px]">
+                                <thead class="bg-white border-b border-ink-200 text-ink-500 font-bold sticky top-0">
                                     <tr>
                                         <th class="px-3 py-2 w-auto">Item</th>
-                                        <th class="px-3 py-2 text-right w-24">Bal (&#8369;)</th>
-                                        <th class="px-3 py-2 text-right w-32">Pay (&#8369;)</th>
+                                        <th class="px-3 py-2 text-right w-20">Bal (₱)</th>
+                                        <th class="px-3 py-2 text-right w-24">Pay (₱)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="orderItemsTableBody">
@@ -100,11 +101,11 @@
                         </div>
                         <div class="bg-ink-50 px-3 py-2 border-t border-ink-200 flex justify-between items-center font-bold text-ink-900 text-xs">
                             <span>Total Payment:</span>
-                            <span id="orderTotalDisplay" class="text-emerald-600 text-sm">&#8369;0.00</span>
+                            <span id="orderTotalDisplay" class="text-emerald-600 text-sm">₱0.00</span>
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary w-full !py-3 mt-4">
+                    <button type="submit" class="btn btn-primary w-full !py-2.5 md:!py-3 mt-2 md:mt-4 !text-xs md:!text-sm">
                         <i class="fas fa-save"></i> Save Payment
                     </button>
                 </form>
@@ -114,11 +115,11 @@
         {{-- HISTORY SECTION --}}
         <div class="xl:col-span-7">
             <div class="card overflow-hidden h-full flex flex-col">
-                <div class="px-6 py-4 border-b border-ink-200 bg-ink-50 flex justify-between items-center shrink-0">
-                    <h3 class="font-bold text-ink-900">Payment History</h3>
+                <div class="px-4 md:px-6 py-3 md:py-4 border-b border-ink-200 bg-ink-50 flex justify-between items-center shrink-0">
+                    <h3 class="font-bold text-ink-900 text-sm md:text-base">Payment History</h3>
                 </div>
-                <div class="overflow-x-auto flex-1">
-                    <table class="table-clean">
+                <div class="overflow-x-auto w-full flex-1 pb-2" style="-webkit-overflow-scrolling: touch;">
+                    <table class="table-clean w-full min-w-[600px]">
                         <thead>
                             <tr>
                                 <th class="w-32">Date</th>
@@ -129,7 +130,7 @@
                         @include('payments._table')
                     </table>
                 </div>
-                <div class="px-6 py-4 border-t border-ink-200 bg-ink-50 shrink-0">{{ $payments->links() }}</div>
+                <div class="px-4 md:px-6 py-3 md:py-4 border-t border-ink-200 bg-ink-50 shrink-0 text-sm">{{ $payments->links() }}</div>
             </div>
         </div>
     </div>
