@@ -5,10 +5,26 @@ use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
-    public function index()
+        public function index(\Illuminate\Http\Request $request)
     {
-        $expenses = Expense::latest('expense_date')->paginate(10);
-        $totalExpenses = Expense::sum('amount');
+        $query = \App\Models\Expense::query();
+
+        // Filter pinaagi sa Start Date
+        if ($request->filled('start_date')) {
+            $query->whereDate('expense_date', '>=', $request->start_date);
+        }
+        
+        // Filter pinaagi sa End Date
+        if ($request->filled('end_date')) {
+            $query->whereDate('expense_date', '<=', $request->end_date);
+        }
+
+        // Ang total kay mo-follow sa na-filter nga date range
+        $totalExpenses = $query->sum('amount');
+        
+        // Pagination nga mo-preserve sa date filter inig page 2
+        $expenses = $query->orderByDesc('expense_date')->paginate(15)->appends($request->query());
+
         return view('expenses.index', compact('expenses', 'totalExpenses'));
     }
 

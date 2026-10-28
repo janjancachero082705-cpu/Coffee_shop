@@ -24,7 +24,7 @@
     ];
     $activeTab = array_key_exists(request('tab'), $tabs) ? request('tab') : 'main';
     $status    = request('status');
-    $filtered  = request()->filled('search') || request()->filled('status');
+    $filtered  = request()->filled('search') || request()->filled('status') || request()->filled('start_date') || request()->filled('end_date');
 
     $total   = max(0, (int) $stats['total_items']);
     $low     = (int) $stats['low_stock'];
@@ -148,19 +148,33 @@
     </div>
 </div>
 
-<form method="GET" action="{{ route('inventory.index') }}" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4 md:mb-6">
+<form method="GET" action="{{ route('inventory.index') }}" class="flex flex-col xl:flex-row items-start xl:items-center gap-2 mb-4 md:mb-6">
     <input type="hidden" name="tab" id="currentTabInput" value="{{ $activeTab }}">
+    
     <div class="relative w-full sm:w-64">
         <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-xs pointer-events-none"></i>
         <input type="search" name="search" value="{{ request('search') }}" placeholder="Search..." aria-label="Search product or SKU" class="input !pl-9 !py-2 !text-xs">
     </div>
+    
+    <div class="flex items-center gap-1.5 w-full sm:w-auto">
+        <input type="date" name="start_date" value="{{ request('start_date') }}" class="input !w-full sm:!w-auto !py-2 !text-xs cursor-pointer" title="Start Date">
+        <span class="text-ink-400 text-xs">to</span>
+        <input type="date" name="end_date" value="{{ request('end_date') }}" class="input !w-full sm:!w-auto !py-2 !text-xs cursor-pointer" title="End Date">
+    </div>
+
     <select name="status" aria-label="Filter by status" class="input !w-full sm:!w-auto !py-2 !text-xs cursor-pointer" onchange="this.form.submit()">
         <option value="">All statuses</option>
         <option value="in_stock" @selected($status === 'in_stock')>In stock</option>
         <option value="low_stock" @selected($status === 'low_stock')>Low stock</option>
         <option value="out_of_stock" @selected($status === 'out_of_stock')>Out of stock</option>
     </select>
-    <button type="submit" class="btn btn-secondary !py-2 !text-xs w-full sm:w-auto">Search</button>
+    
+    <div class="flex items-center gap-1.5 w-full sm:w-auto">
+        <button type="submit" class="btn btn-secondary !py-2 !text-xs w-full sm:w-auto">Search</button>
+        @if(request()->anyFilled(['search', 'status', 'start_date', 'end_date']))
+            <a href="{{ route('inventory.index', ['tab' => $activeTab]) }}" class="btn btn-secondary !py-2 !text-xs w-full sm:w-auto" title="Clear Filter">Clear</a>
+        @endif
+    </div>
 </form>
 
 {{-- ══ CARDS ══ --}}

@@ -4,15 +4,7 @@
 
 @section('content')
 
-@php
-    $totalCount = \App\Models\Delivery::count();
-    $totalDistributed = \App\Models\Delivery::sum('total_amount') ?? 0;
-    $totalCollected = 0;
-    if (class_exists('App\Models\Payment') && \Illuminate\Support\Facades\Schema::hasTable('payments')) {
-        $totalCollected = \App\Models\Payment::sum('amount') ?? 0;
-    }
-    $totalBalance = max(0, $totalDistributed - $totalCollected);
-@endphp
+
 
 <div class="w-full max-w-screen-2xl mx-auto space-y-4 md:space-y-6">
     
@@ -43,9 +35,13 @@
                 <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-xs"></i>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search DR or customer..." class="input !pl-8 !py-2 !text-xs md:!text-sm">
             </div>
-            <input type="date" name="date" value="{{ request('date') }}" class="input !w-full sm:!w-auto !py-2 !text-xs md:!text-sm cursor-pointer">
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="input !w-full sm:!w-auto !py-2 !text-xs md:!text-sm cursor-pointer" title="Start Date">
+                <span class="text-ink-400 text-xs">to</span>
+                <input type="date" name="end_date" value="{{ request('end_date') }}" class="input !w-full sm:!w-auto !py-2 !text-xs md:!text-sm cursor-pointer" title="End Date">
+            </div>
             <button type="submit" class="btn btn-secondary !py-2 !text-xs md:!text-sm w-full sm:w-auto">Filter</button>
-            @if(request()->has('search') || request()->has('date'))
+            @if(request()->has('search') || request()->has('start_date') || request()->has('end_date'))
                 <a href="{{ route('deliveries.index') }}" class="text-xs font-semibold text-ink-500 hover:text-brand-600 text-center py-2 sm:py-0">Clear</a>
             @endif
         </form>

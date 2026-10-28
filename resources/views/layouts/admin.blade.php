@@ -386,5 +386,35 @@
         });
     });
 </script>
+    
+    <!-- GLOBAL REALTIME AUTO-UPDATE -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initial timestamp gikan sa server (gikuha gikan sa pinakabag-o nga data)
+        let currentGlobalTime = '{{ \Illuminate\Support\Facades\DB::table('payments')->max('updated_at') ?? '0' }}'; 
+        let isReloading = false;
+
+        setInterval(() => {
+            // Ayaw pag-check kung naay usa ka modal/form nga gina-type-an ang user
+            const activeTag = document.activeElement.tagName;
+            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+                return; // Skip aning higayona para dili mawala ang gi-type
+            }
+
+            fetch('{{ route("system.updates") }}')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.latest !== currentGlobalTime && data.latest !== '0') {
+                        if (!isReloading) {
+                            isReloading = true;
+                            console.log('Bag-ong data na-detect! Nag-refresh...');
+                            window.location.reload();
+                        }
+                    }
+                })
+                .catch(err => console.log('Global sync check failed:', err));
+        }, 5000); // Mag-check every 5 seconds
+    });
+    </script>
 </body>
 </html>

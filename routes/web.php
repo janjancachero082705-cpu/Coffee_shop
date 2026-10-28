@@ -26,6 +26,9 @@ Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logou
 Route::middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/system-updates', [App\Http\Controllers\DashboardController::class, 'checkGlobalUpdates'])->name('system.updates');
+    Route::get('/dashboard/check-updates', [App\Http\Controllers\DashboardController::class, 'checkUpdates'])->name('dashboard.check-updates');
+    Route::get('/system-updates', [App\Http\Controllers\DashboardController::class, 'checkGlobalUpdates'])->name('system.updates');
     
     // Management
     Route::resource('stores', StoreController::class);

@@ -30,32 +30,41 @@ class DeliveryController extends Controller
         }
     }
 
-    public function index(Request $request)
+        public function index(\Illuminate\Http\Request $request)
     {
-        $query = Delivery::with('store');
+        $query = \App\Models\Delivery::with('store');
 
+        // Search filter (DR o Customer Name)
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('dr_number', 'like', "%$search%")
+                $q->where('dr_number', 'like', "%{$search}%")
                   ->orWhereHas('store', function($sq) use ($search) {
-                      $sq->where('store_name', 'like', "%$search%");
+                      $sq->where('store_name', 'like', "%{$search}%");
                   });
             });
         }
 
-        $deliveries = $query->latest('delivery_date')->paginate(15)->withQueryString();
+        // Date Range Filter
+        if ($request->filled('start_date')) {
+            $query->whereDate('delivery_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('delivery_date', '<=', $request->end_date);
+        }
 
-        // Stats for Cards
-        $stats = [
-            'total' => Delivery::count(),
-            // GIKAN SA 'pending' lang, gidugangan natog 'partial' para mabilang sila
-            'pending' => Delivery::whereIn('status', ['pending', 'partial'])->count(), 
-            'completed' => Delivery::where('status', 'completed')->count(),
-            'total_value' => Delivery::sum('total_amount'),
-        ];
+        // KPI Calculations (Naka-base sa filtered query)
+        $totalCount = (clone $query)->count();
+        $totalDistributed = (clone $query)->sum('total_amount') ?? 0;
+        
+        $deliveryIds = (clone $query)->pluck('id');
+        $totalCollected = \App\Models\Payment::whereIn('delivery_id', $deliveryIds)->sum('amount') ?? 0;
+        $totalBalance = max(0, $totalDistributed - $totalCollected);
 
-        return view('deliveries.index', compact('deliveries', 'stats'));
+        // Pagination
+        $deliveries = $query->orderByDesc('delivery_date')->orderByDesc('id')->paginate(15)->appends($request->query());
+
+        return view('deliveries.index', compact('deliveries', 'totalCount', 'totalDistributed', 'totalCollected', 'totalBalance'));
     }
 
     public function showStore(Store $store)

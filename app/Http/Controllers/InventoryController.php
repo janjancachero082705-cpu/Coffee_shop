@@ -31,7 +31,14 @@ class InventoryController extends Controller
         }
 
         // 1. Tab 1: Raw Materials & Supplies (LAHAT maliban sa Finished Goods)
-        $mainQuery = clone $baseQuery;
+        // Date Range Filter (Naka-apply sa base query)
+        if ($request->filled('start_date')) {
+            $baseQuery->whereDate('updated_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $baseQuery->whereDate('updated_at', '<=', $request->end_date);
+        }
+$mainQuery = clone $baseQuery;
         $mainInventory = $mainQuery->whereDoesntHave('product.category', function($q) {
             $q->where('name', 'like', '%Finished%');
         })->latest()->paginate(15, ['*'], 'main_page')->withQueryString();

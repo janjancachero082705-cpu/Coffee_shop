@@ -44,10 +44,30 @@
     {{-- LIST (Magiging 2 columns sa desktop) --}}
     <div class="lg:col-span-2">
         <div class="card overflow-hidden h-full flex flex-col">
-            <div class="px-4 md:px-6 py-3 md:py-4 border-b border-ink-200 bg-ink-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
-                <h3 class="font-bold text-ink-900 text-sm md:text-base">Expense History</h3>
-                <div class="text-xs md:text-sm font-bold text-ink-900">Total: <span class="text-red-600">&#8369;{{ number_format($totalExpenses, 2) }}</span></div>
+                <div class="px-4 md:px-6 py-3 md:py-4 border-b border-ink-200 bg-ink-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 shrink-0">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full xl:w-auto">
+            <h3 class="font-bold text-ink-900 text-sm md:text-base whitespace-nowrap">Expense History</h3>
+            <div class="text-xs md:text-sm font-bold text-ink-900 whitespace-nowrap">Total: <span class="text-red-600">&#8369;{{ number_format($totalExpenses, 2) }}</span></div>
+        </div>
+        
+        <form action="{{ route('expenses.index') }}" method="GET" class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="input !py-1.5 !px-2 !text-xs w-full sm:w-auto" title="Start Date">
+                <span class="text-ink-400 text-xs">to</span>
+                <input type="date" name="end_date" value="{{ request('end_date') }}" class="input !py-1.5 !px-2 !text-xs w-full sm:w-auto" title="End Date">
             </div>
+            <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                <button type="submit" class="btn btn-primary !py-1.5 !px-3 !text-xs flex-1 sm:flex-none">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                @if(request()->has('start_date') || request()->has('end_date'))
+                    <a href="{{ route('expenses.index') }}" class="btn btn-secondary !py-1.5 !px-3 !text-xs flex-1 sm:flex-none" title="Clear Filter">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
             
             <div class="overflow-x-auto flex-1 w-full" style="-webkit-overflow-scrolling: touch;">
                 <table class="table-clean min-w-[600px] w-full">
@@ -88,7 +108,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="px-4 py-3 md:px-6 md:py-4 border-t border-ink-200 bg-ink-50 shrink-0 text-sm">{{ $expenses->links() }}</div>
+            <div class="px-4 py-3 md:px-6 md:py-4 border-t border-ink-200 bg-ink-50 shrink-0 text-sm">{{ $expenses->appends(request()->query())->links() }}</div>
         </div>
     </div>
 </div>
