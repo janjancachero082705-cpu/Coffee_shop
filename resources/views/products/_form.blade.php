@@ -98,11 +98,11 @@
                                 </div>
                                 <div class="md:col-span-3">
                                     <label id="price_label_{{ $index }}" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per {{ ucfirst($variant->unit) }} (&#8369;) <span class="text-red-500">*</span></label>
-                                    <input type="number" name="variants[{{ $index }}][price]" step="0.01" required value="{{ $variant->price }}" class="input font-bold">
+                                    <input type="number" name="variants[{{ $index }}][price]" step="0.01" required value="{{ $variant- max="999999" maxlength="9">price }}" class="input font-bold">
                                 </div>
                                 <div class="md:col-span-3">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label>
-                                    <input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" value="{{ $variant->cost_price }}" class="input bg-ink-50" placeholder="0.00">
+                                    <input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" value="{{ $variant- max="999999" maxlength="9">cost_price }}" class="input bg-ink-50" placeholder="0.00">
                                 </div>
                                 <div class="md:col-span-12 mt-2">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
@@ -141,11 +141,11 @@
                             </div>
                             <div class="md:col-span-3">
                                 <label id="price_label_0" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per Unit (&#8369;) <span class="text-red-500">*</span></label>
-                                <input type="number" name="variants[0][price]" step="0.01" required class="input font-bold" placeholder="190">
+                                <input type="number" name="variants[0][price]" step="0.01" required class="input font-bold" placeholder="190" max="999999" maxlength="9">
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label>
-                                <input type="number" name="variants[0][cost_price]" step="0.01" class="input bg-ink-50" placeholder="0.00">
+                                <input type="number" name="variants[0][cost_price]" step="0.01" class="input bg-ink-50" placeholder="0.00" max="999999" maxlength="9">
                             </div>
                             <div class="md:col-span-12 mt-2">
                                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
@@ -211,8 +211,8 @@
                 <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-4"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label><input type="text" name="variants[${variantIndex}][weight]" required class="input" placeholder="e.g. 500g / Large"></div>
                     <div class="md:col-span-2"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Unit</label><select name="variants[${variantIndex}][unit]" id="unit_select_${variantIndex}" onchange="updatePriceLabel(${variantIndex})" class="input cursor-pointer"><option value="g">grams (g)</option><option value="kg">kilograms (kg)</option><option value="pcs">pieces (pcs)</option><option value="pack">packs</option></select></div>
-                    <div class="md:col-span-3"><label id="price_label_${variantIndex}" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per Unit (&#8369;) <span class="text-red-500">*</span></label><input type="number" name="variants[${variantIndex}][price]" step="0.01" required class="input font-bold"></div>
-                    <div class="md:col-span-3"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label><input type="number" name="variants[${variantIndex}][cost_price]" step="0.01" class="input bg-ink-50" placeholder="0.00"></div>
+                    <div class="md:col-span-3"><label id="price_label_${variantIndex}" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per Unit (&#8369;) <span class="text-red-500">*</span></label><input type="number" name="variants[${variantIndex}][price]" step="0.01" required class="input font-bold" max="999999" maxlength="9"></div>
+                    <div class="md:col-span-3"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label><input type="number" name="variants[${variantIndex}][cost_price]" step="0.01" class="input bg-ink-50" placeholder="0.00" max="999999" maxlength="9"></div>
                     <div class="md:col-span-12 mt-2"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label><div class="flex items-center gap-3 bg-ink-50 p-2 rounded-lg border border-ink-200 border-dashed"><div class="w-10 h-10 rounded border border-ink-200 flex items-center justify-center flex-shrink-0 bg-white"><i class="fas fa-image text-ink-300"></i></div><input type="file" name="variants[${variantIndex}][image]" accept="image/*" class="block w-full text-xs text-ink-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-white file:text-ink-700 file:shadow-sm hover:file:bg-ink-100 cursor-pointer"></div></div>
                 </div>
             `;

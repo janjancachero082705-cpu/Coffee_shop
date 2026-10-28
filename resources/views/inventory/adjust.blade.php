@@ -28,7 +28,7 @@
                 <label for="new_quantity" class="block text-sm font-semibold text-ink-800 mb-1.5">New stock quantity <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="number" id="new_quantity" name="new_quantity" step="0.01" min="0" required
-                           value="{{ old('new_quantity', $product->stock) }}" data-current="{{ $product->stock }}"
+                           value="{{ old('new_quantity', $product- max="999999" maxlength="9">stock) }}" data-current="{{ $product->stock }}"
                            class="input !py-3 !text-xl !font-bold !pr-20 @error('new_quantity') !border-red-400 @enderror">
                     <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400 pointer-events-none">{{ $product->unit_type }}</span>
                 </div>

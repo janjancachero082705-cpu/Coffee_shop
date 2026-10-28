@@ -32,7 +32,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Amount (&#8369;)</label>
-                    <input type="number" name="amount" step="0.01" min="0.01" required class="input !py-2 !text-xs md:!text-sm font-bold text-ink-900">
+                    <input type="number" name="amount" step="0.01" min="0.01" required class="input !py-2 !text-xs md:!text-sm font-bold text-ink-900" max="999999" maxlength="9">
                 </div>
                 <button type="submit" class="btn btn-primary w-full !py-2.5 !text-xs md:!text-sm">
                     <i class="fas fa-save"></i> Save Expense

@@ -3,6 +3,49 @@
 @section('subtitle', 'Manage suppliers and track purchase history')
 
 @section('content')
+<style>
+    /* ==========================================
+       PURCHASE HISTORY MOBILE RESPONSIVE FIX
+       ========================================== */
+    @media (max-width: 767px) {
+        /* 1. Siguraduhon nga mo-scroll ang table sa kilid */
+        .history-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.75rem;
+            border: 1px solid #E8E5E0;
+        }
+        
+        /* 2. Pugngan ang table sa pag-squish */
+        .history-table-wrapper table {
+            min-width: 700px;
+            width: 100%;
+        }
+
+        /* 3. I-adjust ang mga text ug badges sa mobile */
+        .history-table-wrapper th, 
+        .history-table-wrapper td {
+            font-size: 11px !important;
+            padding: 0.75rem 0.5rem !important;
+            white-space: nowrap;
+        }
+
+        /* 4. Ipa-stack ang mga header controls kung naay filter/search */
+        .history-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+
+        /* 5. Ipa-full width ang search bar ug buttons */
+        .history-controls input,
+        .history-controls select,
+        .history-controls button {
+            width: 100% !important;
+        }
+    }
+</style>
 
 <div class="w-full max-w-screen-2xl mx-auto space-y-4 md:space-y-6">
 
@@ -11,7 +54,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
         {{-- Total Spent --}}
         <div class="card p-3 md:p-5 border-l-4 border-l-brand-500 relative overflow-hidden group">
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-2 history-controls flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <div>
                     <div class="text-[9px] md:text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Total Spent</div>
                     <div class="text-lg md:text-3xl font-black text-ink-900">₱{{ number_format($totalSpent, 2) }}</div>
@@ -24,7 +67,7 @@
         
         {{-- Total Transactions --}}
         <div class="card p-3 md:p-5 border-l-4 border-l-ink-400 relative overflow-hidden group">
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-2 history-controls flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <div>
                     <div class="text-[9px] md:text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">Total Trans.</div>
                     <div class="text-lg md:text-3xl font-black text-ink-900">{{ $purchases->total() }}</div>
@@ -38,9 +81,10 @@
         {{-- Quick Action (Spans 2 columns on mobile) --}}
         <div class="col-span-2 sm:col-span-1 card p-3 md:p-5 border-l-4 border-l-emerald-500 relative overflow-hidden group">
             <div class="relative z-10 h-full flex flex-col justify-center">
-                <a href="{{ route('purchases.create') }}" class="btn btn-primary w-full !py-2.5 shadow-sm hover:shadow-md transition-all text-[11px] md:text-sm">
-                    <i class="fas fa-plus-circle"></i> Record New Purchase
-                </a>
+                <a href="{{ route('purchases.create') }}" class="btn btn-primary w-full md:w-auto !py-2.5 !px-4 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all">
+    <i class="fas fa-plus-circle text-sm"></i>
+    <span>Record New Purchase</span>
+</a>
             </div>
         </div>
     </div>
@@ -115,7 +159,7 @@
             
             {{-- Header & Filters --}}
             <div class="p-4 md:p-5 border-b border-ink-200 bg-ink-50">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4 history-controls flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                     <div>
                         <h3 class="font-bold text-ink-800 text-sm md:text-lg flex items-center gap-2">
                             @if(request('supplier'))
@@ -211,6 +255,44 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Gamiton nato ang window.onload para masiguro nga na-load na tanan script sa system
+    window.addEventListener('load', function() {
+        // Kuhaon ang parameters sa URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasSearch = urlParams.has('search') && urlParams.get('search') !== '';
+        const isHistoryTab = urlParams.get('tab') === 'history';
+
+        // Kung gikan sa "View History" (naay search) o gi-click ang History tab
+        if (hasSearch || isHistoryTab) {
+            
+            // Pangitaon ang button sa History pinaagi sa text content niini
+            const allButtons = document.querySelectorAll('button');
+            let historyBtn = null;
+
+            allButtons.forEach(btn => {
+                if (btn.textContent.trim().toLowerCase().includes('history')) {
+                    historyBtn = btn;
+                }
+            });
+
+            // I-click ang History tab
+            if (historyBtn) {
+                setTimeout(() => {
+                    historyBtn.click();
+                    
+                    // I-fill pud ang search bar kung naay dala nga ngalan
+                    const searchParam = urlParams.get('search');
+                    const searchInput = document.querySelector('input[name="search"]');
+                    if (searchInput && searchParam) {
+                        searchInput.value = searchParam;
+                    }
+                }, 100); // 100ms delay para mo-initialize una ang system scripts
+            }
+        }
+    });
+</script>
 @endsection
 
 @push('scripts')

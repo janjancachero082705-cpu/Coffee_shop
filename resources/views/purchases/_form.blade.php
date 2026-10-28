@@ -41,12 +41,12 @@
 
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Quantity <span class="text-red-500">*</span></label>
-                <input type="number" name="quantity" step="1" min="1" required value="{{ old('quantity', $purchase->quantity ?? '') }}" class="input" placeholder="e.g. 50">
+                <input type="number" name="quantity" step="1" min="1" required value="{{ old('quantity', $purchase- max="999999" maxlength="9">quantity ?? '') }}" class="input" placeholder="e.g. 50">
             </div>
 
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost per Unit (&#8369;) <span class="text-red-500">*</span></label>
-                <input type="number" name="cost_per_unit" step="0.01" min="0" required value="{{ old('cost_per_unit', $purchase->cost_per_unit ?? '') }}" class="input" placeholder="e.g. 150.00">
+                <input type="number" name="cost_per_unit" step="0.01" min="0" required value="{{ old('cost_per_unit', $purchase- max="999999" maxlength="9">cost_per_unit ?? '') }}" class="input" placeholder="e.g. 150.00">
             </div>
         </div>
     </div>

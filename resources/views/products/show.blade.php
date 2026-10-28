@@ -117,7 +117,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-ink-800 mb-1">Quantity to Add (units)</label>
-                    <input type="number" name="quantity" step="1" min="1" required class="input" placeholder="e.g. 50">
+                    <input type="number" name="quantity" step="1" min="1" required class="input" placeholder="e.g. 50" max="999999" maxlength="9">
                 </div>
             </div>
             

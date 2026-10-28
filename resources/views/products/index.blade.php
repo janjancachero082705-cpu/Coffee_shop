@@ -204,7 +204,7 @@
                                         Available: {{ number_format($cherryVariant->stock ?? 0, 2) }} kg
                                     </span>
                                 </div>
-                                <input type="number" name="raw_qty_used" id="rawQtyInput" data-max="{{ $cherryVariant->stock ?? 0 }}" step="0.01" min="0.01" required class="input font-bold text-rose-700 !border-rose-300 !py-2 md:!py-2.5 !text-sm">
+                                <input type="number" name="raw_qty_used" id="rawQtyInput" data-max="{{ $cherryVariant- maxlength="9" max="999999">stock ?? 0 }}" step="0.01" min="0.01" required class="input font-bold text-rose-700 !border-rose-300 !py-2 md:!py-2.5 !text-sm">
                                 <p id="stockWarning" class="text-[10px] md:text-xs text-red-600 font-bold mt-1 hidden"><i class="fas fa-exclamation-triangle"></i> Kulang ang stock! Available: <span id="maxStockDisplay"></span> kg.</p>
                             </div>
                             <div class="text-[10px] md:text-sm text-rose-600 font-medium pb-2">
@@ -250,7 +250,7 @@
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-[9px] md:text-[10px] font-bold text-ink-600 mb-1">Qty</label>
-                                    <input type="number" name="products[0][quantity]" step="0.01" min="0.01" required class="input !py-1.5 md:!py-2 !text-xs font-bold text-emerald-700" placeholder="0">
+                                    <input type="number" name="products[0][quantity]" step="0.01" min="0.01" required class="input !py-1.5 md:!py-2 !text-xs font-bold text-emerald-700" placeholder="0" max="999999" maxlength="9">
                                 </div>
                                 <div class="md:col-span-1 flex justify-center pb-1"><button type="button" class="remove-product w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 rounded-md opacity-50 cursor-not-allowed"><i class="fas fa-trash text-[10px]"></i></button></div>
                             </div>
@@ -260,7 +260,7 @@
                     {{-- 3. EXPENSES --}}
                     <div class="pt-3 md:pt-4 border-t border-ink-200">
                         <label class="block text-[10px] md:text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Additional Expense (&#8369;)</label>
-                        <input type="number" name="expense_amount" step="0.01" min="0" class="input !py-2 md:!py-2.5 !text-xs md:!text-sm" placeholder="0.00 (Optional)">
+                        <input type="number" name="expense_amount" step="0.01" min="0" class="input !py-2 md:!py-2.5 !text-xs md:!text-sm" placeholder="0.00 (Optional)" max="999999" maxlength="9">
                     </div>
                 </div>
                 <div class="px-4 md:px-6 py-3 md:py-4 border-t border-ink-200 bg-ink-50 flex justify-end">
@@ -490,7 +490,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[9px] md:text-[10px] font-bold text-ink-600 mb-1">Qty</label>
-                    <input type="number" name="products[${productIndex}][quantity]" step="0.01" min="0.01" required class="input !py-1.5 md:!py-2 !text-xs font-bold text-emerald-700" placeholder="0">
+                    <input type="number" name="products[${productIndex}][quantity]" step="0.01" min="0.01" required class="input !py-1.5 md:!py-2 !text-xs font-bold text-emerald-700" placeholder="0" max="999999" maxlength="9">
                 </div>
                 <div class="md:col-span-1 flex justify-center pb-1">
                     <button type="button" class="remove-product w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 rounded-md"><i class="fas fa-trash text-[10px]"></i></button>

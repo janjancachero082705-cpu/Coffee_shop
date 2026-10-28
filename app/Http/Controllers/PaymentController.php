@@ -82,7 +82,7 @@ class PaymentController extends Controller
             'delivery_id' => 'required|exists:deliveries,id',
             'payment_date' => 'required|date',
             'items' => 'required|array',
-            'items.*' => 'numeric|min:0',
+            'items.*' => 'numeric|min:0|max:999999',
         ]);
 
         try {

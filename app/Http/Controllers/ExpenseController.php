@@ -34,7 +34,7 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date',
             'category' => 'required|string',
             'description' => 'nullable|string',
-            'amount' => 'required|numeric|min:0.01'
+            'amount' => 'required|numeric|min:0.01|max:999999'
         ]);
 
         Expense::create($validated);
@@ -53,7 +53,7 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date',
             'category' => 'required|string',
             'description' => 'nullable|string',
-            'amount' => 'required|numeric|min:0.01'
+            'amount' => 'required|numeric|min:0.01|max:999999'
         ]);
 
         $expense->update($validated);

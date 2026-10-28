@@ -2,6 +2,49 @@
 @section('title', $purchase->purchase_number)
 @section('subtitle', $purchase->supplier_name)
 @section('content')
+<style>
+    /* ==========================================
+       PURCHASE HISTORY MOBILE RESPONSIVE FIX
+       ========================================== */
+    @media (max-width: 767px) {
+        /* 1. Siguraduhon nga mo-scroll ang table sa kilid */
+        .history-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.75rem;
+            border: 1px solid #E8E5E0;
+        }
+        
+        /* 2. Pugngan ang table sa pag-squish */
+        .history-table-wrapper table {
+            min-width: 700px;
+            width: 100%;
+        }
+
+        /* 3. I-adjust ang mga text ug badges sa mobile */
+        .history-table-wrapper th, 
+        .history-table-wrapper td {
+            font-size: 11px !important;
+            padding: 0.75rem 0.5rem !important;
+            white-space: nowrap;
+        }
+
+        /* 4. Ipa-stack ang mga header controls kung naay filter/search */
+        .history-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+
+        /* 5. Ipa-full width ang search bar ug buttons */
+        .history-controls input,
+        .history-controls select,
+        .history-controls button {
+            width: 100% !important;
+        }
+    }
+</style>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
     <div class="lg:col-span-2 card p-6">
         <h2 class="font-black text-xl text-ink-900 mb-4">{{ $purchase->purchase_number }}</h2>

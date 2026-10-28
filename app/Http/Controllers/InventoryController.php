@@ -67,7 +67,7 @@ $mainQuery = clone $baseQuery;
     {
         $request->validate([
             'variant_id' => 'required|exists:product_variants,id',
-            'quantity' => 'required|numeric|min:0.01'
+            'quantity' => 'required|numeric|min:0.01|max:999999'
         ]);
 
         DB::transaction(function () use ($request) {

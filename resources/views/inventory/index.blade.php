@@ -266,7 +266,7 @@
             <button type="button" data-close class="iv-modal-btn relative self-start -mr-2 -mt-2" style="background:rgba(255,255,255,.7)" aria-label="Close"><i class="fas fa-xmark"></i></button>
         </div>
 
-        <div class="px-6 pt-5 pb-2 space-y-6">
+        <div class="px-6 pt-5 pb-2 space-y-6 max-h-[60vh] overflow-y-auto">
             <div>
                 <label for="stockInVariantSelect" class="sk-label"><span class="sk-step">1</span>Product variant</label>
                 <select name="variant_id" id="stockInVariantSelect" required class="input !rounded-xl !py-2.5 cursor-pointer">
@@ -289,10 +289,11 @@
                 <label for="stockInQty" class="sk-label"><span class="sk-step">2</span>Quantity to add</label>
                 <div class="sk-stepper">
                     <button type="button" id="skMinus" aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
-                    <input type="number" name="quantity" id="stockInQty" step="0.01" min="0.01" required placeholder="0" inputmode="decimal">
+                    <input type="number" name="quantity" id="stockInQty" step="0.01" min="0.01" max="999999" maxlength="6" required placeholder="0" inputmode="decimal">
                     <span class="sk-unit" id="skUnit"></span>
                     <button type="button" id="skPlus" aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
                 </div>
+                <p id="qtyWarning" class="text-[11px] font-bold text-red-500 mt-2 hidden animate-pulse"><i class="fas fa-circle-exclamation mr-1"></i> Limit reached! Maximum is 999,999.</p>
                 <div class="flex flex-wrap gap-2 mt-3" aria-label="Quick add">
                     @foreach([1, 5, 10, 50, 100] as $n)
                         <button type="button" class="sk-chip" data-add="{{ $n }}">+{{ $n }}</button>
@@ -304,12 +305,12 @@
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <div class="text-xs font-semibold text-ink-500">Current</div>
-                        <div class="text-xl font-bold text-ink-700 tabular-nums" id="skCur">—</div>
+                        <div class="text-xl font-bold text-ink-700 tabular-nums truncate" id="skCur">—</div>
                     </div>
                     <i class="fas fa-arrow-right text-ink-300"></i>
                     <div class="text-right">
                         <div class="text-xs font-semibold text-ink-500">After adding</div>
-                        <div class="text-2xl font-extrabold tabular-nums" style="color:#E86100" id="skAfter">—</div>
+                        <div class="text-2xl font-extrabold tabular-nums truncate" style="color:#E86100" id="skAfter">—</div>
                     </div>
                 </div>
                 <div class="sk-track mt-4" aria-hidden="true"><i id="skBar1" style="width:0"></i><i id="skBar2" class="sk-add" style="width:0"></i></div>
@@ -409,7 +410,8 @@
     function updatePreview() {
         const opt = select.selectedOptions[0], has = !!(opt && opt.value);
         const cur = has ? (parseFloat(opt.dataset.stock) || 0) : 0;
-        const add = Math.max(0, parseFloat(qty.value) || 0);
+        let add = Math.max(0, parseFloat(qty.value) || 0);
+        if (add > 999999) add = 999999; // Limit sa JS
         const unit = has ? (opt.dataset.unit || '') : '';
         const pick = $('#skPick'), badge = $('#skBadge');
 
@@ -439,7 +441,16 @@
         $('#skSave').innerHTML = add > 0 ? `<i class="fas fa-check text-xs"></i>Add ${fmt(add)} ${unit}` : '<i class="fas fa-check text-xs"></i>Save stock';
     }
     function bump(n) {
-        const next = Math.max(0, (parseFloat(qty.value) || 0) + n);
+        let next = Math.max(0, (parseFloat(qty.value) || 0) + n);
+        
+        // Limitan kung mo-sobra
+        if (next > 999999) {
+            next = 999999;
+            document.getElementById('qtyWarning').classList.remove('hidden');
+        } else {
+            document.getElementById('qtyWarning').classList.add('hidden');
+        }
+        
         qty.value = next > 0 ? Number(next.toFixed(2)) : '';
         updatePreview();
     }
@@ -457,7 +468,19 @@
         if (e.target.closest('[data-close]') || e.target === dlg) dlg.close();
     });
     select.addEventListener('change', updatePreview);
-    qty.addEventListener('input', updatePreview);
+        qty.addEventListener('input', function() {
+        let val = parseFloat(this.value) || 0;
+        
+        // Kung mo-sobra ang gi-type/paste, i-limit dayon sa 999999
+        if (val > 999999) {
+            this.value = 999999;
+            document.getElementById('qtyWarning').classList.remove('hidden');
+        } else {
+            document.getElementById('qtyWarning').classList.add('hidden');
+        }
+        
+        updatePreview();
+    });
 })();
 </script>
 @endpush

@@ -62,7 +62,7 @@
             <div class="bg-ink-50 p-4 rounded-lg border border-ink-200">
                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Custom Discount (%)</label>
                 <div class="relative">
-                    <input type="number" name="discount" step="0.01" min="0" max="100" value="{{ old('discount', $store->discount ?? 0) }}" 
+                    <input type="number" name="discount" step="0.01" min="0" max="999999" value="{{ old('discount', $store- maxlength="9">discount ?? 0) }}" 
                            class="input font-bold !pr-8" 
                            placeholder="0.00">
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

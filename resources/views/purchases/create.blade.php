@@ -56,7 +56,7 @@
                     <label class="block text-[11px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Quantity <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <i class="fas fa-sort-numeric-up absolute left-4 top-1/2 -translate-y-1/2 text-ink-400"></i>
-                        <input type="number" name="quantity" id="qtyInput" step="0.01" min="0.01" required class="input pl-11 font-bold text-ink-800" placeholder="e.g. 0.5, 0.75, 10">
+                        <input type="number" name="quantity" id="qtyInput" step="0.01" min="0.01" required class="input pl-11 font-bold text-ink-800" placeholder="e.g. 0.5, 0.75, 10" max="999999" maxlength="9">
                     </div>
                 </div>
 
@@ -80,7 +80,7 @@
                     <label class="block text-[11px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Cost per Unit (&#8369;) <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-500 font-bold">&#8369;</span>
-                        <input type="number" name="cost_per_unit" id="costInput" step="0.01" min="0" required class="input pl-10 font-bold text-ink-800 text-lg" placeholder="0.00">
+                        <input type="number" name="cost_per_unit" id="costInput" step="0.01" min="0" required class="input pl-10 font-bold text-ink-800 text-lg" placeholder="0.00" max="999999" maxlength="9">
                     </div>
                 </div>
             </div>

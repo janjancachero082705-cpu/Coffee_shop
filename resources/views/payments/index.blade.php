@@ -201,7 +201,7 @@
                         </td>
                         <td class="px-3 py-2 text-right font-bold text-red-600 whitespace-nowrap text-xs">\u20B1${formattedBal}</td>
                         <td class="px-3 py-2">
-                            <input type="number" inputmode="decimal" name="items[${item.id}]" value="${bal.toFixed(2)}" max="${bal.toFixed(2)}" step="0.01" min="0" class="item-pay-input w-full px-2 py-2 border border-ink-300 rounded text-right font-bold text-ink-900 text-base md:text-xs">
+                            <input type="number" inputmode="decimal" name="items[${item.id}]" value="${bal.toFixed(2)}" max="${bal.toFixed(2)}" step="0.01" min="0" class="item-pay-input w-full px-2 py-2 border border-ink-300 rounded text-right font-bold text-ink-900 text-base md:text-xs" maxlength="9" max="999999">
                         </td>
                     `;
                     tbody.appendChild(tr);

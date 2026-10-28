@@ -28,7 +28,7 @@
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Amount (&#8369;) <span class="text-red-500">*</span></label>
-                <input type="number" name="amount" step="0.01" min="0" required class="input font-bold">
+                <input type="number" name="amount" step="0.01" min="0" required class="input font-bold" max="999999" maxlength="9">
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Supplier</label>
@@ -36,7 +36,7 @@
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Quantity</label>
-                <input type="number" name="quantity" step="0.01" min="0" class="input">
+                <input type="number" name="quantity" step="0.01" min="0" class="input" max="999999" maxlength="9">
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Unit</label>

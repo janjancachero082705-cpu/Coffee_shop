@@ -29,7 +29,7 @@
             </div>
             <div class="md:col-span-2">
                 <label class="block text-[11px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Amount (&#8369;) <span class="text-red-500">*</span></label>
-                <input type="number" name="amount" step="0.01" min="0.01" value="{{ $expense->amount }}" required class="input font-bold">
+                <input type="number" name="amount" step="0.01" min="0.01" value="{{ $expense- max="999999" maxlength="9">amount }}" required class="input font-bold">
             </div>
         </div>
     </div>

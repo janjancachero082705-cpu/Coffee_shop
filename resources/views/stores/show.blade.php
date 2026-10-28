@@ -3,6 +3,50 @@
 @section('subtitle', $store->store_name)
 
 @section('content')
+<style>
+    /* FAIL-SAFE SCROLLBAR CSS */
+    @media (max-width: 767px) {
+        .overflow-x-auto {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        .overflow-x-auto table {
+            min-width: 600px !important;
+        }
+    }
+</style>
+<style>
+    @media (max-width: 767px) {
+        /* Pugson ang tanang table sulod sa accordion nga ma-scroll */
+        #dr- * table, .order-history-card table {
+            min-width: 600px !important;
+        }
+        /* I-override ang bisan unsang overflow-hidden */
+        #dr- .overflow-hidden, .order-history-card {
+            overflow: visible !important;
+        }
+    }
+</style>
+<style>
+    /* ==========================================
+       CUSTOMER PROFILE ORDER HISTORY SCROLL FIX
+       ========================================== */
+    @media (max-width: 767px) {
+        /* Force scrollable table */
+        .order-history-card, .card table {
+            min-width: 500px !important;
+        }
+        
+        /* Tangtangon ang bisan unsang overflow-hidden sa parent */
+        .overflow-hidden {
+            overflow: visible !important;
+        }
+    }
+</style>
+
+
+
+
 <div class="max-w-5xl mx-auto space-y-6">
 
     {{-- 1. HERO PROFILE CARD --}}
@@ -141,12 +185,12 @@
 
                     {{-- Expandable Content --}}
                     <div id="dr-{{ $dr->id }}" class="hidden border-t border-ink-200 bg-ink-50/50">
-                        <div class="p-6">
+                        <div class="p-4 sm:p-6">
                             <h4 class="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <i class="fas fa-box-open text-brand-500"></i> Items Included
                             </h4>
-                            <div class="bg-white rounded-xl border border-ink-200 overflow-hidden shadow-sm">
-                                <table class="w-full text-sm">
+                            <div class="bg-white rounded-xl border border-ink-200 shadow-sm order-history-card">
+                                <div class="overflow-x-auto w-full pb-2" style="-webkit-overflow-scrolling: touch;"><table class="w-full text-sm min-w-[500px]">
                                     <thead class="bg-ink-50 border-b border-ink-200">
                                         <tr>
                                             <th class="text-left px-4 py-3 text-[10px] font-bold text-ink-500 uppercase tracking-widest">Product</th>

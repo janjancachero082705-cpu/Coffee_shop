@@ -74,9 +74,9 @@ class PurchaseController extends Controller
             'supplier_name' => 'required|string|max:255',
             'purchase_date' => 'required|date',
             'item_name' => 'required|string|max:255',
-            'quantity' => 'required|numeric|min:0.01', 
+            'quantity' => 'required|numeric|min:0.01|max:999999', 
             'unit' => 'required|string',
-            'cost_per_unit' => 'required|numeric|min:0',
+            'cost_per_unit' => 'required|numeric|min:0|max:999999',
         ]);
 
         DB::transaction(function () use ($validated) {

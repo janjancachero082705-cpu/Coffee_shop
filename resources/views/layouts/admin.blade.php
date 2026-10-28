@@ -169,6 +169,53 @@
             border-top: 1px solid #DFDBD5 !important;
         }
     </style>
+    <meta name="color-scheme" content="light">
+    
+    <!-- CHOICES.JS FOR CUSTOM DROPDOWNS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <style>
+        /* Override Choices.js styling to match our theme */
+        .choices { margin-bottom: 0 !important; width: 100% !important; }
+        .choices__inner {
+            background-color: #FFFFFF !important;
+            border: 1px solid #D3CEC6 !important;
+            border-radius: 10px !important;
+            padding: 8px 10px !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            min-height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: #1A1715 !important;
+        }
+        .choices[data-type*="select-one"] .choices__inner {
+            padding-bottom: 8px !important;
+        }
+        .choices__list--dropdown {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E5E0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+            z-index: 100 !important;
+            margin-top: 4px !important;
+        }
+        .choices__list--dropdown .choices__item {
+            padding: 12px 15px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid #F3F1EE !important;
+            color: #57514B !important;
+        }
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #FFF7EE !important;
+            color: #E86100 !important;
+        }
+        .choices[data-type*="select-one"]::after {
+            border-color: #A29B90 transparent transparent transparent !important;
+            right: 15px !important;
+        }
+    </style>
 </head>
 <body>
 <div id="top-loader"></div>
@@ -375,7 +422,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto px-4 sm:px-8 pb-10 pt-4">
+        <main class="flex-1 overflow-y-auto px-4 sm:px-8 pb-24 md:pb-10 pt-4" style="padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;">
             <div class="max-w-[1600px] mx-auto w-full">
                 @if(session('success'))
                     <div role="status" class="mb-6 px-4 py-3 bg-emerald-50 text-emerald-800 rounded-xl flex items-center gap-3 text-sm font-bold border border-emerald-200 shadow-sm">
@@ -696,6 +743,46 @@
                     }, 200);
                 }
             });
+        });
+    </script>
+    
+    <script>
+        // GLOBAL INLINE NUMBER LIMITER (Parehas sa Inventory)
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.type === 'number') {
+                let maxVal = parseFloat(e.target.getAttribute('max')) || 999999;
+                let val = parseFloat(e.target.value);
+
+                // Pangitaon kung asa dapit ibutang ang warning
+                let parent = e.target.parentElement;
+                
+                // Kung ang input kay naa sa sulod sa usa ka relative/flex wrapper, didto ta sa gawas magbutang
+                let insertTarget = parent;
+                if (parent.classList.contains('relative') || parent.classList.contains('flex') || parent.classList.contains('sk-stepper')) {
+                    insertTarget = parent.parentElement;
+                }
+
+                // Pangitaon kung naa nay existing nga warning para dili mag-doble
+                let warningEl = insertTarget.querySelector('.global-number-warning');
+                
+                if (!warningEl) {
+                    // Kung wala pa, himoan nato og bag-o
+                    warningEl = document.createElement('p');
+                    warningEl.className = 'global-number-warning text-[11px] font-bold text-red-500 mt-1.5 hidden animate-pulse';
+                    warningEl.innerHTML = `<i class="fas fa-circle-exclamation mr-1"></i> Limit reached! Maximum is ${maxVal.toLocaleString()}.`;
+                    
+                    // Ibutang pagkahuman sa input wrapper
+                    insertTarget.appendChild(warningEl);
+                }
+
+                // I-check kung sobra ba
+                if (val > maxVal) {
+                    e.target.value = maxVal; // I-cap ang value
+                    warningEl.classList.remove('hidden'); // Ipakita ang warning
+                } else {
+                    warningEl.classList.add('hidden'); // Tagoa ang warning kung ubos pa sa limit
+                }
+            }
         });
     </script>
 </body>
