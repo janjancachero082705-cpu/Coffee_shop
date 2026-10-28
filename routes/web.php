@@ -26,10 +26,10 @@ Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logou
 Route::middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/system-updates', [App\Http\Controllers\DashboardController::class, 'checkGlobalUpdates'])->name('system.updates');
-    Route::get('/dashboard/check-updates', [App\Http\Controllers\DashboardController::class, 'checkUpdates'])->name('dashboard.check-updates');
-    Route::get('/system-updates', [App\Http\Controllers\DashboardController::class, 'checkGlobalUpdates'])->name('system.updates');
-    
+    Route::get('/activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity.logs');
+    Route::post('/activity-logs/{id}/read', [App\Http\Controllers\ActivityLogController::class, 'markAsRead'])->name('activity.logs.read');
+    Route::post('/activity-logs/mark-all-read', [App\Http\Controllers\ActivityLogController::class, 'markAllAsRead'])->name('activity.logs.markAll');
+                
     // Management
     Route::resource('stores', StoreController::class);
     Route::resource('products', ProductController::class);
@@ -51,3 +51,4 @@ Route::middleware(['auth'])->group(function () {
     
     Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
 });
+Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])->name('inventory.movements');

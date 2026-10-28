@@ -165,6 +165,7 @@ class PaymentController extends Controller
                 ]);
             }
 
+            \App\Models\ActivityLog::record('Payments', 'Recorded', 'Received payment of ₱' . number_format($totalPayment, 2));
             return redirect()->route('payments.index')->with('success', 'Payment recorded successfully!');
         } catch (\Exception $e) {
             DB::rollBack();

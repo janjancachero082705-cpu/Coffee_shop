@@ -143,6 +143,7 @@
         @endforeach
     </div>
     <div class="flex items-center gap-2">
+        <a href="{{ route('inventory.movements') }}" class="btn btn-secondary !py-2 !px-3 !text-xs"><i class="fas fa-clock-rotate-left text-[10px]"></i> History</a>
         <button type="button" id="exportBtn" class="btn btn-secondary !py-2 !px-3 !text-xs"><i class="fas fa-download text-[10px]"></i> Export</button>
         <button type="button" data-stock-in class="btn btn-primary !py-2 !px-3 !text-xs"><i class="fas fa-plus text-[10px]"></i> Add stock</button>
     </div>

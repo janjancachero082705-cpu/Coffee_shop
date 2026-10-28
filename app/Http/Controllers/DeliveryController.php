@@ -146,6 +146,30 @@ class DeliveryController extends Controller
 
             $delivery->update(['total_amount' => $totalAmount]);
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
+                        // Log inventory movements for delivery (stock out)
+            foreach ($delivery->items as $item) {
+                \App\Models\InventoryMovement::create([
+                    'product_variant_id' => $item->product_variant_id,
+                    'type' => 'out',
+                    'quantity' => $item->quantity,
+                    'reference_type' => \App\Models\Delivery::class,
+                    'reference_id' => $delivery->id,
+                    'notes' => 'Stock out for Delivery: ' . $delivery->dr_number
+                ]);
+                // Deduct actual stock
+                
+                // --- STOCK VALIDATION (Dili mo-ubos sa 0) ---
+                $variant = \App\Models\ProductVariant::find($item['product_variant_id'] ?? $item->product_variant_id);
+                $qtyToDeduct = $item['quantity'] ?? $item->quantity;
+                
+                if ($variant && $variant->stock < $qtyToDeduct) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+                    return back()->with('error', 'Dili igo ang stock para sa ' . ($variant->product->name ?? 'Item') . '. Kulang og ' . ($qtyToDeduct - $variant->stock) . ' ' . $variant->unit . '.')->withInput();
+                }
+                // ----------------------------------------
+    
+$item->variant->decrement('stock', $item->quantity);
+            }
             DB::commit();
 
             return redirect()->route('deliveries.store-profile', $request->store_id)->with('success', 'Delivery created successfully!');

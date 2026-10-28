@@ -58,13 +58,17 @@ class ExpenseController extends Controller
 
         $expense->update($validated);
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
+        try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
+            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')'); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
+            return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
     }
 
     public function destroy(Expense $expense)
     {
         $expense->delete();
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        return redirect()->route('expenses.index')->with('success', 'Expense deleted successfully!');
+        try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
+            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')'); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
+            return redirect()->route('expenses.index')->with('success', 'Expense deleted successfully!');
     }
 }

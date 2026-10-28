@@ -73,8 +73,29 @@ $mainQuery = clone $baseQuery;
         DB::transaction(function () use ($request) {
             $variant = ProductVariant::lockForUpdate()->findOrFail($request->variant_id);
             $variant->increment('stock', $request->quantity);
+            \App\Models\InventoryMovement::create([
+                'product_variant_id' => $variant->id,
+                'type' => 'in',
+                'quantity' => $request->quantity,
+                'notes' => 'Manual Add Stock'
+            ]);
         });
 
         return redirect()->route('inventory.index', ['tab' => 'main'])->with('success', 'Stock added successfully!');
+    }
+    
+    public function movements(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\InventoryMovement::with(['variant.product'])->latest();
+
+        if ($request->filled('search')) {
+            $query->whereHas('variant.product', function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%");
+            });
+        }
+
+        $movements = $query->paginate(20)->appends($request->query());
+
+        return view('inventory.movements', compact('movements'));
     }
 }

@@ -136,18 +136,20 @@
         </div>
     </form>
 </div>
-                <div id="paymentTableWrapper" class="overflow-x-auto w-full flex-1 pb-2" style="-webkit-overflow-scrolling: touch;">
-                    <table class="table-clean w-full min-w-[600px]">
-                        <thead>
-                            <tr>
-                                <th class="w-32">Date</th>
-                                <th>Order & Items Paid</th>
-                                <th class="text-right w-32">Amount Paid</th>
-                            </tr>
-                        </thead>
+                <div class="overflow-x-auto w-full flex-1 pb-2" style="-webkit-overflow-scrolling: touch;">
+                <table class="table-clean w-full min-w-[600px]">
+                    <thead class="bg-ink-50 border-b border-ink-200">
+                        <tr>
+                            <th class="w-32 text-[11px] uppercase tracking-wider text-ink-500">Date</th>
+                            <th class="text-[11px] uppercase tracking-wider text-ink-500">Order & Items Paid</th>
+                            <th class="text-right w-32 text-[11px] uppercase tracking-wider text-ink-500">Amount Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentTableBody" class="divide-y divide-ink-100 bg-white">
                         @include('payments._table')
-                    </table>
-                </div>
+                    </tbody>
+                </table>
+            </div>
                 <div class="px-4 md:px-6 py-3 md:py-4 border-t border-ink-200 bg-ink-50 shrink-0 text-sm">{{ $payments->appends(request()->query())->links() }}</div>
             </div>
         </div>
@@ -267,7 +269,7 @@
                         document.getElementById('kpi-transactions').innerText = data.totalTransactions;
 
                         // 2. I-update ang Payment History table (walay reload)
-                        document.getElementById('paymentTableWrapper').innerHTML = data.html;
+                        document.getElementById('paymentTableBody').innerHTML = data.html;
 
                         // 3. I-reset ang form
                         this.reset();
@@ -286,12 +288,12 @@
                         deliveriesData = data.deliveriesData;
 
                         // Success feedback
-                        alert(data.message);
+                        showToast(data.message, 'success');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error saving payment. Please check console.');
+                    showToast('Error saving payment. Please check console.', 'error');
                 })
                 .finally(() => {
                     btn.innerHTML = originalText;

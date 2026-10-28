@@ -116,13 +116,37 @@
                 <h3 class="text-sm md:text-base font-bold text-ink-900">Cash Flow</h3>
                 <p class="text-[10px] md:text-xs text-ink-500 mt-0.5">Tap a category, then tap a row or slice</p>
             </div>
-            <div id="cfChips" class="cf-chips" role="tablist">
-                <button type="button" class="cf-chip is-on" data-m="all">All</button>
-                <button type="button" class="cf-chip" data-m="cash">Cash</button>
-                <button type="button" class="cf-chip" data-m="exp">Expenses</button>
-                <button type="button" class="cf-chip" data-m="pur">Purchases</button>
-                <button type="button" class="cf-chip" data-m="profit">Profit</button>
+            <div class="relative w-full max-w-[280px] mb-5" id="cfDropdownWrapper">
+        <!-- Custom Dropdown Button -->
+        <button type="button" id="cfMobileBtn" class="flex items-center justify-between w-full px-4 py-3 bg-white border border-ink-200 rounded-2xl shadow-sm text-sm font-bold text-ink-900 transition-all hover:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-chart-pie text-brand-500"></i>
+                <span id="cfMobileLabel">All Categories</span>
             </div>
+            <i class="fas fa-chevron-down text-ink-400 text-xs transition-transform duration-300" id="cfMobileIcon"></i>
+        </button>
+
+        <!-- Custom Dropdown Menu -->
+        <div id="cfMobileMenu" class="absolute top-full left-0 right-0 mt-2 bg-white border border-ink-200 rounded-2xl shadow-xl z-50 hidden overflow-hidden transform origin-top transition-all duration-200 opacity-0 scale-95">
+            <button type="button" class="cf-mobile-item w-full flex items-center gap-3 text-left px-4 py-3 text-sm font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 border-b border-ink-50 transition-colors" data-m="all" data-label="All Categories">
+                <span class="w-2 h-2 rounded-full bg-ink-900"></span> All Categories
+            </button>
+            <button type="button" class="cf-mobile-item w-full flex items-center gap-3 text-left px-4 py-3 text-sm font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 border-b border-ink-50 transition-colors" data-m="cash" data-label="Cash in Hand">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Cash in Hand
+            </button>
+            <button type="button" class="cf-mobile-item w-full flex items-center gap-3 text-left px-4 py-3 text-sm font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 border-b border-ink-50 transition-colors" data-m="exp" data-label="Expenses">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span> Expenses
+            </button>
+            <button type="button" class="cf-mobile-item w-full flex items-center gap-3 text-left px-4 py-3 text-sm font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 border-b border-ink-50 transition-colors" data-m="pur" data-label="Purchases">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Purchases
+            </button>
+            <button type="button" class="cf-mobile-item w-full flex items-center gap-3 text-left px-4 py-3 text-sm font-bold text-ink-700 hover:bg-brand-50 hover:text-brand-700 transition-colors" data-m="profit" data-label="Profit">
+                <span class="w-2 h-2 rounded-full bg-teal-500"></span> Profit
+            </button>
+        </div>
+    </div>
+
+    
             <div class="flex flex-col items-center gap-4 md:gap-5 flex-1 justify-center mt-4">
                 <div id="cfBox" class="relative shrink-0" style="width:190px;height:190px">
                     <svg viewBox="0 0 42 42" class="absolute inset-0 w-full h-full">
@@ -226,6 +250,76 @@
   window.addEventListener('pointerup', function () { down = false; });
   window.addEventListener('pointercancel', function () { down = false; });
   document.addEventListener('pointerdown', function (e) { if (!ov.contains(e.target)) hide(); });
+  
+  
+
+  // I-sync ang mobile label kung ang desktop chips ang gi-click
+  function updateMobileLabel(m) {
+      if(!mLabel) return;
+      const labels = { all: 'All Categories', cash: 'Cash in Hand', exp: 'Expenses', pur: 'Purchases', profit: 'Profit' };
+      mLabel.textContent = labels[m] || 'All Categories';
+  }
+  
+  var originalRender = render;
+  render = function(m) {
+      originalRender(m);
+      updateMobileLabel(m);
+  };
+// --- CUSTOM DROPDOWN LOGIC (INSTANT HIDE) ---
+  var mBtn = document.getElementById('cfMobileBtn');
+  var mMenu = document.getElementById('cfMobileMenu');
+  var mIcon = document.getElementById('cfMobileIcon');
+
+  if (mBtn && mMenu) {
+      // 1. Toggle inig-click sa button
+      mBtn.addEventListener('click', function(e) {
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          
+          if (mMenu.classList.contains('hidden')) {
+              mMenu.classList.remove('hidden');
+              // Gamay nga delay para mo-animate pag-open
+              setTimeout(function() {
+                  mMenu.classList.remove('opacity-0', 'scale-95');
+                  if(mIcon) mIcon.classList.add('rotate-180');
+              }, 10);
+          } else {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 2. Close inig-click sa gawas
+      document.addEventListener('click', function(e) {
+          if (!mMenu.classList.contains('hidden') && !mMenu.contains(e.target) && !mBtn.contains(e.target)) {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 3. Pag-pili og item (DIRETSO HIDE)
+      document.querySelectorAll('.cf-mobile-item').forEach(function(item) {
+          item.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              // --- UNAHON PAG-HIDE PARA DILI MAGDUGAY ---
+              mMenu.classList.add('hidden'); 
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+
+              // --- SUNOD ANG DATA UPDATE ---
+              var val = this.getAttribute('data-m');
+              var lbl = this.getAttribute('data-label');
+              var mLabel = document.getElementById('cfMobileLabel');
+              if(mLabel) mLabel.textContent = lbl;
+              
+              render(val); // I-update ang chart
+          });
+      });
+  }
 })();
 </script>
 
@@ -247,12 +341,81 @@
       for (var k in panels) { if (panels[k]) panels[k].classList.toggle('tab-off', k !== t); }
     });
   });
+  
+  
+
+  // I-sync ang mobile label kung ang desktop chips ang gi-click
+  function updateMobileLabel(m) {
+      if(!mLabel) return;
+      const labels = { all: 'All Categories', cash: 'Cash in Hand', exp: 'Expenses', pur: 'Purchases', profit: 'Profit' };
+      mLabel.textContent = labels[m] || 'All Categories';
+  }
+  
+  var originalRender = render;
+  render = function(m) {
+      originalRender(m);
+      updateMobileLabel(m);
+  };
+// --- CUSTOM DROPDOWN LOGIC (INSTANT HIDE) ---
+  var mBtn = document.getElementById('cfMobileBtn');
+  var mMenu = document.getElementById('cfMobileMenu');
+  var mIcon = document.getElementById('cfMobileIcon');
+
+  if (mBtn && mMenu) {
+      // 1. Toggle inig-click sa button
+      mBtn.addEventListener('click', function(e) {
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          
+          if (mMenu.classList.contains('hidden')) {
+              mMenu.classList.remove('hidden');
+              // Gamay nga delay para mo-animate pag-open
+              setTimeout(function() {
+                  mMenu.classList.remove('opacity-0', 'scale-95');
+                  if(mIcon) mIcon.classList.add('rotate-180');
+              }, 10);
+          } else {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 2. Close inig-click sa gawas
+      document.addEventListener('click', function(e) {
+          if (!mMenu.classList.contains('hidden') && !mMenu.contains(e.target) && !mBtn.contains(e.target)) {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 3. Pag-pili og item (DIRETSO HIDE)
+      document.querySelectorAll('.cf-mobile-item').forEach(function(item) {
+          item.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              // --- UNAHON PAG-HIDE PARA DILI MAGDUGAY ---
+              mMenu.classList.add('hidden'); 
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+
+              // --- SUNOD ANG DATA UPDATE ---
+              var val = this.getAttribute('data-m');
+              var lbl = this.getAttribute('data-label');
+              var mLabel = document.getElementById('cfMobileLabel');
+              if(mLabel) mLabel.textContent = lbl;
+              
+              render(val); // I-update ang chart
+          });
+      });
+  }
 })();
 </script>
 
 <style>
-.cf-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.cf-chips::-webkit-scrollbar{display:none}
+
 .cf-chip{flex:none;padding:8px 14px;border-radius:9999px;font-size:12px;font-weight:700;border:1px solid #E8E5E0;background:#fff;color:#57514B;cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .15s;-webkit-tap-highlight-color:transparent}
 .cf-chip:active{transform:scale(.95)}
 .cf-chip.is-on{background:var(--c,#1A1715);border-color:var(--c,#1A1715);color:#fff}
@@ -329,6 +492,7 @@
       return '<button type="button" class="cf-row" data-i="' + i + '"><span class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full shrink-0" style="background:' + it.c + '"></span><span class="truncate text-ink-600">' + esc(it.l) + '</span></span><span class="flex items-center gap-2 shrink-0"><span class="text-[10px] text-ink-400 tabular-nums">' + (it.v / total * 100).toFixed(1) + '%</span><span class="font-bold text-ink-900 tabular-nums">' + money(it.v) + '</span></span></button>';
     }).join('') : '<div class="py-6 text-center text-xs text-ink-400">No data yet.</div>';
     chips.forEach(function (b) { var k = b.getAttribute('data-m'); b.classList.toggle('is-on', k === m); b.style.setProperty('--c', CHIP[k]); });
+    
     paint();
   }
 
@@ -343,34 +507,97 @@
     } else { tip.style.opacity = 0; }
   }
 
-  chips.forEach(function (b) { b.addEventListener('click', function () { render(b.getAttribute('data-m')); }); });
+  chips.forEach(function (b) { 
+        b.addEventListener('click', function (e) { 
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // I-force ang active state dayon para feeling snappy
+            chips.forEach(function(c) { c.classList.remove('is-on'); });
+            this.classList.add('is-on');
+
+            // I-update ang chart
+            render(this.getAttribute('data-m')); 
+        }); 
+    });
+  
   list.addEventListener('click', function (e) { var r = e.target.closest('.cf-row'); if (r) pick(+r.getAttribute('data-i')); });
   segs.forEach(function (s, i) { s.addEventListener('click', function (e) { e.stopPropagation(); if (items[i]) pick(i, e); }); });
   document.addEventListener('click', function () { if (sel >= 0) { sel = -1; paint(); } tip.style.opacity = 0; });
   requestAnimationFrame(function () { requestAnimationFrame(function () { render('all'); }); });
+  
+  
+
+  // I-sync ang mobile label kung ang desktop chips ang gi-click
+  function updateMobileLabel(m) {
+      if(!mLabel) return;
+      const labels = { all: 'All Categories', cash: 'Cash in Hand', exp: 'Expenses', pur: 'Purchases', profit: 'Profit' };
+      mLabel.textContent = labels[m] || 'All Categories';
+  }
+  
+  var originalRender = render;
+  render = function(m) {
+      originalRender(m);
+      updateMobileLabel(m);
+  };
+// --- CUSTOM DROPDOWN LOGIC (INSTANT HIDE) ---
+  var mBtn = document.getElementById('cfMobileBtn');
+  var mMenu = document.getElementById('cfMobileMenu');
+  var mIcon = document.getElementById('cfMobileIcon');
+
+  if (mBtn && mMenu) {
+      // 1. Toggle inig-click sa button
+      mBtn.addEventListener('click', function(e) {
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          
+          if (mMenu.classList.contains('hidden')) {
+              mMenu.classList.remove('hidden');
+              // Gamay nga delay para mo-animate pag-open
+              setTimeout(function() {
+                  mMenu.classList.remove('opacity-0', 'scale-95');
+                  if(mIcon) mIcon.classList.add('rotate-180');
+              }, 10);
+          } else {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 2. Close inig-click sa gawas
+      document.addEventListener('click', function(e) {
+          if (!mMenu.classList.contains('hidden') && !mMenu.contains(e.target) && !mBtn.contains(e.target)) {
+              mMenu.classList.add('hidden'); // Diretso tago
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+          }
+      });
+
+      // 3. Pag-pili og item (DIRETSO HIDE)
+      document.querySelectorAll('.cf-mobile-item').forEach(function(item) {
+          item.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              // --- UNAHON PAG-HIDE PARA DILI MAGDUGAY ---
+              mMenu.classList.add('hidden'); 
+              mMenu.classList.add('opacity-0', 'scale-95');
+              if(mIcon) mIcon.classList.remove('rotate-180');
+
+              // --- SUNOD ANG DATA UPDATE ---
+              var val = this.getAttribute('data-m');
+              var lbl = this.getAttribute('data-label');
+              var mLabel = document.getElementById('cfMobileLabel');
+              if(mLabel) mLabel.textContent = lbl;
+              
+              render(val); // I-update ang chart
+          });
+      });
+  }
 })();
 </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    let currentLastUpdate = '{{ max(
-        \App\Models\Purchase::max("updated_at") ?? "0",
-        \App\Models\Expense::max("updated_at") ?? "0",
-        \App\Models\Payment::max("updated_at") ?? "0",
-        \App\Models\Delivery::max("updated_at") ?? "0"
-    ) }}';
 
-    setInterval(() => {
-        fetch('{{ route("dashboard.check-updates") }}')
-            .then(res => res.json())
-            .then(data => {
-                if (data.last_update !== currentLastUpdate) {
-                    window.location.reload();
-                }
-            })
-            .catch(err => console.log('Auto-refresh check failed:', err));
-    }, 5000); // Mag-check every 5 seconds
-});
-</script>
 @endsection
 

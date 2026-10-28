@@ -21,4 +21,3 @@
     @empty
         <tr><td colspan="3" class="text-center py-8 text-slate-500">No payments recorded yet.</td></tr>
     @endforelse
-</tbody>

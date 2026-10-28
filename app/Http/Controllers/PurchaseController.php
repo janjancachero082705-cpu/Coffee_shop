@@ -125,13 +125,16 @@ class PurchaseController extends Controller
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         });
 
-        return redirect()->route('purchases.index')->with('success', 'Purchase logged! Stock updated.');
+        try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
+            \App\Models\ActivityLog::record('Purchases', 'Created', 'Purchased ' . $request->quantity . ' ' . $request->unit . ' of ' . $request->item_name);
+            return redirect()->route('purchases.index')->with('success', 'Purchase logged! Stock updated.');
     }
 
     public function destroy(Purchase $purchase)
     {
         $purchase->delete();
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        return redirect()->route('purchases.index')->with('success', 'Purchase log deleted.');
+        try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
+            return redirect()->route('purchases.index')->with('success', 'Purchase log deleted.');
     }
 }

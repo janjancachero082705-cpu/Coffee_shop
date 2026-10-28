@@ -74,8 +74,104 @@
         @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
     </style>
     @stack('styles')
+    @vite(['resources/js/app.js'])
+    
+    
+    <link rel="preload" as="image" href="{{ asset('images/Kape_Logo.png') }}">
+    
+    <!-- INSTANT PAGE PREFETCHING -->
+    <script src="https://instant.page/5.2.0" type="module"></script>
+    <style>
+        /* Top Loading Bar */
+        #top-loader {
+            position: fixed; top: 0; left: 0; height: 3px; background: #E86100;
+            width: 0%; z-index: 99999; transition: width 0.3s ease, opacity 0.3s ease;
+            box-shadow: 0 0 10px #E86100; opacity: 0;
+        }
+        /* Mobile Viewport Fix (Para dili mag-ungot ang scroll) */
+        @media (max-width: 1023px) {
+            html, body { height: 100dvh !important; overflow: hidden; }
+        }
+    </style>
+    
+    
+    <style>
+        /* ==========================================
+           COMFORTABLE EYE-FRIENDLY THEME (SOFT CONTRAST)
+           ========================================== */
+        
+        /* 1. Main Background - Warm Soft Gray (Dili Sakit sa Mata) */
+        body, 
+        .bg-\[\#FDFCFB\], 
+        .flex.h-screen {
+            background-color: #F3F1EE !important; /* Warm Beige/Gray */
+        }
+
+        /* 2. Sidebar - Slightly Darker than Main */
+        #sidebar {
+            background: #EBE8E3 !important; /* Soft warm gray for separation */
+            border-right: 1px solid #DFDBD5 !important;
+        }
+
+        /* 3. Header - Subtle Warm White */
+        header {
+            background: #F9F8F6 !important;
+            border-bottom: 1px solid #E2DED8 !important;
+            box-shadow: 0 4px 15px -5px rgba(0,0,0,0.03) !important;
+        }
+
+        /* 4. Cards - Keep them White to pop against the beige background */
+        .card {
+            background: #FFFFFF !important;
+            border: 1px solid #E8E5E0 !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+        }
+
+        /* 5. Navigation Links - Softer Colors */
+        .nav-link {
+            color: #57514B !important;
+        }
+        .nav-link i {
+            color: #78716A !important;
+        }
+        .nav-link:hover {
+            background: #DFDBD5 !important;
+            color: #1A1715 !important;
+        }
+        .nav-link.active {
+            background: #E86100 !important; /* Solid Brand Orange */
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 12px rgba(232, 97, 0, 0.25) !important;
+        }
+        .nav-link.active i {
+            color: #FFFFFF !important;
+        }
+
+        /* 6. Inputs - Softer background */
+        .input {
+            background-color: #F9F8F6 !important;
+            border-color: #DFDBD5 !important;
+        }
+        .input:focus {
+            background-color: #FFFFFF !important;
+            border-color: #E86100 !important;
+        }
+
+        /* 7. Table Headers */
+        .table-clean th {
+            background-color: #F9F8F6 !important;
+            color: #78716A !important;
+        }
+
+        /* 8. Sidebar Footer */
+        #sidebar .bg-\[\#F5F2EE\] {
+            background: #EBE8E3 !important;
+            border-top: 1px solid #DFDBD5 !important;
+        }
+    </style>
 </head>
 <body>
+<div id="top-loader"></div>
 @php
     $userName = Auth::user()->name ?? 'Admin';
     $initial  = strtoupper(substr($userName, 0, 1));
@@ -113,8 +209,8 @@
     {{-- SIDEBAR --}}
     <aside id="sidebar" class="w-[260px] h-full flex flex-col flex-shrink-0 z-40 lg:relative fixed inset-y-0 left-0">
         <div class="h-[90px] flex items-center gap-3 px-5 flex-shrink-0 border-b border-ink-200/50 group cursor-pointer hover:bg-white/50 transition-colors">
-            <div class="w-[48px] h-[48px] rounded-full overflow-hidden bg-white shadow-sm border border-ink-200 shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:rotate-3 group-hover:shadow-md">
-                <img src="{{ asset('images/Kape_Logo.png') }}" alt="Kape Miarayon logo" class="w-full h-full object-cover">
+            <div class="w-[48px] h-[48px] rounded-full overflow-hidden bg-white shadow-sm border border-ink-200 shrink-0 group-hover:scale-105 group-hover:rotate-3 group-hover:shadow-md will-change-transform">
+                <img src="{{ asset('images/Kape_Logo.png') }}" alt="Kape Miarayon logo" class="w-full h-full object-cover" fetchpriority="high">
             </div>
             <div class="flex flex-col justify-center min-w-0 transition-transform duration-300 group-hover:translate-x-1">
                 <div class="flex items-baseline gap-1.5 leading-none">
@@ -132,9 +228,16 @@
                     <a href="{{ route($route) }}" class="nav-link {{ request()->routeIs($pattern) ? 'active' : '' }}" @if(request()->routeIs($pattern)) aria-current="page" @endif>
                         <i class="fas {{ $icon }}"></i><span>{{ $text }}</span>
                     </a>
+
                 @endforeach
             @endforeach
-        </nav>
+        
+            <div class="nav-group mt-4">SYSTEM</div>
+            <a href="{{ route('activity.logs') }}" class="nav-link {{ request()->routeIs('activity.logs') ? 'active' : '' }}">
+                <i class="fas fa-history"></i>
+                <span>Transactions</span>
+            </a>
+</nav>
 
         <div class="p-4 border-t border-ink-200/50 bg-[#F5F2EE] flex flex-col gap-3 shrink-0">
             <div class="flex items-center gap-3 px-1 group cursor-default">
@@ -164,7 +267,7 @@
             <div class="flex items-center gap-3 min-w-0">
                 {{-- Hamburger Button --}}
                 <div class="w-10 h-10 shrink-0 lg:hidden relative overflow-hidden rounded-xl border border-ink-200 bg-white z-30">
-                    <button type="button" id="mobileMenuBtn" class="absolute inset-0 w-full h-full flex items-center justify-center text-ink-600 transition-transform duration-300 ease-in-out transform translate-x-0" onclick="document.body.classList.add('nav-open')" aria-label="Open menu">
+                    <button type="button" id="mobileMenuBtn" class="absolute inset-0 w-full h-full flex items-center justify-center text-ink-600 transition-transform duration-300 ease-in-out transform translate-x-0" onclick="event.preventDefault(); document.body.classList.add('nav-open')" aria-label="Open menu">
                         <i class="fas fa-bars"></i>
                     </button>
                 </div>
@@ -185,39 +288,90 @@
 
             {{-- RIGHT SIDE HEADER (Notification Bell) --}}
             <div class="flex items-center gap-3 shrink-0 relative z-[60]">
-                <div class="relative" id="notifMenu">
+                @php
+    $recentNotifs = \App\Models\ActivityLog::whereNull('read_at')->latest()->take(6)->get();
+    $notifCount = \App\Models\ActivityLog::whereNull('read_at')->count();
+    $lowStockCount = $lowStockCount ?? 0;
+@endphp
+
+<div class="relative" id="notifMenu">
                     {{-- GIGAMIT NATO ANG INLINE ONCLICK PARA SIGURADO NGA MO-GANA --}}
                     <button type="button" onclick="toggleNotif(event)" class="relative w-10 h-10 rounded-xl bg-white border border-ink-200 flex items-center justify-center text-ink-600 hover:text-ink-900 transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer z-[100]">
                         <i class="fas fa-bell text-[13px] pointer-events-none"></i>
-                        @if($lowStockCount > 0)
-                            <span class="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-white animate-pulse px-1 pointer-events-none">{{ $lowStockCount }}</span>
+                        @if($notifCount > 0)
+                            <span class="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-white animate-pulse px-1 pointer-events-none">{{ $notifCount > 99 ? "99+" : $notifCount }}</span>
                         @endif
                     </button>
                     
                     {{-- DROPDOWN --}}
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-[280px] max-w-[90vw] bg-white border border-ink-200 rounded-xl shadow-pop z-[100] overflow-hidden" style="transform-origin: top right;">
-                        <div class="px-4 py-3 border-b border-ink-100 bg-ink-50 flex justify-between items-center">
-                            <span class="text-[11px] font-bold text-ink-800 uppercase tracking-widest">Low Stock Alerts</span>
-                            <span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">{{ $lowStockCount }} items</span>
-                        </div>
-                        <div class="max-h-64 overflow-y-auto">
-                            @forelse($lowStockItems as $item)
-                                <a href="{{ route('inventory.index') }}" class="block px-4 py-3 border-b border-ink-50 hover:bg-brand-50 transition-colors group">
-                                    <div class="flex justify-between items-start mb-1">
-                                        <span class="text-[13px] font-bold text-ink-900 group-hover:text-brand-600 transition-colors">{{ $item->product->name ?? 'Unknown' }}</span>
-                                        <span class="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">{{ $item->stock }} left</span>
-                                    </div>
-                                    <div class="text-[11px] font-medium text-ink-500">{{ $item->name }}</div>
-                                </a>
-                            @empty
-                                <div class="px-4 py-8 text-center text-sm font-medium text-ink-500">No low stock items.</div>
-                            @endforelse
-                        </div>
-                        <div class="px-4 py-2.5 bg-ink-50 text-center border-t border-ink-100 hover:bg-ink-100 transition-colors">
-                            <a href="{{ route('inventory.index') }}" class="text-[11px] font-bold text-brand-600">View All Inventory <i class="fas fa-arrow-right ml-1 text-[9px]"></i></a>
-                        </div>
-                    </div>
+                                <!-- DYNAMIC NOTIFICATIONS DROPDOWN -->
+            
+
+            <div id="notifDropdown" class="hidden absolute right-0 mt-3 w-80 md:w-96 bg-white border border-ink-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right transition-all duration-200">
+                <div class="px-4 py-3 border-b border-ink-100 flex justify-between items-center bg-ink-50/50">
+                    <h3 class="text-sm font-bold text-ink-900">Notifications</h3>
+                    <span class="text-[10px] font-bold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">{{ $notifCount }} New</span>
                 </div>
+                
+                <div class="max-h-[300px] overflow-y-auto">
+                    @forelse($recentNotifs as $notif)
+                        @php
+                            // I-map ang module ngadto sa saktong route
+                            $link = match($notif->module) {
+                                'Purchases' => route('purchases.index'),
+                                'Expenses' => route('expenses.index'),
+                                'Payments' => route('payments.index'),
+                                'Deliveries' => route('deliveries.index'),
+                                'Inventory' => route('inventory.index'),
+                                default => route('activity.logs')
+                            };
+                            
+                            // Ibutang ang kolor sa icon base sa module
+                            $iconColor = match($notif->module) {
+                                'Purchases' => 'bg-amber-100 text-amber-600',
+                                'Expenses' => 'bg-red-100 text-red-600',
+                                'Payments' => 'bg-emerald-100 text-emerald-600',
+                                'Deliveries' => 'bg-blue-100 text-blue-600',
+                                'Inventory' => 'bg-purple-100 text-purple-600',
+                                default => 'bg-gray-100 text-gray-600'
+                            };
+                            
+                            $iconClass = match($notif->module) {
+                                'Purchases' => 'fa-shopping-cart',
+                                'Expenses' => 'fa-receipt',
+                                'Payments' => 'fa-money-bill-wave',
+                                'Deliveries' => 'fa-truck',
+                                'Inventory' => 'fa-boxes',
+                                default => 'fa-bell'
+                            };
+                        @endphp
+
+                        <a href="{{ $link }}" onclick="markNotifRead(event, {{ $notif->id }})" class="block w-full text-left px-4 py-3 hover:bg-ink-50 transition-colors border-b border-ink-50 last:border-0 group">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 {{ $iconColor }} mt-0.5 shadow-sm">
+                                    <i class="fas {{ $iconClass }} text-xs"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[13px] font-bold text-ink-900 group-hover:text-brand-600 transition-colors">{{ $notif->module }} Update</p>
+                                    <p class="text-xs text-ink-500 line-clamp-2 mt-0.5 leading-relaxed">{{ $notif->description }}</p>
+                                    <p class="text-[10px] font-semibold text-ink-400 mt-1"><i class="far fa-clock mr-1"></i>{{ $notif->created_at->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="px-4 py-8 text-center">
+                            <div class="w-12 h-12 bg-ink-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-bell-slash text-ink-300 text-lg"></i>
+                            </div>
+                            <p class="text-xs font-semibold text-ink-600">No notifications yet.</p>
+                        </div>
+                    @endforelse
+                </div>
+                
+                <a href="{{ route('activity.logs') }}" onclick="markAllNotifRead(event)" class="block w-full py-3 text-center text-xs font-bold text-brand-600 hover:text-brand-700 bg-white hover:bg-brand-50 border-t border-ink-100 transition-colors">
+                    View All Transactions
+                </a>
+            </div>
             </div>
         </header>
 
@@ -387,34 +541,162 @@
     });
 </script>
     
-    <!-- GLOBAL REALTIME AUTO-UPDATE -->
+    <!-- WEBSOCKET REALTIME LISTENER -->
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initial timestamp gikan sa server (gikuha gikan sa pinakabag-o nga data)
-        let currentGlobalTime = '{{ \Illuminate\Support\Facades\DB::table('payments')->max('updated_at') ?? '0' }}'; 
-        let isReloading = false;
-
-        setInterval(() => {
-            // Ayaw pag-check kung naay usa ka modal/form nga gina-type-an ang user
-            const activeTag = document.activeElement.tagName;
-            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
-                return; // Skip aning higayona para dili mawala ang gi-type
-            }
-
-            fetch('{{ route("system.updates") }}')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.latest !== currentGlobalTime && data.latest !== '0') {
-                        if (!isReloading) {
-                            isReloading = true;
-                            console.log('Bag-ong data na-detect! Nag-refresh...');
-                            window.location.reload();
-                        }
+        if (typeof window.Echo !== 'undefined') {
+            window.Echo.channel('system-updates')
+                .listen('DataUpdated', (e) => {
+                    console.log('WebSocket: Bag-ong data na-detect!');
+                    
+                    // SIGURADUHON NGA WALAY GINA-TYPE ANG USER BAGO MAG-UPDATE
+                    const activeTag = document.activeElement.tagName;
+                    const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT');
+                    
+                    if (!isTyping) {
+                        // Pwede i-reload, o kaha i-fetch ang bag-ong data via AJAX
+                        window.location.reload();
+                    } else {
+                        console.log('WebSocket: Gi-skip ang update kay naay nag-type.');
                     }
-                })
-                .catch(err => console.log('Global sync check failed:', err));
-        }, 5000); // Mag-check every 5 seconds
+                });
+        } else {
+            console.warn('Laravel Echo wala na-load. I-check ang npm run dev.');
+        }
     });
+    </script>
+    
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+    <script>
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            
+            // Colors based on type
+            const isSuccess = type === 'success';
+            const bgClass = isSuccess ? 'bg-white border-emerald-200' : 'bg-white border-red-200';
+            const iconClass = isSuccess ? 'fa-check-circle text-emerald-500' : 'fa-exclamation-circle text-red-500';
+            const titleText = isSuccess ? 'Success' : 'Error';
+            const titleColor = isSuccess ? 'text-emerald-700' : 'text-red-700';
+
+            toast.className = `pointer-events-auto flex items-start gap-3 p-4 w-80 md:w-96 rounded-xl border shadow-xl transform transition-all duration-300 translate-x-full opacity-0 ${bgClass}`;
+            
+            toast.innerHTML = `
+                <div class="shrink-0 mt-0.5"><i class="fas ${iconClass} text-lg"></i></div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold ${titleColor}">${titleText}</h4>
+                    <p class="text-xs font-medium text-ink-600 mt-0.5 leading-relaxed">${message}</p>
+                </div>
+                <button onclick="this.parentElement.classList.add('translate-x-full', 'opacity-0'); setTimeout(() => this.parentElement.remove(), 300);" class="shrink-0 text-ink-400 hover:text-ink-800 transition-colors ml-2">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger Slide-in animation
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+
+        // I-convert ang Laravel Flash Messages ngadto sa Toast inig-load
+        document.addEventListener('DOMContentLoaded', function () {
+            @if(session('success'))
+                showToast("{{ session('success') }}", 'success');
+            @endif
+            @if(session('error'))
+                showToast("{{ session('error') }}", 'error');
+            @endif
+        });
+    </script>
+    <script>
+        window.markNotifRead = function(e, id) {
+            e.preventDefault();
+            const url = e.currentTarget.href;
+            e.currentTarget.style.pointerEvents = 'none';
+            e.currentTarget.style.opacity = '0.5';
+
+            fetch(`/activity-logs/${id}/read`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' }
+            }).then(() => { window.location.href = url; })
+              .catch(() => { window.location.href = url; });
+        };
+
+        window.markAllNotifRead = function(e) {
+            e.preventDefault();
+            const url = e.currentTarget.href;
+            fetch(`/activity-logs/mark-all-read`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' }
+            }).then(() => { window.location.href = url; })
+              .catch(() => { window.location.href = url; });
+        };
+    </script>
+    <script>
+        // Siguraduhon nga mo-close ang mobile sidebar inig-click sa link
+        document.addEventListener('turbo:click', function(event) {
+            // Kung ang gi-click kay naa sa sulod sa sidebar, i-remove ang 'nav-open'
+            if (event.target.closest('#sidebar')) {
+                document.body.classList.remove('nav-open');
+            }
+        });
+
+        // Backup: I-close pud ang sidebar inig-sugod og load sa bag-ong page
+        document.addEventListener('turbo:before-visit', function() {
+            document.body.classList.remove('nav-open');
+        });
+        
+        // I-close kung mo-click sa backdrop
+        document.addEventListener('turbo:load', function() {
+            const backdrop = document.getElementById('navBackdrop');
+            if (backdrop) {
+                backdrop.addEventListener('click', function() {
+                    document.body.classList.remove('nav-open');
+                });
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loader = document.getElementById('top-loader');
+            const links = document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([href^="javascript"])');
+            
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    // 1. I-start ang loading bar
+                    if(loader) {
+                        loader.style.width = '40%';
+                        loader.style.opacity = '1';
+                    }
+                    
+                    // 2. I-close dayon ang sidebar sa mobile para wala nay mag-ungot
+                    document.body.classList.remove('nav-open');
+                });
+            });
+            
+            // Kung mahuman na og load ang page, pun-a ang loading bar
+            window.addEventListener('load', function() {
+                if(loader) {
+                    loader.style.width = '100%';
+                    setTimeout(() => {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.width = '0', 300);
+                    }, 200);
+                }
+            });
+        });
     </script>
 </body>
 </html>
