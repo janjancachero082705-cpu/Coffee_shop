@@ -17,19 +17,26 @@ use App\Http\Controllers\ExpenseController;
 Route::get('/', function () { return redirect()->route('dashboard'); });
 Route::get('/admin', function () { return redirect()->route('dashboard'); });
 
-// Auth Routes (Custom Login)
-Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+// ==========================================
+// AUTH ROUTES (SECURED)
+// ==========================================
+// 1. Gi-usab ang URL gikan sa '/login' ngadto sa '/km-secure-login-2024'
+// 2. Gibutangan og 'throttle:5,1' (5 attempts per minute ra para dili ma-brute force)
+Route::get('/km-secure-login-2024', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/km-secure-login-2024', [App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
-// Protected Routes
+// ==========================================
+// PROTECTED ROUTES (ADMIN ONLY)
+// ==========================================
 Route::middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Activity Logs
     Route::get('/activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity.logs');
     Route::post('/activity-logs/{id}/read', [App\Http\Controllers\ActivityLogController::class, 'markAsRead'])->name('activity.logs.read');
     Route::post('/activity-logs/mark-all-read', [App\Http\Controllers\ActivityLogController::class, 'markAllAsRead'])->name('activity.logs.markAll');
-    
     Route::put('/activity-logs/{id}', [App\Http\Controllers\ActivityLogController::class, 'update'])->name('activity.logs.update');
     Route::delete('/activity-logs/{id}', [App\Http\Controllers\ActivityLogController::class, 'destroy'])->name('activity.logs.destroy');
                 
@@ -40,8 +47,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('products/store-production', [ProductController::class, 'storeProduction'])->name('products.store-production');
     Route::resource('deliveries', DeliveryController::class);
     Route::get('deliveries/store/{store}', [DeliveryController::class, 'showStore'])->name('deliveries.store-profile');
+    
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::post('inventory/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
+    
+    // 🚨 FIXED: Gibalhin nako ni sa SULOD sa auth group!
+    Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])->name('inventory.movements');
 
     // Consignment & Sales
     Route::get('sales-reports', [SalesReportController::class, 'index'])->name('sales-reports.index');
@@ -51,7 +62,5 @@ Route::middleware(['auth'])->group(function () {
 
     // Business Modules (Purchases, Production, Expenses)
     Route::resource('purchases', PurchaseController::class);
-    
     Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
 });
-Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])->name('inventory.movements');

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -35,9 +35,11 @@
         
         /* Premium Eye-Friendly Theme */
         body, .bg-\[\#FDFCFB\], .flex.h-screen { background-color: #F3F1EE !important; }
+        
+        /* GLASSY SIDEBAR (Desktop) */
         #sidebar { 
-            background: rgba(255, 255, 255, 0.45) !important; /* 45% ra ang opacity */
-            backdrop-filter: blur(30px) saturate(150%) !important; /* Kusog nga blur para readable gihapon */
+            background: rgba(255, 255, 255, 0.45) !important; 
+            backdrop-filter: blur(30px) saturate(150%) !important; 
             -webkit-backdrop-filter: blur(30px) saturate(150%) !important;
             border-right: 1px solid rgba(255, 255, 255, 0.6) !important;
             box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05) !important;
@@ -53,7 +55,7 @@
             transform: translateX(4px); 
             box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
         }
-        #sidebar .nav-link.active { background: linear-gradient(135deg, #FF8512 0%, #E86100 100%); color:#fff; font-weight:700; box-shadow: 0 4px 12px rgba(232,97,0,0.3); }
+        #sidebar .nav-link.active { background: linear-gradient(135deg, #FF8512 0%, #E86100 100%); color:#fff; font-weight:700; box-shadow: 0 4px 12px rgba(232,97,0,0.3); text-shadow: none; }
         #sidebar .nav-link.active i { color:#fff; }
 
         .card { background:#FFFFFF !important; border:1px solid #F0EDE8 !important; border-radius:16px; box-shadow: 0 2px 10px -2px rgba(26, 23, 21, 0.03), 0 4px 20px -4px rgba(26, 23, 21, 0.03) !important; transition: transform 0.3s, box-shadow 0.3s; }
@@ -123,7 +125,6 @@
     $userName = Auth::user()->name ?? 'Admin';
     $initial  = strtoupper(substr($userName, 0, 1));
     
-    // GIBALIK NAKO SA NORMAL NGA CATEGORIES
     $nav = [
         ['label' => null, 'items' => [['Dashboard', 'dashboard', 'dashboard', 'fa-table-cells-large']]],
         ['label' => 'Financials', 'items' => [['Purchases', 'purchases.index', 'purchases.*', 'fa-cart-shopping'], ['Expenses', 'expenses.index', 'expenses.*', 'fa-receipt']]],
@@ -132,13 +133,12 @@
     ];
 @endphp
 
-<div id="navBackdrop" class="hidden fixed inset-0 z-30 bg-transparent lg:hidden" onclick="document.body.classList.remove('nav-open')"></div></div></div>
+<div id="navBackdrop" class="hidden fixed inset-0 z-30 bg-transparent lg:hidden" onclick="document.body.classList.remove('nav-open')"></div>
 
 <div class="flex h-screen overflow-hidden">
     {{-- SIDEBAR --}}
     <aside id="sidebar" class="w-[260px] h-full flex flex-col flex-shrink-0 z-40 lg:relative fixed inset-y-0 left-0">
         
-        {{-- GI-USAB NAKO ANG HEADER SA SIDEBAR PARA MAO NI SA IMO SCREENSHOT --}}
         <div class="h-[100px] flex items-center px-5 flex-shrink-0 border-b border-ink-200/50">
             <div class="flex items-center gap-4 group cursor-pointer w-full">
                 <!-- GIPADAKO ANG LOGO -->
@@ -150,7 +150,6 @@
                         <span class="font-serif italic font-bold text-[24px] text-brand-600 tracking-tight">Kape</span>
                         <span class="font-black text-[19px] text-ink-900 tracking-tighter">Miarayon</span>
                     </div>
-                    <!-- GIBUTANGAN OG whitespace-nowrap PARA DILI MOBALI ANG LINYA -->
                     <span class="text-[10px] font-bold text-ink-700 uppercase tracking-widest mt-1.5 whitespace-nowrap drop-shadow-sm">Wholesale & Retailer</span>
                 </div>
             </div>
@@ -179,12 +178,11 @@
                     <div class="text-[8px] font-bold text-brand-600 uppercase tracking-wider mt-0.5 truncate">Admin</div>
                 </div>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-all shadow-sm" title="Log out">
-                    <i class="fas fa-right-from-bracket"></i> Log out
-                </button>
-            </form>
+            
+            <!-- FIXED: AJAX Logout Button -->
+            <button type="button" onclick="handleLogout(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-all shadow-sm" title="Log out">
+                <i class="fas fa-right-from-bracket"></i> Log out
+            </button>
         </div>
     </aside>
 
@@ -280,6 +278,33 @@
 
 @stack('scripts')
 <script>
+    // ==========================================
+    // AJAX LOGOUT FUNCTION (Bypass Turbo)
+    // ==========================================
+    window.handleLogout = function(btn) {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PROCESSING...';
+        btn.classList.add('opacity-75', 'pointer-events-none', 'cursor-not-allowed');
+
+        fetch('{{ route('logout') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(() => {
+            window.location.href = '{{ route('login') }}';
+        })
+        .catch(error => {
+            console.error('Logout Error:', error);
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed');
+            alert('Failed to log out. Please check your connection.');
+        });
+    };
+
     window.toggleNotif = function(e) { if(e) e.stopPropagation(); const d = document.getElementById('notifDropdown'); if(d) d.classList.toggle('hidden'); };
     document.addEventListener('DOMContentLoaded', function () {
         document.addEventListener('click', function(e) { const d = document.getElementById('notifDropdown'); const b = e.target.closest('button[onclick*="toggleNotif"]'); if(d && !d.contains(e.target) && !b) d.classList.add('hidden'); });
@@ -293,7 +318,6 @@
         const floatingBtn = document.getElementById('floatingMenuWrapper');
         let idleTimer;
 
-        // Ipakita ang button
         const showFloatingBtn = () => {
             if (floatingBtn) {
                 floatingBtn.classList.remove('-translate-x-[150%]', 'opacity-0');
@@ -301,7 +325,6 @@
             }
         };
 
-        // Itago ang button (pabaliwat sa wala)
         const hideFloatingBtn = () => {
             if (floatingBtn && !document.body.classList.contains('nav-open')) {
                 floatingBtn.classList.remove('translate-x-0', 'opacity-100');
@@ -309,11 +332,10 @@
             }
         };
 
-        // Reset timer inig naay lihok
         const resetIdleTimer = () => {
             showFloatingBtn();
             clearTimeout(idleTimer);
-            idleTimer = setTimeout(hideFloatingBtn, 2000); // 2 segundos idle
+            idleTimer = setTimeout(hideFloatingBtn, 2000); 
         };
 
         if (mainEl && header) {
@@ -330,14 +352,14 @@
             }, { passive: true });
         }
 
-        // I-reset ang timer inig click o touch bisan asa
         document.addEventListener('click', resetIdleTimer, { passive: true });
         document.addEventListener('touchstart', resetIdleTimer, { passive: true });
 
-        // Sugdi ang timer
         resetIdleTimer();
 
+        // ==========================================
         // CONFIRMATION MODAL
+        // ==========================================
         const modal = document.getElementById('customConfirmModal'), content = document.getElementById('confirmModalContent'), messageEl = document.getElementById('confirmMessage'), confirmBtn = document.getElementById('confirmBtn');
         let formToSubmit = null;
         window.openConfirmModal = function (message, form) { formToSubmit = form; messageEl.innerText = message; modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10); confirmBtn.focus(); };
@@ -355,23 +377,63 @@
         });
     });
 
-    // GLOBAL DOUBLE CLICK PREVENTER
+    // ==========================================
+    // GLOBAL DOUBLE CLICK PREVENTER (FIXED TIMEOUT)
+    // ==========================================
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function (e) {
                 if (e.defaultPrevented) return;
-                if (form.getAttribute('data-is-submitting') === 'true') { e.preventDefault(); return false; }
+                
+                if (form.getAttribute('data-is-submitting') === 'true') { 
+                    e.preventDefault(); 
+                    return false; 
+                }
+                
                 form.setAttribute('data-is-submitting', 'true');
                 const submitBtn = form.querySelector('button[type="submit"]');
-                if (submitBtn) { submitBtn.setAttribute('data-original-html', submitBtn.innerHTML); submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PROCESSING...'; submitBtn.classList.add('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); }
+                
+                if (submitBtn) { 
+                    submitBtn.setAttribute('data-original-html', submitBtn.innerHTML); 
+                    submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PROCESSING...'; 
+                    submitBtn.classList.add('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); 
+                }
+
+                setTimeout(() => {
+                    if (form.getAttribute('data-is-submitting') === 'true') {
+                        form.removeAttribute('data-is-submitting');
+                        if (submitBtn) {
+                            submitBtn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed');
+                            const h = submitBtn.getAttribute('data-original-html');
+                            if (h) submitBtn.innerHTML = h;
+                        }
+                    }
+                }, 5000);
             });
         });
+
+        document.addEventListener('turbo:load', function() {
+            document.querySelectorAll('form').forEach(form => {
+                form.removeAttribute('data-is-submitting');
+                const btn = form.querySelector('button[type="submit"]');
+                if (btn) { 
+                    btn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); 
+                    const h = btn.getAttribute('data-original-html'); 
+                    if (h) btn.innerHTML = h; 
+                }
+            });
+        });
+
         window.addEventListener('pageshow', function (event) {
             if (event.persisted) {
                 document.querySelectorAll('form').forEach(form => {
                     form.removeAttribute('data-is-submitting');
                     const btn = form.querySelector('button[type="submit"]');
-                    if (btn) { btn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); const h = btn.getAttribute('data-original-html'); if (h) btn.innerHTML = h; }
+                    if (btn) { 
+                        btn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); 
+                        const h = btn.getAttribute('data-original-html'); 
+                        if (h) btn.innerHTML = h; 
+                    }
                 });
             }
         });

@@ -83,7 +83,6 @@ tmp_*.php
 *.bak-*
 *.backup
 
-
 # ═══ Backup files (auto-ignore) ═══
 *.before-git-restore-*
 *.bak-final
@@ -96,7 +95,6 @@ tmp_*.php
 # Temp files
 /*.txt
 !public/robots.txt
-
 
 # Local backups
 backup_*/
