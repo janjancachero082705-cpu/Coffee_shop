@@ -21,24 +21,28 @@
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <label class="block text-[10px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">SKU <span class="text-red-500">*</span></label>
-                <input type="text" name="sku" required value="{{ old('sku', $product->sku ?? 'SKU-' . strtoupper(Str::random(5))) }}" class="input">
+                <input type="text" name="sku" required value="{{ old('sku', $product->sku ?? 'SKU-' . strtoupper(Str::random(5))) }}" class="input @error('sku') !border-red-500 @enderror">
+                @error('sku') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Product Name <span class="text-red-500">*</span></label>
-                <input type="text" name="name" required value="{{ old('name', $product->name ?? '') }}" class="input">
+                <input type="text" name="name" required value="{{ old('name', $product->name ?? '') }}" class="input @error('name') !border-red-500 @enderror">
+                @error('name') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Category</label>
-                <select name="category_id" class="input cursor-pointer">
+                <select name="category_id" class="input cursor-pointer @error('category_id') !border-red-500 @enderror">
                     <option value="">— Select Category —</option>
                     @foreach($categories as $c)<option value="{{ $c->id }}" {{ old('category_id', $product->category_id ?? '') == $c->id ? 'selected' : '' }}>{{ $c->emoji }} {{ $c->name }}</option>@endforeach
                 </select>
+                @error('category_id') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Base Unit <span class="text-red-500">*</span></label>
-                <select name="unit_type" required class="input cursor-pointer">
+                <select name="unit_type" required class="input cursor-pointer @error('unit_type') !border-red-500 @enderror">
                     @foreach(['grams', 'kg', 'pcs', 'pack', 'bundle', 'seedling'] as $u)<option value="{{ $u }}" {{ old('unit_type', $product->unit_type ?? 'grams') === $u ? 'selected' : '' }}>{{ ucfirst($u) }}</option>@endforeach
                 </select>
+                @error('unit_type') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
             </div>
             <div class="md:col-span-2">
                 <label class="block text-[10px] font-bold text-ink-600 mb-1.5 uppercase tracking-wider">Product Image (Optional)</label>
@@ -85,7 +89,8 @@
                             <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
                                 <div class="md:col-span-4">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label>
-                                    <input type="text" name="variants[{{ $index }}][weight]" required value="{{ $variant->name ?? $variant->weight }}" class="input" placeholder="e.g. 250g / Small">
+                                    <input type="text" name="variants[{{ $index }}][name]" required value="{{ $variant->name ?? $variant->weight }}" class="input @error("variants.$index.name") !border-red-500 @enderror" placeholder="e.g. 250g / Small">
+                                    @error("variants.$index.name") <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
                                 </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Unit</label>
@@ -98,11 +103,12 @@
                                 </div>
                                 <div class="md:col-span-3">
                                     <label id="price_label_{{ $index }}" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per {{ ucfirst($variant->unit) }} (&#8369;) <span class="text-red-500">*</span></label>
-                                    <input type="number" name="variants[{{ $index }}][price]" step="0.01" required value="{{ $variant- max="999999" maxlength="9">price }}" class="input font-bold">
+                                    <input type="number" name="variants[{{ $index }}][price]" step="0.01" required max="999999" maxlength="9" value="{{ $variant->price }}" class="input font-bold @error("variants.$index.price") !border-red-500 @enderror">
+                                    @error("variants.$index.price") <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
                                 </div>
                                 <div class="md:col-span-3">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label>
-                                    <input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" value="{{ $variant- max="999999" maxlength="9">cost_price }}" class="input bg-ink-50" placeholder="0.00">
+                                    <input type="number" name="variants[{{ $index }}][cost_price]" step="0.01" max="999999" maxlength="9" value="{{ $variant->cost_price }}" class="input bg-ink-50" placeholder="0.00">
                                 </div>
                                 <div class="md:col-span-12 mt-2">
                                     <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Variant Image (Optional)</label>
@@ -128,7 +134,8 @@
                         <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
                             <div class="md:col-span-4">
                                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label>
-                                <input type="text" name="variants[0][weight]" required class="input" placeholder="e.g. 250g / Small">
+                                <input type="text" name="variants[0][name]" required class="input @error('variants.0.name') !border-red-500 @enderror" placeholder="e.g. 250g / Small">
+                                @error('variants.0.name') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Unit</label>
@@ -141,7 +148,8 @@
                             </div>
                             <div class="md:col-span-3">
                                 <label id="price_label_0" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per Unit (&#8369;) <span class="text-red-500">*</span></label>
-                                <input type="number" name="variants[0][price]" step="0.01" required class="input font-bold" placeholder="190" max="999999" maxlength="9">
+                                <input type="number" name="variants[0][price]" step="0.01" required class="input font-bold @error('variants.0.price') !border-red-500 @enderror" placeholder="190" max="999999" maxlength="9">
+                                @error('variants.0.price') <p class="text-[10px] text-red-500 mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> {{ $message }}</p> @enderror
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label>
@@ -209,7 +217,7 @@
                     <button type="button" class="remove-variant text-ink-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><i class="fas fa-trash text-xs"></i></button>
                 </div>
                 <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div class="md:col-span-4"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label><input type="text" name="variants[${variantIndex}][weight]" required class="input" placeholder="e.g. 500g / Large"></div>
+                    <div class="md:col-span-4"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Name / Size <span class="text-red-500">*</span></label><input type="text" name="variants[${variantIndex}][name]" required class="input" placeholder="e.g. 500g / Large"></div>
                     <div class="md:col-span-2"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Unit</label><select name="variants[${variantIndex}][unit]" id="unit_select_${variantIndex}" onchange="updatePriceLabel(${variantIndex})" class="input cursor-pointer"><option value="g">grams (g)</option><option value="kg">kilograms (kg)</option><option value="pcs">pieces (pcs)</option><option value="pack">packs</option></select></div>
                     <div class="md:col-span-3"><label id="price_label_${variantIndex}" class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Price per Unit (&#8369;) <span class="text-red-500">*</span></label><input type="number" name="variants[${variantIndex}][price]" step="0.01" required class="input font-bold" max="999999" maxlength="9"></div>
                     <div class="md:col-span-3"><label class="block text-[10px] font-bold text-ink-600 mb-1 uppercase tracking-wider">Cost (&#8369;) <span class="text-[9px] text-ink-400">(Optional)</span></label><input type="number" name="variants[${variantIndex}][cost_price]" step="0.01" class="input bg-ink-50" placeholder="0.00" max="999999" maxlength="9"></div>

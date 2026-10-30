@@ -29,6 +29,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity.logs');
     Route::post('/activity-logs/{id}/read', [App\Http\Controllers\ActivityLogController::class, 'markAsRead'])->name('activity.logs.read');
     Route::post('/activity-logs/mark-all-read', [App\Http\Controllers\ActivityLogController::class, 'markAllAsRead'])->name('activity.logs.markAll');
+    
+    Route::put('/activity-logs/{id}', [App\Http\Controllers\ActivityLogController::class, 'update'])->name('activity.logs.update');
+    Route::delete('/activity-logs/{id}', [App\Http\Controllers\ActivityLogController::class, 'destroy'])->name('activity.logs.destroy');
                 
     // Management
     Route::resource('stores', StoreController::class);

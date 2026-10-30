@@ -36,6 +36,7 @@
                         <th class="text-[11px] uppercase tracking-wider text-ink-500 w-32">Action</th>
                         <th class="text-[11px] uppercase tracking-wider text-ink-500">Description</th>
                         <th class="text-[11px] uppercase tracking-wider text-ink-500 w-32">User</th>
+                        <th class="text-center text-[11px] uppercase tracking-wider text-ink-500 w-24">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-ink-100 bg-white">
@@ -63,10 +64,17 @@
                             <td class="text-ink-500 text-xs">
                                 <i class="fas fa-user-circle mr-1 text-ink-400"></i> {{ $log->user->name ?? 'System' }}
                             </td>
+                            <td class="text-center">
+                                <div class="flex items-center justify-center">
+        <button type="button" onclick="openOverrideModal({{ $log->id }}, '{{ addslashes($log->description) }}', '{{ $log->quantity }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all shadow-sm" title="Override Log">
+            <i class="fas fa-pen"></i> Override
+        </button>
+    </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-16">
+                            <td colspan="6" class="text-center py-16">
                                 <div class="w-16 h-16 mx-auto bg-ink-50 rounded-full flex items-center justify-center mb-3 border border-ink-100">
                                     <i class="fas fa-clipboard-list text-2xl text-ink-300"></i>
                                 </div>
@@ -83,4 +91,57 @@
         </div>
     </div>
 </div>
+<!-- OVERRIDE MODAL -->
+<div id="overrideModal" class="fixed inset-0 z-[100] hidden bg-ink-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-pop w-full max-w-md overflow-hidden">
+        <form id="overrideForm" method="POST" class="p-6">
+            @csrf @method('PUT')
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><i class="fas fa-edit"></i></div>
+                <div><h3 class="text-lg font-bold text-ink-900">Override Transaction</h3><p class="text-xs text-ink-500">Correct the details below.</p></div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Description</label>
+                <textarea name="description" id="overrideDesc" rows="2" class="input !text-sm w-full" required></textarea>
+            </div>
+
+            <div class="mb-4 hidden" id="qtyContainer">
+                <label class="block text-[10px] font-bold text-ink-500 mb-1 uppercase tracking-widest">Correct Quantity</label>
+                <input type="number" name="quantity" id="overrideQty" step="0.01" class="input font-bold !text-sm w-full">
+                <p class="text-[10px] text-amber-600 mt-1"><i class="fas fa-info-circle"></i> Changing this will automatically adjust the actual stock in the inventory.</p>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeOverrideModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Override</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openOverrideModal(id, description, quantity) {
+        const modal = document.getElementById('overrideModal');
+        const form = document.getElementById('overrideForm');
+        const qtyContainer = document.getElementById('qtyContainer');
+        
+        form.action = `/activity-logs/${id}`;
+        document.getElementById('overrideDesc').value = description.replace(' (Overridden)', '');
+        
+        // Kung naay quantity (Inventory), ipakita ang input field
+        if (quantity !== '' && quantity !== null) {
+            qtyContainer.classList.remove('hidden');
+            document.getElementById('overrideQty').value = quantity;
+        } else {
+            qtyContainer.classList.add('hidden');
+        }
+        
+        modal.classList.remove('hidden');
+    }
+
+    function closeOverrideModal() {
+        document.getElementById('overrideModal').classList.add('hidden');
+    }
+</script>
 @endsection

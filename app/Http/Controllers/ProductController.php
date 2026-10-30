@@ -12,34 +12,55 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    public function index(\Illuminate\Http\Request $request)
     {
-        $query = Product::with('category', 'variants');
+        $query = \App\Models\Product::with(['category', 'variants'])->latest();
+
+        // Filter by search
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(fn($q) => $q->where('name', 'like', "%$search%")->orWhere('sku', 'like', "%$search%"));
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
-        if ($request->filled('category')) { $query->where('category_id', $request->input('category')); }
-        if ($request->filled('status')) {
-            if ($request->status === 'low_stock') { $query->whereHas('variants', fn($q) => $q->where('stock', '<=', 5)->where('stock', '>', 0)); } 
-            elseif ($request->status === 'inactive') { $query->where('is_active', false); } 
-            elseif ($request->status === 'out_of_stock') { $query->whereHas('variants', fn($q) => $q->where('stock', 0)); }
+
+        // Filter by category
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
         }
-        $products = $query->latest()->paginate(12)->withQueryString();
-        $categories = Category::withCount('products')->get();
+
+        $products = $query->paginate(12);
+        $categories = \App\Models\Category::all();
+
+        // Pangitaon ang Cherry or Raw Material
+        $cherryVariant = \App\Models\ProductVariant::whereHas('product', function($q) {
+            $q->where('name', 'like', '%Cherry%');
+        })->first();
         
+        if (!$cherryVariant) {
+            $cherryVariant = \App\Models\ProductVariant::whereHas('product.category', function($q) {
+                $q->where('name', 'like', '%Raw%');
+            })->first();
+        }
+
+        // KUHAON ANG TANANG FINISHED GOODS (Apil ang bag-o)
+        $finishedGoods = \App\Models\Product::whereHas('category', function($q) {
+            $q->where('name', 'like', '%Finished%');
+        })->orWhereDoesntHave('category') // Fallback kung walay category
+          ->latest()->get();
+
         $stats = [
-            'total_products' => Product::count(),
-            'low_stock' => ProductVariant::where('stock', '<=', 5)->where('stock', '>', 0)->count(),
-            'out_of_stock' => ProductVariant::where('stock', 0)->count(),
-            'total_value' => ProductVariant::sum(DB::raw('stock * cost_price')),
+            'total_products' => \App\Models\Product::count(),
+            'total_items' => \App\Models\ProductVariant::count(),
+            'low_stock' => \App\Models\ProductVariant::where('stock', '<=', 5)->where('stock', '>', 0)->count(),
+            'out_of_stock' => \App\Models\ProductVariant::where('stock', '<=', 0)->count(),
+            'total_value' => \App\Models\ProductVariant::sum(\DB::raw('stock * cost_price')) ?? 0,
         ];
 
-        $productions = Production::with(['rawVariant.product', 'finishedVariant.product'])->latest()->take(10)->get();
-        $cherryVariant = ProductVariant::whereHas('product', fn($q) => $q->where('name', 'like', '%cherr%'))->first();
-        $allVariants = ProductVariant::with('product')->get();
+        // Production History
+        $productions = \App\Models\Production::with(['finishedVariant.product'])->latest()->take(10)->get();
+        
+        // Tanang Variants para sa JS
+        $allVariants = \App\Models\ProductVariant::with('product')->get();
 
-        return view('products.index', compact('products', 'categories', 'stats', 'productions', 'cherryVariant', 'allVariants'));
+        return view('products.index', compact('products', 'categories', 'cherryVariant', 'finishedGoods', 'stats', 'productions', 'allVariants'));
     }
 
     public function create()
@@ -48,47 +69,61 @@ class ProductController extends Controller
         return view('products.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(\Illuminate\Http\Request $request)
     {
-        $validated = $request->validate([
-            'sku' => 'required|string|max:255|unique:products,sku',
+        $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'category_id' => 'nullable|exists:categories,id',
-            'unit_type' => 'required|string',
-            'description' => 'nullable|string',
+            'category_id' => 'required|exists:categories,id',
             'variants' => 'required|array|min:1',
-            'variants.*.weight' => 'required|string',
-            'variants.*.unit' => 'required|string',
+            'variants.*.name' => 'required|string',
             'variants.*.price' => 'required|numeric|min:0',
-            'variants.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
-        $validated['is_featured'] = $request->has('is_featured') ? 1 : 0;
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
 
-        if ($request->hasFile('image')) { $validated['image'] = $request->file('image')->store('products', 'public'); }
+            $sku = $request->sku ?? 'PRD-' . strtoupper(\Illuminate\Support\Str::random(6));
 
-        DB::transaction(function () use ($validated, $request) {
-            $product = Product::create($validated);
+            // I-save ang Product
+            $product = \App\Models\Product::create([
+                'name' => $request->name,
+                'sku' => $sku,
+                'category_id' => $request->category_id,
+                'unit_type' => $request->unit_type ?? 'pc',
+                'description' => $request->description,
+                'is_active' => $request->has('is_active') ? 1 : 0,
+                'is_featured' => $request->has('is_featured') ? 1 : 0,
+            ]);
+
+            // I-save ang mga Variants ug Image
             foreach ($request->variants as $index => $variant) {
-                $isNumeric = is_numeric($variant['weight']);
-                $variantImage = null;
-                if ($request->hasFile("variants.$index.image")) { $variantImage = $request->file("variants.$index.image")->store('variants', 'public'); }
-
-                $product->variants()->create([
-                    'name' => $variant['weight'],
-                    'weight' => $isNumeric ? $variant['weight'] : 0,
-                    'unit' => $variant['unit'],
+                $variantData = [
+                    'name' => $variant['name'], // Gigamit na ang 'name'
+                    'weight' => $variant['weight'] ?? 0, // Default weight
+                    'unit' => $variant['unit'] ?? $product->unit_type,
                     'price' => $variant['price'],
                     'cost_price' => $variant['cost_price'] ?? 0,
-                    'stock' => 0,
-                    'image' => $variantImage,
-                ]);
-            }
-        });
+                    'stock' => $variant['stock'] ?? 0,
+                ];
 
-        return redirect()->route('products.index')->with('success', 'Product created successfully!');
+                if ($request->hasFile("variants.$index.image")) {
+                    $path = $request->file("variants.$index.image")->store('variants', 'public');
+                    $variantData['image'] = $path;
+                }
+
+                $product->variants()->create($variantData);
+            }
+
+            // Log sa Transactions
+            \App\Models\ActivityLog::record('Products', 'Created', 'Added new product: ' . $product->name, $product);
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->route('products.index')->with('success', 'Product added successfully!');
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Failed to add product: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function show(Product $product)
@@ -119,159 +154,145 @@ class ProductController extends Controller
         return view('products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(\Illuminate\Http\Request $request, \App\Models\Product $product)
     {
-        $validated = $request->validate([
-            'sku' => 'required|string|max:255|unique:products,sku,' . $product->id,
+        $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'category_id' => 'nullable|exists:categories,id',
-            'unit_type' => 'required|string',
-            'description' => 'nullable|string',
-            'variants' => 'required|array|min:1',
-            'variants.*.weight' => 'required|string',
-            'variants.*.unit' => 'required|string',
-            'variants.*.price' => 'required|numeric|min:0',
-            'variants.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
-        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
-        $validated['is_featured'] = $request->has('is_featured') ? 1 : 0;
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
 
-        if ($request->hasFile('image')) {
-            if ($product->image) { Storage::disk('public')->delete($product->image); }
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $product->update([
+                'name' => $request->name,
+                'category_id' => $request->category_id,
+                'description' => $request->description,
+                'is_active' => $request->has('is_active') ? 1 : 0,
+            ]);
+
+            // Logging nga naa sa saktong pwesto
+            \App\Models\ActivityLog::record('Products', 'Updated', 'Updated product: ' . $product->name, $product);
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Error updating product: ' . $e->getMessage())->withInput();
         }
+    }
 
-        DB::transaction(function () use ($validated, $request, $product) {
-            $product->update($validated);
-            $existingVariants = $product->variants->keyBy('id');
-            $processedIds = [];
+    public function destroy($id)
+    {
+        try {
+            // Gigamit nato ang find() imbes findOrFail() para dili mo-crash kung wala na ang product
+            $product = \App\Models\Product::find($id);
 
-            foreach ($request->variants as $index => $variantData) {
-                $variantImage = null;
-                if ($request->hasFile("variants.$index.image")) { $variantImage = $request->file("variants.$index.image")->store('variants', 'public'); }
+            if ($product) {
+                // Kung naa pa ang product, i-log ug i-delete
+                \App\Models\ActivityLog::record('Products', 'Deleted', 'Deleted product: ' . $product->name);
+                $product->variants()->delete();
+                $product->delete();
+            } else {
+                // Kung wala na ang product (orphaned data), i-delete ang mga variants nga nagpabilin
+                \App\Models\ProductVariant::where('product_id', $id)->delete();
+                \App\Models\ActivityLog::record('Inventory', 'Deleted', 'Cleaned up orphaned inventory items for missing Product ID: ' . $id);
+            }
 
-                if (isset($variantData['id']) && $existingVariants->has($variantData['id'])) {
-                    $variant = $existingVariants[$variantData['id']];
-                    $isNumeric = is_numeric($variantData['weight']);
-                    
-                    $updateData = [
-                        'name' => $variantData['weight'],
-                        'weight' => $isNumeric ? $variantData['weight'] : 0,
-                        'unit' => $variantData['unit'],
-                        'price' => $variantData['price'],
-                        'cost_price' => $variantData['cost_price'] ?? 0,
-                    ];
-                    
-                    if ($variantImage) {
-                        if ($variant->image) { Storage::disk('public')->delete($variant->image); }
-                        $updateData['image'] = $variantImage;
-                    }
-
-                    $variant->update($updateData);
-                    $processedIds[] = $variant->id;
-                } else {
-                    $isNumeric = is_numeric($variantData['weight']);
-                    $newVariant = $product->variants()->create([
-                        'name' => $variantData['weight'],
-                        'weight' => $isNumeric ? $variantData['weight'] : 0,
-                        'unit' => $variantData['unit'],
-                        'price' => $variantData['price'],
-                        'cost_price' => $variantData['cost_price'] ?? 0,
-                        'stock' => 0,
-                        'image' => $variantImage,
-                    ]);
-                    $processedIds[] = $newVariant->id;
-                }
+            // I-redirect balik kung asa siya gikan
+            if (str_contains(url()->previous(), 'inventory')) {
+                return redirect()->route('inventory.index')->with('success', 'Item deleted successfully.');
             }
             
-            $toDelete = $product->variants()->whereNotIn('id', $processedIds)->get();
-            foreach ($toDelete as $delVar) {
-                if ($delVar->image) { Storage::disk('public')->delete($delVar->image); }
-                $delVar->delete();
-            }
-        });
-
-        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
-    }
-
-    public function destroy(Product $product)
-    {
-        if ($product->image) { Storage::disk('public')->delete($product->image); }
-        foreach ($product->variants as $variant) {
-            if ($variant->image) { Storage::disk('public')->delete($variant->image); }
+            return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error deleting: ' . $e->getMessage());
         }
-        $product->delete();
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
-    }
-
-    public function storeProduction(Request $request)
+    }public function storeProduction(\Illuminate\Http\Request $request)
     {
         $request->validate([
             'production_date' => 'required|date',
+            'raw_variant_id' => 'required|exists:product_variants,id',
             'raw_qty_used' => 'required|numeric|min:0.01',
             'products' => 'required|array|min:1',
             'products.*.product_name' => 'required|string',
             'products.*.variant_name' => 'required|string',
             'products.*.unit' => 'required|string',
             'products.*.quantity' => 'required|numeric|min:0.01',
-            'expense_amount' => 'nullable|numeric|min:0',
         ]);
 
         try {
-            DB::beginTransaction();
+            \Illuminate\Support\Facades\DB::beginTransaction();
 
-            $cherryVariant = ProductVariant::whereHas('product', fn($q) => $q->where('name', 'like', '%cherr%'))->lockForUpdate()->first();
+            // 1. Kuhaon ang Raw Material (Cherry/Raw)
+            $rawVariant = \App\Models\ProductVariant::findOrFail($request->raw_variant_id);
 
-            if (!$cherryVariant) {
-                throw new \Exception("Walang naka-setup na Coffee Cherries sa system. Mag-add muna ng product na may pangalang 'Cherries'.");
+            if ($rawVariant->stock < $request->raw_qty_used) {
+                return back()->with('error', 'Dili igo ang stock sa ' . ($rawVariant->product->name ?? 'Raw Material') . '! Kulang og ' . ($request->raw_qty_used - $rawVariant->stock) . ' ' . $rawVariant->unit . '.')->withInput();
             }
 
-            if ($cherryVariant->stock < $request->raw_qty_used) {
-                throw new \Exception("Kulang ang stock ng Cherries! Available: {$cherryVariant->stock} kg, Needed: {$request->raw_qty_used} kg.");
-            }
+            // 2. Deduct Raw Material
+            $rawVariant->decrement('stock', $request->raw_qty_used);
+            
+            // Log Inventory Movement para sa Raw (Stock Out)
+            \App\Models\InventoryMovement::create([
+                'product_variant_id' => $rawVariant->id,
+                'type' => 'out',
+                'quantity' => $request->raw_qty_used,
+                'notes' => 'Used for Production Batch'
+            ]);
 
-            $cherryVariant->decrement('stock', $request->raw_qty_used);
+            // 3. Process Finished Goods (Existing/New Variant)
+            foreach ($request->products as $output) {
+                
+                // Pangitaon ang Product base sa ngalan
+                $product = \App\Models\Product::where('name', $output['product_name'])->first();
+                
+                if (!$product) {
+                    throw new \Exception("Product '{$output['product_name']}' does not exist. Please add it in the Catalog first.");
+                }
 
-            $category = Category::firstOrCreate(['name' => 'Finished Goods'], ['emoji' => 'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â¢']);
-
-            foreach ($request->products as $index => $prod) {
-                $finishedProduct = Product::firstOrCreate(
-                    ['name' => $prod['product_name']],
-                    ['sku' => 'FG-' . strtoupper(Str::random(5)), 'category_id' => $category->id, 'unit_type' => $prod['unit'], 'is_active' => true]
+                // I-find o i-create ang bag-ong VARIANT sa maong produkto
+                $variant = \App\Models\ProductVariant::firstOrCreate(
+                    [
+                        'product_id' => $product->id,
+                        'name' => $output['variant_name']
+                    ],
+                    [
+                        'unit' => $output['unit'],
+                        'weight' => 0,
+                        'price' => 0,
+                        'cost_price' => 0,
+                        'stock' => 0,
+                    ]
                 );
 
-                $finishedVariant = ProductVariant::firstOrCreate(
-                    ['product_id' => $finishedProduct->id, 'name' => $prod['variant_name']],
-                    ['weight' => 0, 'unit' => $prod['unit'], 'price' => 0, 'cost_price' => 0, 'stock' => 0]
-                );
+                // Idugang ang stock sa bag-ong variant
+                $variant->increment('stock', $output['quantity']);
 
-                $finishedVariant->increment('stock', $prod['quantity']);
-
-                Production::create([
-                    'production_date' => $request->production_date,
-                    'raw_variant_id' => $cherryVariant->id,
-                    'finished_variant_id' => $finishedVariant->id,
-                    'raw_qty_used' => $index === 0 ? $request->raw_qty_used : 0,
-                    'finished_qty_produced' => $prod['quantity'],
+                // Log Inventory Movement para sa Finished Good (Stock In)
+                \App\Models\InventoryMovement::create([
+                    'product_variant_id' => $variant->id,
+                    'type' => 'in',
+                    'quantity' => $output['quantity'],
+                    'notes' => 'Generated from Production'
                 ]);
             }
 
-            if ($request->expense_amount > 0) {
-                Expense::create([
-                    'expense_date' => $request->production_date,
-                    'category' => 'Production Cost',
-                    'description' => "Batch Processing Expense",
-                    'amount' => $request->expense_amount,
-                ]);
-            }
+            // Log sa System Transactions
+            \App\Models\ActivityLog::record('Production', 'Created', 'Processed production batch using ' . $request->raw_qty_used . ' ' . $rawVariant->unit);
 
-            DB::commit();
-            return redirect()->route('products.index', ['tab' => 'production'])->with('success', "Production saved! Deducted {$request->raw_qty_used}kg from Cherries.");
+            \Illuminate\Support\Facades\DB::commit();
+            
+            // I-REDIRECT SA INVENTORY PARA MAKITA DAYON ANG RESULTA
+            return redirect()->route('inventory.index', ['tab' => 'finished'])->with('success', 'Production successful! Stock updated.');
+
         } catch (\Exception $e) {
-            DB::RollBack();
-            return back()->with('error', $e->getMessage())->withInput();
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Production Error: ' . $e->getMessage())->withInput();
         }
     }
-}
+
+    }

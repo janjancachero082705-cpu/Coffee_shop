@@ -43,6 +43,17 @@ class SalesReportController extends Controller
 
         $sales = $query->latest('delivery_date')->paginate(15)->withQueryString();
 
-        return view('sales-reports.index', compact('sales', 'totalSales', 'totalCollected', 'totalOutstanding', 'startDate', 'endDate'));
+                
+        // Data para sa Pie Chart (Sales by Store)
+        $salesByStore = \App\Models\Delivery::select('store_id', \Illuminate\Support\Facades\DB::raw('SUM(total_amount) as total'))
+            ->groupBy('store_id')
+            ->with('store')
+            ->orderByDesc('total')
+            ->get();
+
+        $chartLabels = $salesByStore->map(fn($item) => $item->store->store_name ?? 'Unknown')->toArray();
+        $chartData = $salesByStore->pluck('total')->toArray();
+
+        return view('sales-reports.index', compact('chartLabels', 'chartData', 'sales', 'totalSales', 'totalCollected', 'totalOutstanding', 'startDate', 'endDate'));
     }
 }

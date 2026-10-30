@@ -8,71 +8,94 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $baseQuery = ProductVariant::with('product.category');
+        // KINI ANG MGA CATEGORY NGA MAPUNTA SA "RAW MATERIALS"
+        $rawCategories = ['Raw Cherries', 'Packaging', 'Farm Supplies', 'Raw Materials'];
+        
+        // Base Query para sa tanan variants
+        $baseQuery = \App\Models\ProductVariant::with(['product.category']);
 
-        // Apply Search
+        // --- FILTERS (Search & Dates) ---
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $baseQuery->where(function($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhereHas('product', function($pq) use ($search) {
-                      $pq->where('name', 'like', "%$search%")
-                         ->orWhere('sku', 'like', "%$search%");
-                  });
-            });
+            $search = $request->search;
+            $baseQuery->whereHas('product', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            })->orWhere('name', 'like', "%{$search}%");
         }
 
-        // Apply Status
-        if ($request->filled('status')) {
-            $status = $request->input('status');
-            if ($status === 'in_stock') { $baseQuery->where('stock', '>', 5); } 
-            elseif ($status === 'low_stock') { $baseQuery->where('stock', '<=', 5)->where('stock', '>', 0); } 
-            elseif ($status === 'out_of_stock') { $baseQuery->where('stock', 0); }
-        }
-
-        // 1. Tab 1: Raw Materials & Supplies (LAHAT maliban sa Finished Goods)
-        // Date Range Filter (Naka-apply sa base query)
         if ($request->filled('start_date')) {
             $baseQuery->whereDate('updated_at', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
             $baseQuery->whereDate('updated_at', '<=', $request->end_date);
         }
-$mainQuery = clone $baseQuery;
-        $mainInventory = $mainQuery->whereDoesntHave('product.category', function($q) {
-            $q->where('name', 'like', '%Finished%');
-        })->latest()->paginate(15, ['*'], 'main_page')->withQueryString();
 
-        // 2. Tab 2: Finished Goods (Powder, Roasted, etc.)
+        // 1. TAB 1: RAW MATERIALS (Kadtong 4 ra ka category)
+        $mainQuery = clone $baseQuery;
+        $mainQuery->whereHas('product.category', function($q) use ($rawCategories) {
+            $q->whereIn('name', $rawCategories);
+        });
+
+        // Filter by Status (In stock, Low, Out)
+        if ($request->filled('status')) {
+            if ($request->status === 'in_stock') $mainQuery->where('stock', '>', 5);
+            if ($request->status === 'low_stock') $mainQuery->where('stock', '<=', 5)->where('stock', '>', 0);
+            if ($request->status === 'out_of_stock') $mainQuery->where('stock', '<=', 0);
+        }
+        
+        $mainInventory = $mainQuery->latest()->paginate(15, ['*'], 'main_page')->withQueryString();
+
+        // 2. TAB 2: FINISHED GOODS (Tanan nga wala sa Raw Categories)
         $finishedQuery = clone $baseQuery;
-        $finishedGoods = $finishedQuery->whereHas('product.category', function($q) {
-            $q->where('name', 'like', '%Finished%');
-        })->latest()->paginate(15, ['*'], 'finished_page')->withQueryString();
+        $finishedQuery->whereHas('product.category', function($q) use ($rawCategories) {
+            $q->whereNotIn('name', $rawCategories);
+        });
 
-        // 3. Overall Stats
-        $allVariants = ProductVariant::all();
+        if ($request->filled('status')) {
+            if ($request->status === 'in_stock') $finishedQuery->where('stock', '>', 5);
+            if ($request->status === 'low_stock') $finishedQuery->where('stock', '<=', 5)->where('stock', '>', 0);
+            if ($request->status === 'out_of_stock') $finishedQuery->where('stock', '<=', 0);
+        }
+
+        $finishedGoods = $finishedQuery->latest()->paginate(15, ['*'], 'finished_page')->withQueryString();
+
+        // 3. STATS (Para sa KPI Cards sa taas)
         $stats = [
-            'total_items' => $allVariants->count(),
-            'low_stock' => $allVariants->where('stock', '<=', 5)->where('stock', '>', 0)->count(),
-            'out_of_stock' => $allVariants->where('stock', 0)->count(),
-            'total_value' => $allVariants->sum(fn($v) => $v->stock * $v->cost_price),
+            'total_items' => \App\Models\ProductVariant::count(),
+            'low_stock' => \App\Models\ProductVariant::where('stock', '<=', 5)->where('stock', '>', 0)->count(),
+            'out_of_stock' => \App\Models\ProductVariant::where('stock', '<=', 0)->count(),
+            'total_value' => \App\Models\ProductVariant::sum(\DB::raw('stock * cost_price')) ?? 0,
         ];
 
-        $allVariantsList = ProductVariant::with('product')->get();
+        // Listahan sa tanang variants para sa "Add Stock" Dialog
+        $allVariantsList = \App\Models\ProductVariant::with('product')->get();
 
         return view('inventory.index', compact('mainInventory', 'finishedGoods', 'stats', 'allVariantsList'));
     }
 
-    public function stockIn(Request $request)
+    public function stockIn(\Illuminate\Http\Request $request)
     {
         $request->validate([
             'variant_id' => 'required|exists:product_variants,id',
             'quantity' => 'required|numeric|min:0.01|max:999999'
         ]);
 
-        DB::transaction(function () use ($request) {
-            $variant = ProductVariant::lockForUpdate()->findOrFail($request->variant_id);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $variant = \App\Models\ProductVariant::lockForUpdate()->findOrFail($request->variant_id);
+            
+            // 1. I-increment ang stock
             $variant->increment('stock', $request->quantity);
+            
+            // 2. I-record sa Activity Log (Transactions)
+            \App\Models\ActivityLog::record(
+                'Inventory', 
+                'Stock In', 
+                'Added ' . $request->quantity . ' ' . $variant->unit . ' to ' . ($variant->product->name ?? 'Product'), 
+                $variant, 
+                $request->quantity
+            );
+            
+            // 3. I-record sa Inventory Movements (History)
             \App\Models\InventoryMovement::create([
                 'product_variant_id' => $variant->id,
                 'type' => 'in',
@@ -83,7 +106,7 @@ $mainQuery = clone $baseQuery;
 
         return redirect()->route('inventory.index', ['tab' => 'main'])->with('success', 'Stock added successfully!');
     }
-    
+
     public function movements(\Illuminate\Http\Request $request)
     {
         $query = \App\Models\InventoryMovement::with(['variant.product'])->latest();

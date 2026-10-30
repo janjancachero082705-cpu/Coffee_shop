@@ -137,12 +137,12 @@
     </form>
 </div>
                 <div class="overflow-x-auto w-full flex-1 pb-2" style="-webkit-overflow-scrolling: touch;">
-                <table class="table-clean w-full min-w-[600px]">
+                <table class="table-clean w-full table-fixed">
                     <thead class="bg-ink-50 border-b border-ink-200">
                         <tr>
-                            <th class="w-32 text-[11px] uppercase tracking-wider text-ink-500">Date</th>
+                            <th class="w-24 md:w-32 text-[11px] uppercase tracking-wider text-ink-500">Date</th>
                             <th class="text-[11px] uppercase tracking-wider text-ink-500">Order & Items Paid</th>
-                            <th class="text-right w-32 text-[11px] uppercase tracking-wider text-ink-500">Amount Paid</th>
+                            <th class="text-right w-24 md:w-32 text-[11px] uppercase tracking-wider text-ink-500">Amount Paid</th>
                         </tr>
                     </thead>
                     <tbody id="paymentTableBody" class="divide-y divide-ink-100 bg-white">

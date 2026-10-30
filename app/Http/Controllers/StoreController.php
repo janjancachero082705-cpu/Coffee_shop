@@ -54,12 +54,14 @@ class StoreController extends Controller
 
         $validated['discount'] = $validated['discount'] ?? 0;
         $store->update($validated);
+        \App\Models\ActivityLog::record('Customers', 'Updated', 'Updated customer: ' . $store->store_name);
         return redirect()->route('stores.index')->with('success', 'Customer updated successfully!');
     }
 
     public function destroy(Store $store)
     {
         $store->delete();
+        \App\Models\ActivityLog::record('Customers', 'Deleted', 'Deleted customer: ' . $store->store_name);
         return redirect()->route('stores.index')->with('success', 'Customer deleted successfully!');
     }
 }

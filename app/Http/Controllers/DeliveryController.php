@@ -1,40 +1,23 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
 use App\Models\Store;
 use App\Models\ProductVariant;
-use App\Models\Payment;
+use App\Models\InventoryMovement;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DeliveryController extends Controller
 {
-    public static function syncDeliveryStatus($delivery_id)
+    public function index(Request $request)
     {
-        $delivery = Delivery::find($delivery_id);
-        if (!$delivery) return;
+        $query = Delivery::with('store');
 
-        $totalPaid = Payment::where('delivery_id', $delivery_id)->sum('amount');
-
-        if ($totalPaid >= $delivery->total_amount) {
-            $delivery->update(['status' => 'completed']);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        } elseif ($totalPaid > 0) {
-            $delivery->update(['status' => 'partial']);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        } else {
-            $delivery->update(['status' => 'pending']);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-        }
-    }
-
-        public function index(\Illuminate\Http\Request $request)
-    {
-        $query = \App\Models\Delivery::with('store');
-
-        // Search filter (DR o Customer Name)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -45,7 +28,6 @@ class DeliveryController extends Controller
             });
         }
 
-        // Date Range Filter
         if ($request->filled('start_date')) {
             $query->whereDate('delivery_date', '>=', $request->start_date);
         }
@@ -53,7 +35,6 @@ class DeliveryController extends Controller
             $query->whereDate('delivery_date', '<=', $request->end_date);
         }
 
-        // KPI Calculations (Naka-base sa filtered query)
         $totalCount = (clone $query)->count();
         $totalDistributed = (clone $query)->sum('total_amount') ?? 0;
         
@@ -61,33 +42,22 @@ class DeliveryController extends Controller
         $totalCollected = \App\Models\Payment::whereIn('delivery_id', $deliveryIds)->sum('amount') ?? 0;
         $totalBalance = max(0, $totalDistributed - $totalCollected);
 
-        // Pagination
         $deliveries = $query->orderByDesc('delivery_date')->orderByDesc('id')->paginate(15)->appends($request->query());
 
         return view('deliveries.index', compact('deliveries', 'totalCount', 'totalDistributed', 'totalCollected', 'totalBalance'));
     }
 
-    public function showStore(Store $store)
-    {
-        $deliveries = $store->deliveries()->with(['items.variant.product', 'payments'])
-            ->withSum('payments', 'amount')
-            ->latest()
-            ->paginate(10);
-            
-        $totalAmount = $store->deliveries()->sum('total_amount');
-        $totalPaid = $store->payments()->sum('amount');
-        $totalItems = $store->deliveries()->count();
         
-        return view('deliveries.store', compact('store', 'deliveries', 'totalAmount', 'totalPaid', 'totalItems'));
-    }
-
     public function create()
     {
-        $stores = Store::all();
-        $variants = ProductVariant::with('product')->whereHas('product', function($q) {
-            $q->where('is_active', 1);
-        })->get();
-        
+        $stores = \App\Models\Store::orderBy('store_name')->get();
+        $variants = \App\Models\ProductVariant::with('product')
+            ->whereHas('product', function($q) {
+                $q->where('is_active', 1);
+            })
+            ->where('stock', '>', 0)
+            ->get();
+            
         return view('deliveries.create', compact('stores', 'variants'));
     }
 
@@ -98,89 +68,129 @@ class DeliveryController extends Controller
             'delivery_date' => 'required|date',
             'products' => 'required|array|min:1',
             'products.*.variant_id' => 'required|exists:product_variants,id',
-            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.price' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0'
         ]);
 
         try {
             DB::beginTransaction();
 
-            $drNumber = 'DR-' . Carbon::now()->format('Ymd') . '-' . Carbon::now()->format('His') . rand(10, 99);
+            $drNumber = 'DR-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
             $totalAmount = 0;
+            $itemsToSave = [];
+
+            foreach ($request->products as $item) {
+                $variant = ProductVariant::findOrFail($item['variant_id']);
+                
+                if ($variant->stock < $item['quantity']) {
+                    throw new \Exception("Dili igo ang stock para sa " . ($variant->product->name ?? 'Item'));
+                }
+
+                $subtotal = $item['quantity'] * $item['price'];
+                $totalAmount += $subtotal;
+
+                $itemsToSave[] = [
+                    'product_id' => $variant->product_id,
+                    'product_variant_id' => $variant->id,
+                    'quantity' => $item['quantity'],
+                    'weight' => $variant->weight ?? 0,
+                    'unit_price' => $item['price'],
+                    'subtotal' => $subtotal
+                ];
+
+                // Deduct Stock
+                $variant->decrement('stock', $item['quantity']);
+                
+                // Log Inventory Movement
+                InventoryMovement::create([
+                    'product_variant_id' => $variant->id,
+                    'type' => 'out',
+                    'quantity' => $item['quantity'],
+                    'notes' => 'Delivered via ' . $drNumber
+                ]);
+            }
+
+            $discount = $request->discount ?? 0;
 
             $delivery = Delivery::create([
                 'dr_number' => $drNumber,
                 'store_id' => $request->store_id,
                 'delivery_date' => $request->delivery_date,
-                'total_amount' => 0,
+                'total_amount' => $totalAmount,
                 'status' => 'pending'
             ]);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
 
-            foreach ($request->products as $item) {
-                $variant = ProductVariant::lockForUpdate()->findOrFail($item['variant_id']);
-                
-                if ($variant->stock < $item['quantity']) {
-                    throw new \Exception("Kulang ang stock para sa {$variant->product->name} ({$variant->name}). Available: {$variant->stock}");
-                }
-
-                $subtotal = $item['quantity'] * $item['price']; 
-                $totalAmount += $subtotal;
-                $totalWeight = $item['quantity'] * $variant->weight;
-
-                DeliveryItem::create([
-                    'delivery_id' => $delivery->id,
-                    'product_id' => $variant->product_id,
-                    'product_variant_id' => $variant->id,
-                    'quantity' => $item['quantity'],
-                    'weight' => $totalWeight,
-                    'unit_price' => $item['price'],
-                    'subtotal' => $subtotal,
-                ]);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-
-                $variant->decrement('stock', $item['quantity']);
-        \Illuminate\Support\Facades\Cache::forget('low_stock_alerts');
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
+            foreach ($itemsToSave as $item) {
+                $delivery->items()->create($item);
             }
 
-            $delivery->update(['total_amount' => $totalAmount]);
-        \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
-                        // Log inventory movements for delivery (stock out)
-            foreach ($delivery->items as $item) {
-                \App\Models\InventoryMovement::create([
-                    'product_variant_id' => $item->product_variant_id,
-                    'type' => 'out',
-                    'quantity' => $item->quantity,
-                    'reference_type' => \App\Models\Delivery::class,
-                    'reference_id' => $delivery->id,
-                    'notes' => 'Stock out for Delivery: ' . $delivery->dr_number
-                ]);
-                // Deduct actual stock
-                
-                // --- STOCK VALIDATION (Dili mo-ubos sa 0) ---
-                $variant = \App\Models\ProductVariant::find($item['product_variant_id'] ?? $item->product_variant_id);
-                $qtyToDeduct = $item['quantity'] ?? $item->quantity;
-                
-                if ($variant && $variant->stock < $qtyToDeduct) {
-                    \Illuminate\Support\Facades\DB::rollBack();
-                    return back()->with('error', 'Dili igo ang stock para sa ' . ($variant->product->name ?? 'Item') . '. Kulang og ' . ($qtyToDeduct - $variant->stock) . ' ' . $variant->unit . '.')->withInput();
-                }
-                // ----------------------------------------
-    
-$item->variant->decrement('stock', $item->quantity);
-            }
+            // Log System Transaction
+            ActivityLog::record('Deliveries', 'Created', 'Created delivery receipt for ' . ($delivery->store->store_name ?? 'Store'), $delivery);
+
             DB::commit();
+            return redirect()->route('deliveries.index')->with('success', 'Delivery created successfully!');
 
-            return redirect()->route('deliveries.store-profile', $request->store_id)->with('success', 'Delivery created successfully!');
         } catch (\Exception $e) {
-            DB::RollBack();
+            DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
-    public function show(\App\Models\Delivery $delivery)
+
+    public function show(Delivery $delivery)
     {
-        $delivery->load(['store', 'items.variant.product', 'payments']);
+        $delivery->load('items.variant.product', 'store', 'payments');
         return view('deliveries.show', compact('delivery'));
+    }
+
+    public function showStore(Store $store)
+    {
+        $deliveries = Delivery::with(['items.variant.product'])
+            ->where('store_id', $store->id)
+            ->withSum('payments', 'amount')
+            ->orderByDesc('delivery_date')
+            ->paginate(10);
+
+        $totalAmount = $deliveries->sum('total_amount');
+        $totalPaid = $deliveries->sum('payments_sum_amount');
+        
+        $stats = [
+            'total_sales' => $totalAmount,
+            'total_paid' => $totalPaid,
+            'outstanding' => max(0, $totalAmount - $totalPaid)
+        ];
+
+        return view('deliveries.store-profile', compact('store', 'deliveries', 'stats', 'totalAmount', 'totalPaid'));
+    }
+
+    public function destroy(Delivery $delivery)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Restore stock
+            foreach ($delivery->items as $item) {
+                if ($item->variant) {
+                    $item->variant->increment('stock', $item->quantity);
+                    
+                    InventoryMovement::create([
+                        'product_variant_id' => $item->variant->id,
+                        'type' => 'in',
+                        'quantity' => $item->quantity,
+                        'notes' => 'Restored from deleted delivery ' . $delivery->dr_number
+                    ]);
+                }
+            }
+
+            ActivityLog::record('Deliveries', 'Deleted', 'Deleted delivery receipt: ' . $delivery->dr_number, $delivery);
+            
+            $delivery->delete();
+
+            DB::commit();
+            return redirect()->route('deliveries.index')->with('success', 'Delivery deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error deleting delivery: ' . $e->getMessage());
+        }
     }
 }

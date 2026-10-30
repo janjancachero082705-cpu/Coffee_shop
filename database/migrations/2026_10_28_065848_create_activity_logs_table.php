@@ -11,9 +11,15 @@ return new class extends Migration
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('module'); // e.g., Purchases, Payments, Inventory
-            $table->string('action'); // e.g., Created, Updated, Deleted
+            $table->string('module');
+            $table->string('action');
             $table->text('description');
+            
+            // Gidungan nato ang tanang gipangdugang kaniadto
+            $table->decimal('quantity', 12, 2)->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->nullableMorphs('reference'); // reference_id & reference_type
+            
             $table->timestamps();
         });
     }

@@ -3,6 +3,19 @@
 @section('subtitle', $store->store_name)
 
 @section('content')
+<style>
+    /* FAILSAFE SCROLLBAR CSS */
+    @media (max-width: 767px) {
+        .overflow-x-auto {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-x !important;
+        }
+        .overflow-x-auto table {
+            min-width: 600px !important;
+        }
+    }
+</style>
 <div class="max-w-5xl mx-auto space-y-5">
 
     {{-- 1. CLEAN HERO PROFILE CARD --}}
@@ -159,7 +172,7 @@
                                 <i class="fas fa-box-open text-brand-500"></i> Items Included
                             </h4>
                             <div class="bg-white rounded-lg border border-ink-200 overflow-hidden shadow-sm">
-                                <table class="w-full text-xs">
+                                <div class="overflow-x-auto w-full pb-2" style="-webkit-overflow-scrolling: touch; touch-action: pan-x;"><table class="w-full text-xs min-w-[600px] whitespace-nowrap">
                                     <thead class="bg-ink-50 border-b border-ink-200">
                                         <tr>
                                             <th class="text-left px-4 py-2 text-[9px] font-bold text-ink-500 uppercase tracking-widest">Product</th>
@@ -181,7 +194,7 @@
                                             </tr>
                                         @endforeach
                                     </tbody>
-                                </table>
+                                </table></div>
                             </div>
                         </div>
                     </div>

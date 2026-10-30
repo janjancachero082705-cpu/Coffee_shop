@@ -4,6 +4,19 @@
 
 @section('content')
 <style>
+    /* FAILSAFE SCROLLBAR CSS */
+    @media (max-width: 767px) {
+        .overflow-x-auto {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-x !important;
+        }
+        .overflow-x-auto table {
+            min-width: 600px !important;
+        }
+    }
+</style>
+<style>
     /* FAIL-SAFE SCROLLBAR CSS */
     @media (max-width: 767px) {
         .overflow-x-auto {

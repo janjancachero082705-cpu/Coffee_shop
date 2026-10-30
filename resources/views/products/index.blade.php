@@ -204,7 +204,8 @@
                                         Available: {{ number_format($cherryVariant->stock ?? 0, 2) }} kg
                                     </span>
                                 </div>
-                                <input type="number" name="raw_qty_used" id="rawQtyInput" data-max="{{ $cherryVariant- maxlength="9" max="999999">stock ?? 0 }}" step="0.01" min="0.01" required class="input font-bold text-rose-700 !border-rose-300 !py-2 md:!py-2.5 !text-sm">
+                                <input type="hidden" name="raw_variant_id" value="{{ $cherryVariant->id ?? '' }}">
+                                <input type="number" name="raw_qty_used" id="rawQtyInput" data-max="{{ $cherryVariant->stock ?? 0 }}" maxlength="9" max="999999" step="0.01" min="0.01" required class="input font-bold text-rose-700 !border-rose-300 !py-2 md:!py-2.5 !text-sm">
                                 <p id="stockWarning" class="text-[10px] md:text-xs text-red-600 font-bold mt-1 hidden"><i class="fas fa-exclamation-triangle"></i> Kulang ang stock! Available: <span id="maxStockDisplay"></span> kg.</p>
                             </div>
                             <div class="text-[10px] md:text-sm text-rose-600 font-medium pb-2">

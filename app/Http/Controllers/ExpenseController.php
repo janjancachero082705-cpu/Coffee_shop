@@ -20,12 +20,27 @@ class ExpenseController extends Controller
         }
 
         // Ang total kay mo-follow sa na-filter nga date range
-        $totalExpenses = $query->sum('amount');
+                
+        // Filter by Category
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $totalExpenses = $query->sum('amount');        
+        // Calculate totals per category
+        $categoryTotals = (clone $query)->select('category', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->get();
         
         // Pagination nga mo-preserve sa date filter inig page 2
-        $expenses = $query->orderByDesc('expense_date')->paginate(15)->appends($request->query());
+                
+        // Kuhaon ang tanang unique categories para sa dropdown
+        $uniqueCategories = \App\Models\Expense::select('category')->distinct()->orderBy('category')->pluck('category');
 
-        return view('expenses.index', compact('expenses', 'totalExpenses'));
+        $expenses = $query->orderBy('category')->orderByDesc('expense_date')->paginate(15)->appends($request->query());
+
+        return view('expenses.index', compact('expenses', 'totalExpenses', 'categoryTotals', 'uniqueCategories'));
     }
 
     public function store(Request $request)
@@ -59,7 +74,7 @@ class ExpenseController extends Controller
         $expense->update($validated);
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
-            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')'); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
+            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')', $expense); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
             return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
     }
 
@@ -68,7 +83,7 @@ class ExpenseController extends Controller
         $expense->delete();
         \Illuminate\Support\Facades\Cache::forget('dashboard_metrics');
         try { event(new \App\Events\DataUpdated()); } catch (\Exception $e) { /* Skip kung mapalong ang Reverb */ }
-            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')'); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
+            \App\Models\ActivityLog::record('Expenses', 'Recorded', 'Added expense: ' . $request->category . ' (₱' . number_format($request->amount, 2) . ')', $expense); // . $request->category . ' (₱' . number_format($request->amount, 2) . ')');
             return redirect()->route('expenses.index')->with('success', 'Expense deleted successfully!');
     }
 }

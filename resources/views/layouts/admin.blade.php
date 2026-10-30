@@ -216,6 +216,234 @@
             right: 15px !important;
         }
     </style>
+    
+    
+    
+    <style>
+        /* ==========================================
+           GLOBAL CHOICES.JS STYLING (PAREHAS SA SCREENSHOT)
+           ========================================== */
+        
+        /* 1. Ang Main Input Box */
+        .choices__inner {
+            background-color: #FFFFFF !important;
+            border: 1px solid #D3CEC6 !important;
+            border-radius: 12px !important;
+            padding: 10px 14px !important;
+            font-size: 16px !important; /* 16px para dili mo-zoom in ang iPhone */
+            font-weight: 600 !important;
+            color: #1A1715 !important;
+            min-height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            box-shadow: none !important;
+        }
+
+        /* 2. Ang Dropdown Menu (Listahan sa mga Options) */
+        .choices__list--dropdown {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E5E0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+            z-index: 9999 !important;
+            margin-top: 6px !important;
+            padding: 6px !important;
+        }
+
+        /* 3. Ang Matag Option sa Listahan */
+        .choices__list--dropdown .choices__item {
+            padding: 12px 14px !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            color: #57514B !important;
+            border-radius: 8px !important;
+            border-bottom: none !important;
+            margin-bottom: 2px !important;
+        }
+
+        /* 4. Kolor kung i-hover o i-highlight ang isa ka option */
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #FFF7EE !important;
+            color: #E86100 !important;
+        }
+
+        /* 5. Ang Arrow sa Tuo */
+        .choices[data-type*="select-one"]::after {
+            border-color: #A29B90 transparent transparent transparent !important;
+            right: 15px !important;
+        }
+
+        /* 6. Tangtangon ang search bar (kay normal select lang ato gusto) */
+        .choices__list--dropdown .choices__input {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        // GLOBAL AUTO-INITIALIZE PARA SA TANANG DROPDOWN
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Choices !== 'undefined') {
+                // Pangitaon ang tanang <select> sa page
+                document.querySelectorAll('select').forEach(function(select) {
+                    
+                    // Ayaw i-apply kung ang dropdown kay multiple select (para dili maguba)
+                    if (select.hasAttribute('multiple')) return;
+
+                    // Ayaw i-apply kung naa nay Choices.js (para dili mag-doble)
+                    if (select.classList.contains('choices-initialized')) return;
+
+                    // I-convert ngadto sa nindot nga design
+                    new Choices(select, {
+                        searchEnabled: false, // Tangtangon ang search bar
+                        itemSelectText: '',
+                        shouldSort: false,
+                        classNames: {
+                            containerOuter: 'choices w-full relative',
+                        }
+                    });
+                    
+                    // Butangan og marka para dili ma-initialize pag-usab
+                    select.classList.add('choices-initialized');
+                });
+            }
+        });
+    </script>
+    
+    <style>
+        /* ==========================================
+           PREMIUM UI ENHANCEMENTS
+           ========================================== */
+        
+        /* 1. Typography & Global */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        h1, h2, h3, h4 {
+            letter-spacing: -0.02em;
+        }
+
+        /* 2. Glassmorphism Header & Sidebar */
+        header {
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border-bottom: 1px solid rgba(232, 229, 224, 0.6) !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03) !important;
+        }
+        #sidebar {
+            background: rgba(235, 232, 227, 0.85) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border-right: 1px solid rgba(223, 219, 213, 0.8) !important;
+        }
+
+        /* 3. Premium Cards (Soft Shadows & Hover Lift) */
+        .card {
+            background: #FFFFFF !important;
+            border: 1px solid #F0EDE8 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 10px -2px rgba(26, 23, 21, 0.03), 0 4px 20px -4px rgba(26, 23, 21, 0.03) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(26, 23, 21, 0.08), 0 4px 10px -4px rgba(26, 23, 21, 0.04) !important;
+        }
+
+        /* 4. Enhanced Sidebar Links */
+        .nav-link {
+            border-radius: 12px !important;
+            margin-bottom: 4px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .nav-link.active {
+            background: linear-gradient(135deg, #FF8512 0%, #E86100 100%) !important;
+            box-shadow: 0 6px 16px -4px rgba(232, 97, 0, 0.4) !important;
+        }
+        .nav-link:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.6) !important;
+            transform: translateX(4px);
+        }
+
+        /* 5. Premium Buttons */
+        .btn {
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF8512 0%, #E86100 100%);
+            box-shadow: 0 4px 12px -2px rgba(232, 97, 0, 0.3);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #E86100 0%, #BF4D00 100%);
+            box-shadow: 0 6px 16px -4px rgba(232, 97, 0, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #FFFFFF;
+            border: 1px solid #E8E5E0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .btn-secondary:hover {
+            background: #FAF9F7;
+            border-color: #D3CEC6;
+            transform: translateY(-1px);
+        }
+
+        /* 6. Enhanced Inputs & Dropdowns */
+        .input {
+            background-color: #FAFAFA !important;
+            border: 1.5px solid #E8E5E0 !important;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .input:hover {
+            border-color: #D3CEC6 !important;
+        }
+        .input:focus {
+            background-color: #FFFFFF !important;
+            border-color: #E86100 !important;
+            box-shadow: 0 0 0 4px rgba(232, 97, 0, 0.12) !important;
+        }
+
+        /* 7. Tables (Modern Clean Look) */
+        .table-clean th {
+            background: #FAF9F7 !important;
+            font-size: 11px !important;
+            letter-spacing: 0.05em;
+            border-bottom: 1.5px solid #F0EDE8 !important;
+            padding: 1rem !important;
+        }
+        .table-clean td {
+            padding: 1rem !important;
+            border-bottom: 1px solid #F3F1EE !important;
+            vertical-align: middle;
+        }
+        .table-clean tr:hover td {
+            background-color: #FDFCFB !important;
+        }
+
+        /* 8. Scrollbars (Slim & Elegant) */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: #D3CEC6; 
+            border-radius: 10px; 
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+        ::-webkit-scrollbar-thumb:hover { background-color: #A29B90; }
+    </style>
 </head>
 <body>
 <div id="top-loader"></div>
@@ -734,7 +962,7 @@
             });
             
             // Kung mahuman na og load ang page, pun-a ang loading bar
-            window.addEventListener('load', function() {
+            document.addEventListener('DOMContentLoaded', function() {
                 if(loader) {
                     loader.style.width = '100%';
                     setTimeout(() => {
