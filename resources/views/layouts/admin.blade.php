@@ -89,8 +89,8 @@
             #sidebar { 
                 transform:translateX(-100%); 
                 transition: transform 0.3s ease; 
-                background: rgba(255, 255, 255, 0.40) !important; /* 40% opacity - Sakto nga glass */
-                backdrop-filter: blur(16px) saturate(180%) !important; /* 16px blur - Klaro pero dili malibog */
+                background: rgba(255, 255, 255, 0.40) !important;
+                backdrop-filter: blur(16px) saturate(180%) !important;
                 -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
                 border-right: 1px solid rgba(255, 255, 255, 0.5) !important;
                 box-shadow: 10px 0 30px rgba(0, 0, 0, 0.08) !important;
@@ -98,9 +98,6 @@
             body.nav-open #sidebar { transform:translateX(0); }
             body.nav-open #navBackdrop { display:block; }
             html, body { overflow-x: hidden !important; height: 100dvh !important; }
-            
-            /* Tagoa ang floating hamburger kung open ang sidebar para dili mo-overlap */
-            body.nav-open #floatingMenuWrapper { display: none !important; }
         }
     </style>
     
@@ -140,15 +137,22 @@
     <aside id="sidebar" class="w-[260px] h-full flex flex-col flex-shrink-0 z-40 lg:relative fixed inset-y-0 left-0">
         
         <div class="h-[100px] flex items-center px-5 flex-shrink-0 border-b border-ink-200/50">
-            <div class="flex items-center gap-4 group cursor-pointer w-full">
-                <!-- GIPADAKO ANG LOGO -->
+            <div class="flex items-center gap-4 group w-full">
                 <div class="w-[60px] h-[60px] rounded-full overflow-hidden bg-white shadow-sm border border-ink-200 shrink-0">
                     <img src="{{ asset('images/Kape_Logo.png') }}" alt="Kape Miarayon logo" class="w-full h-full object-cover">
                 </div>
+                
                 <div class="flex flex-col justify-center min-w-0">
-                    <div class="flex items-baseline gap-1.5 leading-none">
-                        <span class="font-serif italic font-bold text-[24px] text-brand-600 tracking-tight">Kape</span>
-                        <span class="font-black text-[19px] text-ink-900 tracking-tighter">Miarayon</span>
+                    <div class="flex items-center gap-2 leading-none">
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="font-serif italic font-bold text-[24px] text-brand-600 tracking-tight">Kape</span>
+                            <span class="font-black text-[19px] text-ink-900 tracking-tighter">Miarayon</span>
+                        </div>
+                        
+                        {{-- 🚨 ARROW BUTTON PARA I-CLOSE ANG SIDEBAR (Mobile only) --}}
+                        <button type="button" onclick="document.body.classList.remove('nav-open')" class="lg:hidden flex items-center justify-center w-6 h-6 rounded-full bg-ink-100/50 text-ink-500 hover:text-ink-900 hover:bg-ink-200 transition-colors shrink-0 ml-1" title="Close Sidebar">
+                            <i class="fas fa-chevron-left text-[10px]"></i>
+                        </button>
                     </div>
                     <span class="text-[10px] font-bold text-ink-700 uppercase tracking-widest mt-1.5 whitespace-nowrap drop-shadow-sm">Wholesale & Retailer</span>
                 </div>
@@ -179,7 +183,6 @@
                 </div>
             </div>
             
-            <!-- FIXED: AJAX Logout Button -->
             <button type="button" onclick="handleLogout(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-all shadow-sm" title="Log out">
                 <i class="fas fa-right-from-bracket"></i> Log out
             </button>
@@ -190,12 +193,24 @@
     <div class="flex-1 flex flex-col h-full min-w-0 relative">
         
         {{-- FIXED HEADER --}}
-        <header id="mainHeader" class="fixed top-0 left-0 lg:left-[260px] right-0 h-[56px] bg-white/40 backdrop-blur-2xl border-b border-white/50 z-30 transition-transform duration-300 flex items-center justify-between px-4 sm:px-6 shadow-sm">
-            <div class="flex flex-col justify-center min-w-0">
-                <h1 class="text-[18px] sm:text-[20px] font-extrabold tracking-tight text-ink-900 leading-tight truncate text-left">@yield('title', 'Dashboard')</h1>
-                <p class="text-[10px] sm:text-[11px] font-medium text-ink-500 truncate mt-0 text-left">@yield('subtitle', 'Welcome back!')</p>
+        <header id="mainHeader" class="fixed top-0 left-0 lg:left-[260px] right-0 h-[64px] bg-white/40 backdrop-blur-2xl border-b border-white/50 z-30 transition-transform duration-300 flex items-center justify-between px-4 sm:px-6 shadow-sm">
+            
+            <div class="flex items-center gap-3 min-w-0">
+                {{-- HAMBURGER BUTTON SA HEADER (Mobile Only) --}}
+                <button type="button" class="lg:hidden w-10 h-10 flex items-center justify-center text-ink-900 hover:text-brand-600 active:scale-90 transition-all shrink-0 -ml-2 rounded-xl hover:bg-black/5" onclick="document.body.classList.add('nav-open')" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+
+                {{-- TITLE & SUBTITLE --}}
+                <div class="flex flex-col justify-center min-w-0">
+                    <h1 class="text-[18px] sm:text-[20px] font-extrabold tracking-tight text-ink-900 leading-tight truncate text-left">@yield('title', 'Dashboard')</h1>
+                    <p class="text-[10px] sm:text-[11px] font-medium text-ink-500 truncate mt-0 text-left">@yield('subtitle', 'Welcome back!')</p>
+                </div>
             </div>
 
+            {{-- NOTIFICATION BELL --}}
             <div class="flex items-center shrink-0 relative z-[60]">
                 <div class="relative" id="notifMenu">
                     <button type="button" onclick="toggleNotif(event)" class="relative w-9 h-9 flex items-center justify-center text-ink-600 transition-colors cursor-pointer z-[100]">
@@ -240,15 +255,8 @@
             </div>
         </header>
 
-        {{-- FLOATING HAMBURGER --}}
-        <div id="floatingMenuWrapper" class="fixed top-[64px] left-1 z-40 flex items-center lg:hidden transition-all duration-300 transform translate-x-0 opacity-100">
-            <button type="button" id="mobileMenuBtn" class="w-10 h-10 flex items-center justify-center text-ink-900 hover:text-brand-600 active:scale-90 transition-all" onclick="document.body.classList.add('nav-open')" aria-label="Open menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="4" ry="4"/><line x1="15" x2="15" y1="3" y2="21"/><path d="m10 8 4 4-4 4"/></svg>
-            </button>
-        </div>
-
         {{-- MAIN SCROLLABLE AREA --}}
-        <main class="flex-1 overflow-y-auto px-4 sm:px-8 pb-24 md:pb-10 pt-[64px]" style="padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;">
+        <main class="flex-1 overflow-y-auto px-4 sm:px-8 pb-24 md:pb-10 pt-[72px]" style="padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;">
             <div class="max-w-[1600px] mx-auto w-full">
                 @if(session('success'))
                     <div role="status" class="mb-6 px-4 py-3 bg-emerald-50 text-emerald-800 rounded-xl flex items-center gap-3 text-sm font-bold border border-emerald-200 shadow-sm"><i class="fas fa-circle-check text-emerald-500 text-lg"></i> {{ session('success') }}</div>
@@ -310,38 +318,14 @@
         document.addEventListener('click', function(e) { const d = document.getElementById('notifDropdown'); const b = e.target.closest('button[onclick*="toggleNotif"]'); if(d && !d.contains(e.target) && !b) d.classList.add('hidden'); });
         
         // ==========================================
-        // HEADER ANIMATION & FLOATING BUTTON AUTO-HIDE
+        // HEADER SCROLL ANIMATION
         // ==========================================
         let lastScrollTop = 0;
         const mainEl = document.querySelector('main');
         const header = document.getElementById('mainHeader');
-        const floatingBtn = document.getElementById('floatingMenuWrapper');
-        let idleTimer;
-
-        const showFloatingBtn = () => {
-            if (floatingBtn) {
-                floatingBtn.classList.remove('-translate-x-[150%]', 'opacity-0');
-                floatingBtn.classList.add('translate-x-0', 'opacity-100');
-            }
-        };
-
-        const hideFloatingBtn = () => {
-            if (floatingBtn && !document.body.classList.contains('nav-open')) {
-                floatingBtn.classList.remove('translate-x-0', 'opacity-100');
-                floatingBtn.classList.add('-translate-x-[150%]', 'opacity-0');
-            }
-        };
-
-        const resetIdleTimer = () => {
-            showFloatingBtn();
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(hideFloatingBtn, 2000); 
-        };
 
         if (mainEl && header) {
             mainEl.addEventListener('scroll', function() {
-                resetIdleTimer();
-                
                 let scrollTop = mainEl.scrollTop;
                 if (scrollTop > lastScrollTop) {
                     header.classList.remove('-translate-y-full');
@@ -351,11 +335,6 @@
                 lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
             }, { passive: true });
         }
-
-        document.addEventListener('click', resetIdleTimer, { passive: true });
-        document.addEventListener('touchstart', resetIdleTimer, { passive: true });
-
-        resetIdleTimer();
 
         // ==========================================
         // CONFIRMATION MODAL
@@ -378,7 +357,7 @@
     });
 
     // ==========================================
-    // GLOBAL DOUBLE CLICK PREVENTER (FIXED TIMEOUT)
+    // GLOBAL DOUBLE CLICK PREVENTER
     // ==========================================
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('form').forEach(form => {
@@ -422,20 +401,6 @@
                     if (h) btn.innerHTML = h; 
                 }
             });
-        });
-
-        window.addEventListener('pageshow', function (event) {
-            if (event.persisted) {
-                document.querySelectorAll('form').forEach(form => {
-                    form.removeAttribute('data-is-submitting');
-                    const btn = form.querySelector('button[type="submit"]');
-                    if (btn) { 
-                        btn.classList.remove('opacity-75', 'pointer-events-none', 'cursor-not-allowed'); 
-                        const h = btn.getAttribute('data-original-html'); 
-                        if (h) btn.innerHTML = h; 
-                    }
-                });
-            }
         });
     });
 
