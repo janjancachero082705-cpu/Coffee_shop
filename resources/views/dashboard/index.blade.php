@@ -61,7 +61,7 @@
         </div>
 
         {{-- Sales trend --}}
-        <div id="pnSales" class="lg:col-span-2 card p-4 md:p-6 w-full min-w-0 flex flex-col">
+        <div id="pnSales" class="lg:col-span-2 card p-4 md:p-6 w-full min-w-0 flex flex-col h-full">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 shrink-0">
                 <div>
                     <h3 class="text-sm md:text-base font-bold text-ink-900">Sales Trend</h3>
@@ -70,7 +70,7 @@
                 <span class="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded">Last 6 Months</span>
             </div>
             
-            <div class="relative w-full" style="height: 250px;">
+            <div class="relative w-full flex-1 min-h-[250px]">
                 
                 {{-- GIBUTANGAN NAKOG EXPLICIT WIDTH UG HEIGHT PARA MA-FORCE DRAW --}}
                 @php
